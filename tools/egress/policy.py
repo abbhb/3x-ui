@@ -71,8 +71,9 @@ def render(base, tags, users):
                     # overriding an explicit sockopt.domainStrategy. Only the new
                     # user clone adopts this policy's IPv6-first resolver contract.
                     direct.pop("targetStrategy", None)
+                    direct["settings"] = direct.get("settings") or {}
                     for legacy in ("domainStrategy", "targetStrategy"):
-                        direct.setdefault("settings", {}).pop(legacy, None)
+                        direct["settings"].pop(legacy, None)
                     # Preserve freedom finalRules (including private-IP blocks), fragmentation, etc.
                     options = {"mark": user["mark"],
                                "domainStrategy": "ForceIP" if network == "tcp" else "ForceIPv6v4"}

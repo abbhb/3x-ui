@@ -66,6 +66,13 @@ class PolicyTests(unittest.TestCase):
             self.assertEqual(outbound["settings"]["finalRules"], original["outbounds"][0]["settings"]["finalRules"])
         self.assertEqual(original, before)
 
+    def test_native_null_direct_settings_use_the_core_defaults(self):
+        original = core_config()
+        original["outbounds"][0]["settings"] = None
+        _, outbounds = policy.render(policy.snapshot(original), ["FIXED_V6_ENTRY"], [{"email": "7.sample", "mark": 123}])
+        self.assertEqual(outbounds[0]["settings"], {})
+        self.assertIsNone(original["outbounds"][0]["settings"])
+
     def test_legacy_identity_ignores_username_but_not_user_number(self):
         self.assertEqual(policy.identity("7.old-name"), policy.identity("7.new-name"))
         self.assertIsNone(policy.identity("ordinary-native-client"))
