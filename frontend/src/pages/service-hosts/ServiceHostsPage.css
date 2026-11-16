@@ -10,6 +10,10 @@
 .service-host-help {
   margin-block: 12px;
 }
+.service-host-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
 .service-host-content .ant-table-cell {
   overflow-wrap: anywhere;
 }

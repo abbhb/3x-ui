@@ -102,7 +102,7 @@ func Load() (*Config, []byte, error) {
 	var fields map[string]json.RawMessage
 	_ = json.Unmarshal(data, &fields)
 	flag := string(fields["enabled"])
-	if len(data) > 64<<10 || (flag != "true" && flag != "false") || json.Unmarshal(data, &config) != nil || config.Policy.Validate() != nil ||
+	if len(data) > 64<<10 || (flag != "true" && flag != "false") || json.Unmarshal(data, &config) != nil || config.Validate() != nil ||
 		!filepath.IsAbs(config.State) || !filepath.IsAbs(config.Binary) || !filepath.IsAbs(config.Allocations) {
 		return nil, nil, errors.New("invalid egress bootstrap configuration")
 	}

@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -18,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -271,6 +273,13 @@ func TestMasterNodeContract(t *testing.T) {
 					_, err := master.FetchTrafficSnapshot(ctx)
 					return err
 				}, nil},
+				{"HostReport reads the node runtime without bootstrap files", []string{"HostReport"}, func() error {
+					report, err := master.HostReport(ctx)
+					if err == nil && report == nil {
+						return errors.New("node returned no host runtime report")
+					}
+					return err
+				}, nil},
 				{"PushGlobalClientTraffics is accepted", []string{"PushGlobalClientTraffics"}, func() error {
 					return master.PushGlobalClientTraffics(ctx, "master-guid", []*xray.ClientTraffic{{Email: "c0", Up: 1, Down: 2}})
 				}, nil},
@@ -357,6 +366,7 @@ func TestMasterNodeContract(t *testing.T) {
 
 // Remote methods that never reach the node, or that this table must not run.
 var remoteMethodsOutsideContract = map[string]string{
+	"SaveHostPolicy":        "requires node-admin; covered by TestHostEgressWriteContract",
 	"Name":                  "local label",
 	"RecordAdoptedInbound":  "local fingerprint bookkeeping",
 	"AdoptInboundAlias":     "local alias bookkeeping",
@@ -365,6 +375,28 @@ var remoteMethodsOutsideContract = map[string]string{
 	"ForgetPushedInbound":   "local fingerprint bookkeeping",
 	"ForgetInbound":         "local bookkeeping for an inbound the node no longer has",
 	"UpdatePanel":           "replaces the node binary; node-sync is denied it on purpose (#6201)",
+}
+
+func TestHostEgressWriteContract(t *testing.T) {
+	for _, scope := range []string{model.ApiScopeAdmin, model.ApiScopeNodeAdmin, model.ApiScopeNodeSync} {
+		t.Run(scope, func(t *testing.T) {
+			t.Setenv("XUI_EGRESS_CONFIG", "")
+			t.Setenv("XUI_XRAY_LAUNCHER", "")
+			node := startContractNode(t)
+			master := node.masterWithToken(t, scope)
+			err := master.SaveHostPolicy(context.Background(), hostops.Policy{})
+			refused := node.takeRefused()
+			if scope == model.ApiScopeNodeSync {
+				if err == nil || len(refused) != 1 || !strings.HasSuffix(refused[0], " -> 403") {
+					t.Fatalf("node-sync write was not forbidden: err=%v refused=%v", err, refused)
+				}
+			} else if err == nil || len(refused) != 0 || !strings.Contains(err.Error(), "invalid egress") {
+				// An authorized request reaches policy validation, without installing
+				// or restarting anything in this router contract test.
+				t.Fatalf("authorized write did not reach controller: err=%v refused=%v", err, refused)
+			}
+		})
+	}
 }
 
 // A Remote method with no cell is how activeInbounds and bulkResetTraffic

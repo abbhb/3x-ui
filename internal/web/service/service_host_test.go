@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -121,5 +122,31 @@ func TestServiceHostRuntimeIsBoundedByMembershipAndKeepsUnavailableServices(t *t
 	}
 	if err := svc.ApplyPolicy(context.Background(), host.Id, 999, policy); err == nil {
 		t.Fatal("foreign service accepted")
+	}
+}
+
+func TestLocalHostReportDoesNotVerifyAStoppedCore(t *testing.T) {
+	setupBulkDB(t)
+	t.Cleanup(SetXrayProcessForTest(nil))
+	hostops.Observations.Reset()
+	t.Cleanup(hostops.Observations.Reset)
+	hostops.Observations.Feed(`MZCONN {"version":1,"event":"ready"}`)
+	report := LocalHostReport()
+	if report.Observer.Ready || report.Status.Verified || report.Status.Reason != "core_stopped" {
+		t.Fatalf("stopped core was reported as ready: %+v", report)
+	}
+}
+
+func TestDisabledHostPolicyCanReferToARemovedInbound(t *testing.T) {
+	setupBulkDB(t)
+	t.Setenv("XUI_EGRESS_CONFIG", "")
+	t.Setenv("XUI_XRAY_LAUNCHER", "")
+	policy := hostops.Policy{Namespace: "test", Interface: "eth0", Prefix: "2001:db8:1::/64", MarkPrefix: 100, Inbounds: []string{"removed-entry"}}
+	if err := SaveLocalHostPolicy(policy); !errors.Is(err, hostops.ErrNotInstalled) {
+		t.Fatalf("disable was blocked by removed inbound before loading bootstrap: %v", err)
+	}
+	policy.Enabled = true
+	if err := SaveLocalHostPolicy(policy); err == nil || !strings.Contains(err.Error(), "local service inbounds") {
+		t.Fatalf("enable accepted an unknown inbound: %v", err)
 	}
 }

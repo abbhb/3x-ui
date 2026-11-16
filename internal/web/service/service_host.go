@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
-	"gorm.io/gorm"
 )
 
 type ServiceHostInput struct {
@@ -284,6 +285,11 @@ type (
 
 func LocalHostReport() *hostops.Report {
 	report := hostops.ReadLocal()
+	if process := currentXrayProcess(); process == nil || !process.IsRunning() {
+		report.Observer.Ready = false
+		report.Status.Verified = false
+		report.Status.Reason = "core_stopped"
+	}
 	var inbounds []model.Inbound
 	if err := database.GetDB().Where("node_id IS NULL").Order("id").Find(&inbounds).Error; err != nil {
 		report.Error = "local inbound inventory unavailable"
@@ -347,16 +353,19 @@ func (s *ServiceHostService) Runtime(ctx context.Context, id int) ([]HostInstanc
 }
 
 func SaveLocalHostPolicy(policy hostops.Policy) error {
-	var inbounds []model.Inbound
-	if err := database.GetDB().Where("node_id IS NULL AND tag IN ?", policy.Inbounds).Find(&inbounds).Error; err != nil {
-		return err
-	}
-	if len(inbounds) != len(policy.Inbounds) {
-		return errors.New("managed inbounds must be local service inbounds")
-	}
-	for _, ib := range inbounds {
-		if !slices.Contains([]model.Protocol{model.VLESS, model.VMESS, model.Trojan, model.Shadowsocks, model.Hysteria}, ib.Protocol) {
-			return errors.New("selected inbound cannot identify users for IPv6 egress")
+	// A removed inbound must never prevent switching the installed policy off.
+	if policy.Enabled {
+		var inbounds []model.Inbound
+		if err := database.GetDB().Where("node_id IS NULL AND tag IN ?", policy.Inbounds).Find(&inbounds).Error; err != nil {
+			return err
+		}
+		if len(inbounds) != len(policy.Inbounds) {
+			return errors.New("managed inbounds must be local service inbounds")
+		}
+		for _, ib := range inbounds {
+			if !slices.Contains([]model.Protocol{model.VLESS, model.VMESS, model.Trojan, model.Shadowsocks, model.Hysteria}, ib.Protocol) {
+				return errors.New("selected inbound cannot identify users for IPv6 egress")
+			}
 		}
 	}
 	if err := hostops.SavePolicy(policy); err != nil {

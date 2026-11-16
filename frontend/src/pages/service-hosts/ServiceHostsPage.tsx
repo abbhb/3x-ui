@@ -133,46 +133,54 @@ export function ConnectionsPanel({ reports }: { reports: HostRuntime[] }) {
           style={{ minWidth: 200 }}
         />
       </Space>
-      <Table<Connection>
-        rowKey={(r) => `${r.nodeId}:${r.id}`}
-        dataSource={rows}
-        pagination={{ pageSize: 20, showSizeChanger: false }}
-        scroll={{ x: 1500 }}
-        locale={{ emptyText: label('noDials') }}
-        columns={[
-          {
-            title: label('time'),
-            dataIndex: 'timestamp',
-            render: (v: string) => new Date(v).toLocaleString(),
-          },
-          { title: label('user'), dataIndex: 'user' },
-          { title: label('service'), dataIndex: 'service' },
-          {
-            title: label('direction'),
-            render: (_, r) => (
-              <Tag>
-                {r.clientFamily} → {r.egressFamily}
-              </Tag>
-            ),
-          },
-          { title: label('clientAddress'), dataIndex: 'source' },
-          { title: label('target'), dataIndex: 'target' },
-          { title: label('actualRemote'), dataIndex: 'remote' },
-          { title: label('socketSource'), dataIndex: 'local' },
-          {
-            title: label('assignedIPv6'),
-            render: (_, r) =>
-              r.assignedIPv6 ? (
-                <span>
-                  {r.assignedIPv6} {!r.allocationVerified && <Tag>{label('unverified')}</Tag>}
-                </span>
-              ) : (
-                '—'
+      <div
+        className="service-host-table-scroll"
+        role="region"
+        /* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The named overflow region must receive keyboard focus so arrow keys can scroll the table. */
+        tabIndex={0}
+        aria-label={label('connections')}
+      >
+        <Table<Connection>
+          rowKey={(r) => `${r.nodeId}:${r.id}`}
+          dataSource={rows}
+          pagination={{ pageSize: 20, showSizeChanger: false }}
+          style={{ minWidth: 1500 }}
+          locale={{ emptyText: <Typography.Text>{label('noDials')}</Typography.Text> }}
+          columns={[
+            {
+              title: label('time'),
+              dataIndex: 'timestamp',
+              render: (v: string) => new Date(v).toLocaleString(),
+            },
+            { title: label('user'), dataIndex: 'user' },
+            { title: label('service'), dataIndex: 'service' },
+            {
+              title: label('direction'),
+              render: (_, r) => (
+                <Tag>
+                  {r.clientFamily} → {r.egressFamily}
+                </Tag>
               ),
-          },
-          { title: label('outbound'), dataIndex: 'outbound' },
-        ]}
-      />
+            },
+            { title: label('clientAddress'), dataIndex: 'source' },
+            { title: label('target'), dataIndex: 'target' },
+            { title: label('actualRemote'), dataIndex: 'remote' },
+            { title: label('socketSource'), dataIndex: 'local' },
+            {
+              title: label('assignedIPv6'),
+              render: (_, r) =>
+                r.assignedIPv6 ? (
+                  <span>
+                    {r.assignedIPv6} {!r.allocationVerified && <Tag>{label('unverified')}</Tag>}
+                  </span>
+                ) : (
+                  '—'
+                ),
+            },
+            { title: label('outbound'), dataIndex: 'outbound' },
+          ]}
+        />
+      </div>
     </Space>
   );
 }
@@ -505,67 +513,75 @@ export default function ServiceHostsPage() {
                     description={label('classificationHelp')}
                     className="service-host-help"
                   />
-                  <Table<HostLine>
-                    rowKey="id"
-                    dataSource={detail.data.lines}
-                    pagination={false}
-                    scroll={{ x: 900 }}
-                    columns={[
-                      {
-                        title: label('line'),
-                        render: (_, line) => (
-                          <Space orientation="vertical" size={0}>
-                            <span>{line.name || line.tag}</span>
-                            <Typography.Text type="secondary">{line.tag}</Typography.Text>
-                          </Space>
-                        ),
-                      },
-                      {
-                        title: label('service'),
-                        render: (_, line) =>
-                          detail.data?.services.find((s) => s.id === line.nodeId)?.name,
-                      },
-                      {
-                        title: t('protocol'),
-                        render: (_, line) => `${line.protocol} / ${line.transport || 'tcp'}`,
-                      },
-                      {
-                        title: label('entries'),
-                        render: (_, line) =>
-                          line.endpoints.length ? (
-                            <Space orientation="vertical" size={4}>
-                              {line.endpoints.map((entry) => (
-                                <span key={entry.id}>
-                                  <Tag>{entry.family}</Tag>
-                                  {entry.name} ·{' '}
-                                  {entry.family === 'IPv6'
-                                    ? `[${entry.address.replace(/^\[|\]$/g, '')}]`
-                                    : entry.address}
-                                  :{entry.port}
-                                  {entry.disabled && <Tag>{label('disabled')}</Tag>}
-                                </span>
-                              ))}
+                  <div
+                    className="service-host-table-scroll"
+                    role="region"
+                    /* oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The named overflow region must receive keyboard focus so arrow keys can scroll the table. */
+                    tabIndex={0}
+                    aria-label={label('lines')}
+                  >
+                    <Table<HostLine>
+                      rowKey="id"
+                      dataSource={detail.data.lines}
+                      pagination={false}
+                      style={{ minWidth: 900 }}
+                      columns={[
+                        {
+                          title: label('line'),
+                          render: (_, line) => (
+                            <Space orientation="vertical" size={0}>
+                              <span>{line.name || line.tag}</span>
+                              <Typography.Text type="secondary">{line.tag}</Typography.Text>
                             </Space>
-                          ) : (
-                            label('noEntry')
                           ),
-                      },
-                      {
-                        title: label('declaredMode'),
-                        render: (_, line) => (
-                          <Select
-                            aria-label={`${label('declaredMode')} ${line.tag}`}
-                            value={line.egressMode}
-                            onChange={(mode) => void saveLine(line, mode)}
-                            options={['unclassified', 'shared', 'user_ipv6', 'tunnel'].map(
-                              (mode) => ({ value: mode, label: label(mode) }),
-                            )}
-                            style={{ minWidth: 155 }}
-                          />
-                        ),
-                      },
-                    ]}
-                  />
+                        },
+                        {
+                          title: label('service'),
+                          render: (_, line) =>
+                            detail.data?.services.find((s) => s.id === line.nodeId)?.name,
+                        },
+                        {
+                          title: t('protocol'),
+                          render: (_, line) => `${line.protocol} / ${line.transport || 'tcp'}`,
+                        },
+                        {
+                          title: label('entries'),
+                          render: (_, line) =>
+                            line.endpoints.length ? (
+                              <Space orientation="vertical" size={4}>
+                                {line.endpoints.map((entry) => (
+                                  <span key={entry.id}>
+                                    <Tag>{entry.family}</Tag>
+                                    {entry.name} ·{' '}
+                                    {entry.family === 'IPv6'
+                                      ? `[${entry.address.replace(/^\[|\]$/g, '')}]`
+                                      : entry.address}
+                                    :{entry.port}
+                                    {entry.disabled && <Tag>{label('disabled')}</Tag>}
+                                  </span>
+                                ))}
+                              </Space>
+                            ) : (
+                              label('noEntry')
+                            ),
+                        },
+                        {
+                          title: label('declaredMode'),
+                          render: (_, line) => (
+                            <Select
+                              aria-label={`${label('declaredMode')} ${line.tag}`}
+                              value={line.egressMode}
+                              onChange={(mode) => void saveLine(line, mode)}
+                              options={['unclassified', 'shared', 'user_ipv6', 'tunnel'].map(
+                                (mode) => ({ value: mode, label: label(mode) }),
+                              )}
+                              style={{ minWidth: 155 }}
+                            />
+                          ),
+                        },
+                      ]}
+                    />
+                  </div>
                 </Card>
               ) : key === 'egress' ? (
                 <Spin aria-live="off" spinning={runtime.isFetching}>
