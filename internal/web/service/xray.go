@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -1542,7 +1543,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 			xrayState.holdBack(refused)
 			return fmt.Errorf("xray %s", refused)
 		}
-		if !isForce && !configUnchanged {
+		if !isForce && !configUnchanged && os.Getenv("XUI_XRAY_LAUNCHER") == "" {
 			applied, err := s.tryHotApply(process, xrayConfig)
 			if err != nil {
 				return err

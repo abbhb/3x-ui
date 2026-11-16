@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -97,6 +98,31 @@ func (s *ClientService) ImportClients(inboundSvc *InboundService, items []Client
 	result := BulkCreateResult{}
 	if len(items) == 0 {
 		return result, false, nil
+	}
+	// A preparation import never upgrades an existing unrestricted account by reuse.
+	// Otherwise native bulk reuse could silently ignore the strict creation-only mode.
+	strictEmails := []string{}
+	strictByEmail := map[string]bool{}
+	for _, item := range items {
+		email := strings.TrimSpace(item.Client.Email)
+		if strict, seen := strictByEmail[email]; seen && strict != item.Client.StrictHostBindings {
+			return result, false, errors.New("conflicting strict host binding modes for a duplicate import client")
+		}
+		strictByEmail[email] = item.Client.StrictHostBindings
+		if item.Client.StrictHostBindings {
+			strictEmails = append(strictEmails, email)
+		}
+	}
+	for _, batch := range chunkStrings(strictEmails, sqlInChunk) {
+		var records []model.ClientRecord
+		if err := database.GetDB().Select("email", "strict_host_bindings").Where("email IN ?", batch).Find(&records).Error; err != nil {
+			return result, false, err
+		}
+		for _, record := range records {
+			if !record.StrictHostBindings {
+				return result, false, errors.New("strict migration imports require fresh clients; existing unrestricted client detected")
+			}
+		}
 	}
 
 	attached := make([]ClientCreatePayload, 0, len(items))

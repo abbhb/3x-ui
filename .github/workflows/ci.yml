@@ -13,6 +13,8 @@ on:
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
       - "tools/tests/**"
+      - "tools/egress/**"
+      - "tools/connection_observer/**"
       - "internal/web/service/testdata/marzban_stage1_clients.json"
       - ".github/workflows/ci.yml"
   push:
@@ -29,6 +31,8 @@ on:
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
       - "tools/tests/**"
+      - "tools/egress/**"
+      - "tools/connection_observer/**"
       - "internal/web/service/testdata/marzban_stage1_clients.json"
       - ".github/workflows/ci.yml"
 
@@ -36,6 +40,24 @@ permissions:
   contents: read
 
 jobs:
+  host-egress-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build pinned opt-in observing core
+        run: python3 tools/connection_observer/build.py --output "$RUNNER_TEMP/xray-observer"
+      - name: Four real socket families and guarded native file startup
+        run: XRAY_OBSERVER_BINARY="$RUNNER_TEMP/xray-observer" python3 -W error::ResourceWarning -m unittest discover -s tools/tests -p test_observer_runtime.py -v
+      - name: Install isolated network lab dependencies
+        run: sudo apt-get update && sudo apt-get install -y nftables iproute2 curl
+      - name: Preserve fixed ingress and verify per-user TCP and UDP IPv6 SNAT
+        run: sudo python3 tools/egress/runtime_lab.py lab "$RUNNER_TEMP/xray-observer"
+
   marzban-export:
     runs-on: ubuntu-latest
     strategy:

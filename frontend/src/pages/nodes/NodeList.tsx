@@ -53,6 +53,11 @@ interface NodeRow extends NodeRecord {
   key: string | number;
 }
 
+function hostDetailHref(nodeId: number): string {
+  const base = (window.X_UI_BASE_PATH || '/').replace(/\/+$/, '');
+  return `${base}/panel/service-hosts?node=${nodeId}`;
+}
+
 function badgeStatus(status?: string): BadgeProps['status'] {
   switch (status) {
     case 'online':
@@ -343,7 +348,11 @@ export default function NodeList({
               {record.transitive && (
                 <ApartmentOutlined aria-hidden style={{ marginInlineEnd: 6, opacity: 0.6 }} />
               )}
-              {record.name}
+              {record.transitive ? (
+                record.name
+              ) : (
+                <a href={hostDetailHref(record.id)}>{record.name}</a>
+              )}
             </span>
             {record.remark && <span className="remark">{record.remark}</span>}
           </div>
@@ -650,7 +659,13 @@ export default function NodeList({
                         onKeyDown={activateOnKey(() => toggleExpanded(record.id))}
                       />
                       <StatusDot status={record.status} xrayState={record.xrayState} />
-                      <span className="node-name">{record.name}</span>
+                      <a
+                        className="node-name"
+                        href={hostDetailHref(record.id)}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {record.name}
+                      </a>
                       <div className="card-actions">
                         <Tooltip title={t('info')}>
                           <InfoCircleOutlined

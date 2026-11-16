@@ -311,12 +311,21 @@ func TestNodeResetsSettleEachClientOnItsOwn(t *testing.T) {
 	}
 }
 
-// stallingResetRuntime never answers a reset until its context ends.
-type stallingResetRuntime struct{ fakeNodeRuntime }
+// stallingResetRuntime answers only after cancellation or explicit test cleanup.
+type stallingResetRuntime struct {
+	fakeNodeRuntime
+	started chan struct{}
+	release chan struct{}
+}
 
-func (*stallingResetRuntime) ResetClientTraffic(ctx context.Context, _ *model.Inbound, _ string) error {
-	<-ctx.Done()
-	return ctx.Err()
+func (r *stallingResetRuntime) ResetClientTraffic(ctx context.Context, _ *model.Inbound, _ string) error {
+	close(r.started)
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-r.release:
+		return errors.New("test node shut down")
+	}
 }
 
 // A node relays its master's reset to its own sub-nodes inline; one silent sub-node must
@@ -328,7 +337,25 @@ func TestNodeResetDeliveryDoesNotHoldTheRequestBehindASilentNode(t *testing.T) {
 	if err := database.GetDB().Create(node).Error; err != nil {
 		t.Fatalf("create node: %v", err)
 	}
-	mgr.SetRuntimeOverride(node.Id, &stallingResetRuntime{})
+	rt := &stallingResetRuntime{started: make(chan struct{}), release: make(chan struct{})}
+	mgr.SetRuntimeOverride(node.Id, rt)
+	t.Cleanup(func() {
+		// The request deliberately returns before delivery finishes. Drain that
+		// worker before restoring the global DB/manager or reusing this node ID.
+		close(rt.release)
+		select {
+		case <-rt.started:
+		case <-time.After(5 * time.Second):
+			t.Error("silent node never received the queued reset")
+			return
+		}
+		lock, _ := nodeResetDeliveryLocks.Load(node.Id)
+		lock.(*sync.Mutex).Lock()
+		defer lock.(*sync.Mutex).Unlock()
+		if left := pendingResetEmails(t, node.Id); !slices.Equal(left, []string{"held"}) {
+			t.Fatalf("failed background delivery lost its queued reset: %v", left)
+		}
+	})
 	ib := nodeInbound(t, node.Id, 41912, []model.Client{{Email: "held", ID: "11111111-1111-1111-1111-1111111111ab", Enable: true}})
 	if err := (&InboundService{}).AddClientStat(database.GetDB(), ib.Id, &model.Client{Email: "held", Enable: true}); err != nil {
 		t.Fatalf("AddClientStat: %v", err)

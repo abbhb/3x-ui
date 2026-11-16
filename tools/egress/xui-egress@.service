@@ -1,0 +1,9 @@
+[Unit]
+Description=3x-ui IPv6 egress reconciliation (%i)
+After=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /usr/local/lib/3x-ui-egress/manage.py --config /etc/3x-ui-egress/%i/node.json sync
+TimeoutStartSec=240

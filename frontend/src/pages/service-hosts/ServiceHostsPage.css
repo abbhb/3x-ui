@@ -1,0 +1,22 @@
+.service-host-content {
+  min-width: 0;
+}
+.service-host-full {
+  width: 100%;
+}
+.service-host-toolbar {
+  margin-bottom: 16px;
+}
+.service-host-help {
+  margin-block: 12px;
+}
+.service-host-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.service-host-content .ant-table-cell {
+  overflow-wrap: anywhere;
+}
+.service-host-content .ant-form {
+  max-width: 780px;
+}

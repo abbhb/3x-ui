@@ -383,6 +383,11 @@ export interface AllSettingView {
   webPort: number;
 }
 
+export interface Allocation {
+  address: string;
+  identity: string;
+}
+
 export interface AmneziaWGLogs {
   events: string[];
   peers: PeerActivity[];
@@ -442,6 +447,7 @@ export interface Client {
   reverse?: ClientReverse | null;
   secret?: string;
   security: string;
+  strictHostBindings?: boolean;
   subId: string;
   tgId: number;
   totalGB: number;
@@ -495,6 +501,7 @@ export interface ClientRecord {
   reverse: unknown;
   secret: string;
   security: string;
+  strictHostBindings: boolean;
   subId: string;
   tgId: number;
   totalGB: number;
@@ -674,6 +681,15 @@ export interface Host {
   vlessRoute: string;
 }
 
+export interface HostEndpoint {
+  address: string;
+  disabled: boolean;
+  family: string;
+  id: number;
+  name: string;
+  port: number;
+}
+
 export interface HostGroup {
   allowInsecure: boolean;
   alpn: string[];
@@ -710,6 +726,40 @@ export interface HostGroup {
   tags: string[];
   verifyPeerCertByName: string;
   vlessRoute: string;
+}
+
+export interface HostInstanceReport {
+  error?: string;
+  inbounds: InboundRef[];
+  installed: boolean;
+  name: string;
+  nodeId: number;
+  observer: ObservationSnapshot;
+  policy?: Policy | null;
+  status: Status;
+}
+
+export interface HostLineView {
+  egressMode: string;
+  enable: boolean;
+  endpoints: HostEndpoint[];
+  id: number;
+  listen: string;
+  name: string;
+  nodeId: number;
+  note: string;
+  port: number;
+  protocol: string;
+  tag: string;
+  transport: string;
+}
+
+export interface HostServiceInstance {
+  address: string;
+  id: number;
+  name: string;
+  status: string;
+  xrayState: string;
 }
 
 export interface HwidSlotStatus {
@@ -789,6 +839,12 @@ export interface InboundOption {
   wgDns?: string;
   wgMtu?: number;
   wgPublicKey?: string;
+}
+
+export interface InboundRef {
+  id: number;
+  protocol: string;
+  tag: string;
 }
 
 export interface InboundTrafficSummary {
@@ -937,6 +993,27 @@ export interface NodeView {
   xrayVersion: string;
 }
 
+export interface Observation {
+  clientFamily: string;
+  egressFamily: string;
+  id: string;
+  inbound: string;
+  local: string;
+  network: string;
+  outbound: string;
+  remote: string;
+  source: string;
+  target: string;
+  timestamp: string;
+  user: string;
+}
+
+export interface ObservationSnapshot {
+  dropped: number;
+  ready: boolean;
+  records: Observation[];
+}
+
 export interface OutboundTraffics {
   down: number;
   id: number;
@@ -963,6 +1040,15 @@ export interface PeerActivity {
   online: boolean;
   tag: string;
   up: number;
+}
+
+export interface Policy {
+  enabled: boolean;
+  inbounds: string[];
+  interface: string;
+  mark_prefix: number;
+  namespace: string;
+  prefix: string;
 }
 
 export interface ProbeResultUI {
@@ -1009,6 +1095,15 @@ export interface RealityScanResult {
   x25519: boolean;
 }
 
+export interface Report {
+  error?: string;
+  inbounds: InboundRef[];
+  installed: boolean;
+  observer: ObservationSnapshot;
+  policy?: Policy | null;
+  status: Status;
+}
+
 export interface ServerSettings {
   contentPaddingAddition?: string;
   disableCookies: boolean;
@@ -1050,6 +1145,50 @@ export interface ServerSettings {
   subnetIp: string;
 }
 
+export interface ServiceHost {
+  createdAt: number;
+  id: number;
+  name: string;
+  note: string;
+  updatedAt: number;
+}
+
+export interface ServiceHostDetail {
+  createdAt: number;
+  id: number;
+  lines: HostLineView[];
+  name: string;
+  note: string;
+  services: HostServiceInstance[];
+  updatedAt: number;
+}
+
+export interface ServiceHostInput {
+  name: string;
+  nodeIds: number[];
+  note: string;
+}
+
+export interface ServiceHostMember {
+  hostId: number;
+  nodeId: number;
+}
+
+export interface ServiceHostView {
+  createdAt: number;
+  id: number;
+  name: string;
+  note: string;
+  services: HostServiceInstance[];
+  updatedAt: number;
+}
+
+export interface ServiceLine {
+  egressMode: string;
+  inboundId: number;
+  note: string;
+}
+
 export interface Setting {
   id: number;
   key: string;
@@ -1072,6 +1211,17 @@ export interface Sponsor {
 export interface SponsorList {
   contact?: string;
   sponsors: Sponsor[];
+}
+
+export interface Status {
+  blockedUsers: string[];
+  enabled: boolean;
+  pid: number;
+  policyHash: string;
+  reason: string;
+  updatedAt: number;
+  users: Allocation[];
+  verified: boolean;
 }
 
 export interface SubBalancer {

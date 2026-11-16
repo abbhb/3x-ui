@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"runtime/debug"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -684,6 +685,16 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	existing, err := s.GetByID(id)
 	if err != nil {
 		return false, err
+	}
+	updated.StrictHostBindings = existing.StrictHostBindings
+	if existing.StrictHostBindings {
+		oldID, _, oldHasID := strings.Cut(existing.Email, ".")
+		newID, _, newHasID := strings.Cut(updated.Email, ".")
+		if oldHasID && oldID != "" {
+			if _, parseErr := strconv.ParseUint(oldID, 10, 64); parseErr == nil && (!newHasID || newID != oldID) {
+				return false, errors.New("the migrated permanent user number cannot be changed")
+			}
+		}
 	}
 	inboundIds, err := s.GetInboundIdsForRecord(id)
 	if err != nil {

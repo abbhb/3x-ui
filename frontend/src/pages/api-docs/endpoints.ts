@@ -198,6 +198,83 @@ const hwidStatusErrorResponses = {
 
 export const sections: readonly Section[] = [
   {
+    id: 'service-hosts',
+    title: 'Service hosts and IPv6 egress',
+    description:
+      'Physical-machine grouping, existing subscription entry routes, and node-local IPv6 controller reports. Host grouping and route classification do not deploy or activate egress. Host management requires an administrator token/session. Node-sync tokens can read only the local runtime report; applying local egress requires node-admin or administrator authority.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/serviceHosts/list',
+        summary: 'List physical hosts and their service instances',
+        responseSchema: 'ServiceHostView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/serviceHosts/get/:id',
+        summary: 'Host detail, inbounds and published entry endpoints',
+        responseSchema: 'ServiceHostDetail',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/serviceHosts/save/:id',
+        summary: 'Create (id=0) or update a host and its service membership',
+        description:
+          'Each service can belong to one host. nodeIds includes 0 for the local core; supports up to 32 direct services. No node credentials are accepted.',
+        requestSchema: { $ref: '#/components/schemas/ServiceHostInput' },
+        responseSchema: 'ServiceHost',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/serviceHosts/del/:id',
+        summary: 'Delete host metadata only',
+        description: 'Does not stop services, remove inbounds or disable deployed egress.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/serviceHosts/line/:id',
+        summary: 'Classify an entire host-owned inbound',
+        description:
+          'Declaration only: does not apply routing. Aliases sharing one inbound cannot receive different server-side policies.',
+        requestSchema: { $ref: '#/components/schemas/ServiceLine' },
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/serviceHosts/runtime/:id',
+        summary: 'Aggregate bounded per-service egress and recent dial reports',
+        description:
+          'Unavailable or old nodes return a per-service error, without fabricated socket evidence. Recent successful dials are not active-connection counts. Socket local address is before NAT.',
+        responseSchema: 'HostInstanceReport',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/serviceHosts/policy/:id/:node',
+        summary: 'Apply installed egress policy and restart the selected service',
+        description:
+          'Requires a pre-installed node-local bootstrap/controller. Prefix, interface, namespace and mark ownership cannot be changed through this API. Newly authenticated users remain blocked until controller readback.',
+        requestSchema: { $ref: '#/components/schemas/Policy' },
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/server/hostRuntime',
+        summary: 'Read this service core and controller report',
+        description:
+          'Read-only local endpoint used by the parent panel. No executable paths, API credentials or raw core config are returned.',
+        responseSchema: 'Report',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/hostEgress',
+        summary: 'Update this installed service policy and restart its core',
+        description:
+          'Node-admin or administrator authority required. enabled must be explicitly provided. Local bootstrap file and allocation ownership remain fixed.',
+        requestSchema: { $ref: '#/components/schemas/Policy' },
+      },
+    ],
+  },
+  {
     id: 'authentication',
     title: 'Authentication',
     description:

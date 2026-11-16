@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
@@ -650,6 +651,9 @@ func (p *process) refreshVersion() {
 
 // Start launches the Xray process with the current configuration.
 func (p *process) Start() (err error) {
+	if os.Getenv("XUI_EGRESS_CONFIG") != "" && os.Getenv("XUI_XRAY_LAUNCHER") == "" {
+		return errors.New("managed egress requires XUI_XRAY_LAUNCHER")
+	}
 	if p.IsRunning() {
 		return errors.New("xray is already running")
 	}
@@ -680,10 +684,11 @@ func (p *process) Start() (err error) {
 		return common.NewErrorf("Failed to write configuration file: %v", err)
 	}
 
-	cmd := exec.CommandContext(context.Background(), GetBinaryPath(), "-c", configPath)
+	cmd := coreStartCommand(context.Background(), GetBinaryPath(), configPath)
 	cmd.Stdout = p.logWriter
 	cmd.Stderr = p.logWriter
 
+	hostops.Observations.Reset()
 	err = p.startCommand(cmd)
 	if err != nil {
 		return err
@@ -693,6 +698,15 @@ func (p *process) Start() (err error) {
 	p.refreshAPIPort()
 
 	return nil
+}
+
+// The optional launcher guards a managed IPv6 instance before the core listens.
+// Pass the real binary explicitly; version checks and core upgrades keep their path.
+func coreStartCommand(ctx context.Context, binary, configPath string) *exec.Cmd {
+	if launcher := os.Getenv("XUI_XRAY_LAUNCHER"); launcher != "" {
+		return exec.CommandContext(ctx, launcher, binary, "-c", configPath)
+	}
+	return exec.CommandContext(ctx, binary, "-c", configPath)
 }
 
 // writeFileAtomic writes data to path via a same-directory temp file that is
