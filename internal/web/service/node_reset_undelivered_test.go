@@ -351,7 +351,10 @@ func TestNodeResetDeliveryDoesNotHoldTheRequestBehindASilentNode(t *testing.T) {
 		}
 		lock, _ := nodeResetDeliveryLocks.Load(node.Id)
 		lock.(*sync.Mutex).Lock()
-		lock.(*sync.Mutex).Unlock()
+		defer lock.(*sync.Mutex).Unlock()
+		if left := pendingResetEmails(t, node.Id); !slices.Equal(left, []string{"held"}) {
+			t.Fatalf("failed background delivery lost its queued reset: %v", left)
+		}
 	})
 	ib := nodeInbound(t, node.Id, 41912, []model.Client{{Email: "held", ID: "11111111-1111-1111-1111-1111111111ab", Enable: true}})
 	if err := (&InboundService{}).AddClientStat(database.GetDB(), ib.Id, &model.Client{Email: "held", Enable: true}); err != nil {
