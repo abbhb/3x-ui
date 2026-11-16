@@ -44,3 +44,8 @@ docker-compose.override.yml
 
 # Ignore .env (Environment Variables) file
 .env
+
+# Private offline migration inputs/outputs and Python bytecode
+.migration-private/
+__pycache__/
+*.pyc
