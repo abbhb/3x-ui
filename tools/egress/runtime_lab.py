@@ -45,14 +45,16 @@ class Echo(BaseHTTPRequestHandler):
 def serve(host):
     cls = type("AddressServer", (ThreadingHTTPServer,), {"address_family": socket.AF_INET6 if ":" in host else socket.AF_INET})
     http = cls((host, 18080 if ":" in host else 18081), Echo)
-    if ":" in host:
-        def udp():
-            with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as sock:
-                sock.bind((host, 18082))
-                while True:
-                    _, source = sock.recvfrom(2048)
-                    sock.sendto(("ip=" + source[0]).encode(), source)
-        threading.Thread(target=udp, daemon=True).start()
+    if ":" not in host:
+        dual = cls((host, 18080), Echo)
+        threading.Thread(target=dual.serve_forever, daemon=True).start()
+    def udp():
+        with socket.socket(socket.AF_INET6 if ":" in host else socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.bind((host, 18082))
+            while True:
+                _, source = sock.recvfrom(2048)
+                sock.sendto(("ip=" + source[0]).encode(), source)
+    threading.Thread(target=udp, daemon=True).start()
     http.serve_forever()
 
 
@@ -127,10 +129,10 @@ def lab(binary):
                     db.execute("INSERT INTO owned VALUES(?)", (f"2001:db8:bb::{key}",))
                 db.execute("INSERT INTO state VALUES('mark_prefix','25903')")
             config = {"api": {"tag": "api", "services": ["HandlerService", "RoutingService"]}, "log": {"loglevel": "warning"},
-                      "routing": {"rules": []}, "dns": {"hosts": {"fallback.test": ["::1", "127.0.0.1"]}},
+                      "routing": {"rules": []}, "dns": {"hosts": {"fallback.test": ["::1", "127.0.0.1"], "dual.test": ["127.0.0.1", "2001:db8:aa::2"]}},
                       "inbounds": [{"tag": tag, "listen": host, "port": port, "protocol": "vless", "settings": {"decryption": "none", "clients": [{"email": name, "id": credential} for name, credential in USERS.items()]}}
                                    for tag, host, port in [("LAB4", "127.0.0.1", 11080), ("LAB6", "2001:db8:aa::1", 11081)]],
-                      "outbounds": [{"tag": "direct", "protocol": "freedom", "settings": {"finalRules": [{"action": "allow", "ip": ["2001:db8::/32", "::1/128", "127.0.0.1/32"]}]}}]}
+                      "outbounds": [{"tag": "direct", "protocol": "freedom", "targetStrategy": "ForceIPv4", "settings": {"domainStrategy": "ForceIPv4", "targetStrategy": "ForceIPv4", "finalRules": [{"action": "allow", "ip": ["2001:db8::/32", "::1/128", "127.0.0.1/32"]}]}}]}
             path = root / "core.json"; path.write_text(json.dumps(config)); path.chmod(0o600)
             log = (root / "core.log").open("w")
             def start():
@@ -155,6 +157,8 @@ def lab(binary):
                 assert get(user) == expected, "TCP did not use the preserved per-user SNAT"
                 assert get(user, ipv6_entry=True) == expected, "fixed IPv6 ingress changed egress ownership"
                 assert get(user, target_port=18082, udp=True) == expected, "UDP did not use per-user SNAT"
+                assert get(user, "dual.test") == expected, "legacy DNS strategy overrode TCP IPv6 preference"
+                assert get(user, "dual.test", 18082, udp=True) == expected, "legacy DNS strategy overrode UDP IPv6 preference"
                 assert get(user, "127.0.0.1", 18081) == "127.0.0.1", "IPv4 literal was remapped"
                 assert get(user, "fallback.test", 18081) == "127.0.0.1", "IPv4 fallback failed"
             process.terminate(); process.wait(timeout=5)
@@ -168,7 +172,7 @@ def lab(binary):
                 assert db.execute("SELECT address FROM users WHERE identity='11'").fetchone()[0] == "2001:db8:bb::11", "orphan allocation lost"
             settings["enabled"] = False; policy.write_text(json.dumps(settings)); sync()
             assert get("7.sample") == "2001:db8:aa::1", "off did not restore shared direct egress"
-            print("PASS: legacy allocations, two users, fixed IPv6 ingress, TCP/UDP SNAT, IPv4 literal/fallback, guarded restart, off")
+            print("PASS: legacy allocations and DNS strategies, two users, fixed IPv6 ingress, TCP/UDP SNAT and dual-stack IPv6 preference, IPv4 literal/fallback, guarded restart, off")
             process.terminate(); process.wait(timeout=5); log.close()
         finally:
             for process in children:

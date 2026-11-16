@@ -67,6 +67,12 @@ def render(base, tags, users):
                     tag = f"mz6-{user['mark']:x}-{suffix}-{network}"
                     direct = deepcopy(base["direct"][exit_tag])
                     direct["tag"] = tag
+                    # The pinned core migrates these legacy strategies into sockopt,
+                    # overriding an explicit sockopt.domainStrategy. Only the new
+                    # user clone adopts this policy's IPv6-first resolver contract.
+                    direct.pop("targetStrategy", None)
+                    for legacy in ("domainStrategy", "targetStrategy"):
+                        direct.setdefault("settings", {}).pop(legacy, None)
                     # Preserve freedom finalRules (including private-IP blocks), fragmentation, etc.
                     options = {"mark": user["mark"],
                                "domainStrategy": "ForceIP" if network == "tcp" else "ForceIPv6v4"}

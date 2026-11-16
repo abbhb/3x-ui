@@ -53,6 +53,19 @@ class PolicyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     policy.render(policy.snapshot(config), ["FIXED_V6_ENTRY"], [])
 
+    def test_legacy_ipv4_resolvers_cannot_override_the_user_ipv6_policy(self):
+        original = core_config()
+        original["outbounds"][0]["targetStrategy"] = "ForceIPv4"
+        original["outbounds"][0]["settings"].update(domainStrategy="ForceIPv4", targetStrategy="ForceIPv4")
+        before = deepcopy(original)
+        _, outbounds = policy.render(policy.snapshot(original), ["FIXED_V6_ENTRY"], [{"email": "7.sample", "mark": 123}])
+        for outbound in outbounds[:2]:
+            self.assertNotIn("targetStrategy", outbound)
+            self.assertNotIn("targetStrategy", outbound["settings"])
+            self.assertNotIn("domainStrategy", outbound["settings"])
+            self.assertEqual(outbound["settings"]["finalRules"], original["outbounds"][0]["settings"]["finalRules"])
+        self.assertEqual(original, before)
+
     def test_legacy_identity_ignores_username_but_not_user_number(self):
         self.assertEqual(policy.identity("7.old-name"), policy.identity("7.new-name"))
         self.assertIsNone(policy.identity("ordinary-native-client"))

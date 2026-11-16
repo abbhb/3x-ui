@@ -87,6 +87,8 @@ python3 tools/marzban_export.py export \
 所有新启动先安装未分配用户的阻断规则，**不信任上次 ready 缓存或仍存在的内核 NAT 表**。
 控制器按永久数字用户编号读取 / 创建分配，依次完成 /128 配置、地址冲突检查、源地址返回流量验证、
 IPv6 SNAT、出站和路由回读后放行。TCP 使用 IPv6 优先的 Happy Eyeballs；UDP 使用 IPv6 优先策略。
+新增用户出站副本会移除旧 `freedom.domainStrategy` / `targetStrategy` 解析设置，统一由本策略的 socket 设置控制；
+锁定版本的内核会把这些旧设置迁移到 socket 并覆盖新值。原始出站和未接管的线路保留原配置。
 IPv4 字面目标保持 IPv4，IPv4 回退可使用共享 IPv4。NAT 只作用于本实例 `ip6 mz6_<namespace>` 中的 mark 映射。
 
 用户身份继续使用 `<永久数字ID>.<用户名>`，与第一阶段导出的核心 email 一致。
@@ -191,7 +193,8 @@ sudo python3 tools/egress/runtime_lab.py lab /path/to/built-core
 
 最后一项只在明确选择的 Linux root 隔离实验室运行，创建随机 netns 与临时状态，使用文档保留地址；
 不读取真实配置，也不接触生产接口 / nft 表，结束清理自建资源。
-它验证旧分配库恢复、双用户 TCP / UDP SNAT、固定 IPv6 接入、IPv4 目标与回退、受保护重启、关闭后恢复共享出口。
+它验证旧分配库恢复、双用户 TCP / UDP SNAT、固定 IPv6 接入、旧 IPv4 解析配置下真实双栈域名的 IPv6 优先、
+IPv4 目标与回退、受保护重启、关闭后恢复共享出口。
 这不代替运营商公网 /64、真实 REALITY / HY2 / CDN / WG 路线及全部客户端的生产验收。
 
 第三阶段继续门户、交易与 MGMA；第四阶段继续高级 XHTTP / 级联、外部订阅、规则 / DNS / 策略组及最终切换。
