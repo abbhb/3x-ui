@@ -33,3 +33,20 @@ func TestServiceHostRestrictedScopeBoundary(t *testing.T) {
 		}
 	}
 }
+
+func TestCommerceRestrictedScopeBoundary(t *testing.T) {
+	for _, scope := range []string{model.ApiScopeMonitor, model.ApiScopeNodeSync, model.ApiScopeNodeAdmin} {
+		for _, test := range []struct{ method, path string }{{"GET", "/commerce/accounts"}, {"GET", "/commerce/settings"}, {"POST", "/commerce/accounts/5/credit"}, {"POST", "/commerce/clients/7/mgma"}, {"PUT", "/commerce/settings"}} {
+			engine := gin.New()
+			api := &APIController{}
+			g := engine.Group("/panel/api")
+			g.Use(func(c *gin.Context) { c.Set("api_token_scope", scope) }, api.enforceTokenScope)
+			g.Handle(test.method, test.path, func(c *gin.Context) { c.Status(http.StatusNoContent) })
+			response := httptest.NewRecorder()
+			engine.ServeHTTP(response, httptest.NewRequest(test.method, "/panel/api"+test.path, nil))
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("restricted scope %s reached commerce: %s %s", scope, test.method, test.path)
+			}
+		}
+	}
+}

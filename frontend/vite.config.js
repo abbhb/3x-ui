@@ -22,7 +22,7 @@ function resolveDBPath() {
   return '/etc/x-ui/x-ui.db';
 }
 
-const PANEL_API_PREFIXES = ['panel/api/', 'panel/csrf-token'];
+const PANEL_API_PREFIXES = ['panel/api/', 'panel/csrf-token', 'api/portal/'];
 
 let cachedBasePath = '/';
 
@@ -105,6 +105,7 @@ function bypassMigratedRoute(req) {
         return undefined;
       }
     }
+    if (stripped === 'portal' || stripped === 'portal/' || stripped.startsWith('portal/')) return '/portal.html';
     if (stripped === 'panel' || stripped === 'panel/' || stripped.startsWith('panel/')) {
       return '/index.html';
     }
@@ -236,6 +237,7 @@ export default defineConfig({
         index: path.resolve(import.meta.dirname, 'index.html'),
         login: path.resolve(import.meta.dirname, 'login.html'),
         subpage: path.resolve(import.meta.dirname, 'subpage.html'),
+        portal: path.resolve(import.meta.dirname, 'portal.html'),
       },
       output: {
         manualChunks(id) {

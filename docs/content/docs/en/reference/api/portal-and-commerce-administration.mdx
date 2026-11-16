@@ -1,0 +1,187 @@
+---
+title: Portal and commerce administration
+description: Full panel-admin authority required. Customer accounts are separate
+  from panel administrators. Money is integer CNY cents; purchases and wallet
+  history are append-only. All financial mutations require an Idempotency-Key.
+  Production cutover remains stage 4.
+full: true
+_openapi:
+  preload:
+    - ./public/openapi.json
+  toc:
+    - depth: 2
+      title: Read customer portal, MGMA and failure-block policy
+      url: '#read-customer-portal-mgma-and-failure-block-policy'
+    - depth: 2
+      title: Replace customer portal settings; keys remain environment-only
+      url: '#replace-customer-portal-settings-keys-remain-environment-only'
+    - depth: 2
+      title: List visible and hidden plans
+      url: '#list-visible-and-hidden-plans'
+    - depth: 2
+      title: Create a plan with explicit concrete endpoint grants
+      url: '#create-a-plan-with-explicit-concrete-endpoint-grants'
+    - depth: 2
+      title: Update a plan; current route grants follow edits while financial
+        snapshots remain unchanged
+      url: '#update-a-plan-current-route-grants-follow-edits-while-financial-snapshots-remain-unchanged'
+    - depth: 2
+      title: List 100 customer accounts per page; optional username search
+      url: '#list-100-customer-accounts-per-page-optional-username-search'
+    - depth: 2
+      title: Atomically create an account and free plan grant; password shown once
+      url: '#atomically-create-an-account-and-free-plan-grant-password-shown-once'
+    - depth: 2
+      title: Read one customer and its entitlement, usage and delivery state
+      url: '#read-one-customer-and-its-entitlement-usage-and-delivery-state'
+    - depth: 2
+      title: Read immutable wallet history, 100 per page
+      url: '#read-immutable-wallet-history-100-per-page'
+    - depth: 2
+      title: Read immutable purchase, grant and renewal history, 100 per page
+      url: '#read-immutable-purchase-grant-and-renewal-history-100-per-page'
+    - depth: 2
+      title: Credit an integer CNY-cent amount
+      url: '#credit-an-integer-cny-cent-amount'
+    - depth: 2
+      title: Grant a visible or hidden plan for free; usage resets
+      url: '#grant-a-visible-or-hidden-plan-for-free-usage-resets'
+    - depth: 2
+      title: Extend expiry only; preserve quota and credentials
+      url: '#extend-expiry-only-preserve-quota-and-credentials'
+    - depth: 2
+      title: Disable the current proxy entitlement
+      url: '#disable-the-current-proxy-entitlement'
+    - depth: 2
+      title: Toggle customer login and invalidate sessions; disable also stops proxy
+        access
+      url: '#toggle-customer-login-and-invalidate-sessions-disable-also-stops-proxy-access'
+    - depth: 2
+      title: Generate a one-time password and invalidate all old customer sessions
+      url: '#generate-a-one-time-password-and-invalidate-all-old-customer-sessions'
+    - depth: 2
+      title: List invitation metadata, never plaintext codes
+      url: '#list-invitation-metadata-never-plaintext-codes'
+    - depth: 2
+      title: Issue a one-time-displayed invitation code; store only its digest
+      url: '#issue-a-one-time-displayed-invitation-code-store-only-its-digest'
+    - depth: 2
+      title: Disable an invitation
+      url: '#disable-an-invitation'
+    - depth: 2
+      title: List persistent source-IP blocks
+      url: '#list-persistent-source-ip-blocks'
+    - depth: 2
+      title: Block an IP or CIDR until absolute Unix milliseconds, or permanently when
+        zero
+      url: '#block-an-ip-or-cidr-until-absolute-unix-milliseconds-or-permanently-when-zero'
+    - depth: 2
+      title: Revoke a source block and clear exact-IP failure counters
+      url: '#revoke-a-source-block-and-clear-exact-ip-failure-counters'
+    - depth: 2
+      title: Read a queued legacy entitlement; expire is absolute Unix seconds
+      url: '#read-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds'
+    - depth: 2
+      title: Remove a queued legacy entitlement; expire is absolute Unix seconds
+      url: '#remove-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds'
+    - depth: 2
+      title: Replace a queued legacy entitlement; expire is absolute Unix seconds
+      url: '#replace-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds'
+    - depth: 2
+      title: Issue the latest MGMA link; replaces any previous bearer
+      url: '#issue-the-latest-mgma-link-replaces-any-previous-bearer'
+    - depth: 2
+      title: Revoke the current MGMA bearer
+      url: '#revoke-the-current-mgma-bearer'
+    - depth: 2
+      title: Rotate path, UUID and HY2 Auth, revoke MGMA and pre-migration signed
+        links
+      url: '#rotate-path-uuid-and-hy2-auth-revoke-mgma-and-pre-migration-signed-links'
+    - depth: 2
+      title: Read configuration-delivery outbox; delivered is not live connection
+        acceptance
+      url: '#read-configuration-delivery-outbox-delivered-is-not-live-connection-acceptance'
+    - depth: 2
+      title: Retry pending configuration and queued entitlement work
+      url: '#retry-pending-configuration-and-queued-entitlement-work'
+  structuredData:
+    headings:
+      - content: Read customer portal, MGMA and failure-block policy
+        id: read-customer-portal-mgma-and-failure-block-policy
+      - content: Replace customer portal settings; keys remain environment-only
+        id: replace-customer-portal-settings-keys-remain-environment-only
+      - content: List visible and hidden plans
+        id: list-visible-and-hidden-plans
+      - content: Create a plan with explicit concrete endpoint grants
+        id: create-a-plan-with-explicit-concrete-endpoint-grants
+      - content: Update a plan; current route grants follow edits while financial
+          snapshots remain unchanged
+        id: update-a-plan-current-route-grants-follow-edits-while-financial-snapshots-remain-unchanged
+      - content: List 100 customer accounts per page; optional username search
+        id: list-100-customer-accounts-per-page-optional-username-search
+      - content: Atomically create an account and free plan grant; password shown once
+        id: atomically-create-an-account-and-free-plan-grant-password-shown-once
+      - content: Read one customer and its entitlement, usage and delivery state
+        id: read-one-customer-and-its-entitlement-usage-and-delivery-state
+      - content: Read immutable wallet history, 100 per page
+        id: read-immutable-wallet-history-100-per-page
+      - content: Read immutable purchase, grant and renewal history, 100 per page
+        id: read-immutable-purchase-grant-and-renewal-history-100-per-page
+      - content: Credit an integer CNY-cent amount
+        id: credit-an-integer-cny-cent-amount
+      - content: Grant a visible or hidden plan for free; usage resets
+        id: grant-a-visible-or-hidden-plan-for-free-usage-resets
+      - content: Extend expiry only; preserve quota and credentials
+        id: extend-expiry-only-preserve-quota-and-credentials
+      - content: Disable the current proxy entitlement
+        id: disable-the-current-proxy-entitlement
+      - content: Toggle customer login and invalidate sessions; disable also stops proxy
+          access
+        id: toggle-customer-login-and-invalidate-sessions-disable-also-stops-proxy-access
+      - content: Generate a one-time password and invalidate all old customer sessions
+        id: generate-a-one-time-password-and-invalidate-all-old-customer-sessions
+      - content: List invitation metadata, never plaintext codes
+        id: list-invitation-metadata-never-plaintext-codes
+      - content: Issue a one-time-displayed invitation code; store only its digest
+        id: issue-a-one-time-displayed-invitation-code-store-only-its-digest
+      - content: Disable an invitation
+        id: disable-an-invitation
+      - content: List persistent source-IP blocks
+        id: list-persistent-source-ip-blocks
+      - content: Block an IP or CIDR until absolute Unix milliseconds, or permanently
+          when zero
+        id: block-an-ip-or-cidr-until-absolute-unix-milliseconds-or-permanently-when-zero
+      - content: Revoke a source block and clear exact-IP failure counters
+        id: revoke-a-source-block-and-clear-exact-ip-failure-counters
+      - content: Read a queued legacy entitlement; expire is absolute Unix seconds
+        id: read-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds
+      - content: Remove a queued legacy entitlement; expire is absolute Unix seconds
+        id: remove-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds
+      - content: Replace a queued legacy entitlement; expire is absolute Unix seconds
+        id: replace-a-queued-legacy-entitlement-expire-is-absolute-unix-seconds
+      - content: Issue the latest MGMA link; replaces any previous bearer
+        id: issue-the-latest-mgma-link-replaces-any-previous-bearer
+      - content: Revoke the current MGMA bearer
+        id: revoke-the-current-mgma-bearer
+      - content: Rotate path, UUID and HY2 Auth, revoke MGMA and pre-migration signed
+          links
+        id: rotate-path-uuid-and-hy2-auth-revoke-mgma-and-pre-migration-signed-links
+      - content: Read configuration-delivery outbox; delivered is not live connection
+          acceptance
+        id: read-configuration-delivery-outbox-delivered-is-not-live-connection-acceptance
+      - content: Retry pending configuration and queued entitlement work
+        id: retry-pending-configuration-and-queued-entitlement-work
+    contents: []
+---
+
+{/* This file was generated by Fumadocs. Do not edit this file directly. Any changes should be made by running the generation command again. */}
+
+export default function Layout(props) {
+  const { OpenAPIPage } = props.components ?? {};
+  return (
+    <>
+      {props.children}
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/commerce/settings","method":"get"},{"path":"/panel/api/commerce/settings","method":"put"},{"path":"/panel/api/commerce/plans","method":"get"},{"path":"/panel/api/commerce/plans","method":"post"},{"path":"/panel/api/commerce/plans/{id}","method":"put"},{"path":"/panel/api/commerce/accounts","method":"get"},{"path":"/panel/api/commerce/accounts","method":"post"},{"path":"/panel/api/commerce/accounts/{id}","method":"get"},{"path":"/panel/api/commerce/accounts/{id}/wallet","method":"get"},{"path":"/panel/api/commerce/accounts/{id}/purchases","method":"get"},{"path":"/panel/api/commerce/accounts/{id}/credit","method":"post"},{"path":"/panel/api/commerce/accounts/{id}/grant","method":"post"},{"path":"/panel/api/commerce/accounts/{id}/renew","method":"post"},{"path":"/panel/api/commerce/accounts/{id}/disable","method":"post"},{"path":"/panel/api/commerce/accounts/{id}/enabled","method":"post"},{"path":"/panel/api/commerce/accounts/{id}/reset-password","method":"post"},{"path":"/panel/api/commerce/invitations","method":"get"},{"path":"/panel/api/commerce/invitations","method":"post"},{"path":"/panel/api/commerce/invitations/{id}/disable","method":"post"},{"path":"/panel/api/commerce/security/blocks","method":"get"},{"path":"/panel/api/commerce/security/blocks","method":"post"},{"path":"/panel/api/commerce/security/blocks/{id}/revoke","method":"post"},{"path":"/panel/api/commerce/clients/{id}/next-plan","method":"get"},{"path":"/panel/api/commerce/clients/{id}/next-plan","method":"delete"},{"path":"/panel/api/commerce/clients/{id}/next-plan","method":"put"},{"path":"/panel/api/commerce/clients/{id}/mgma","method":"post"},{"path":"/panel/api/commerce/clients/{id}/mgma","method":"delete"},{"path":"/panel/api/commerce/clients/{id}/regenerate","method":"post"},{"path":"/panel/api/commerce/runtime","method":"get"},{"path":"/panel/api/commerce/runtime/retry","method":"post"}]} showTitle />
+    </>
+  );
+}

@@ -1661,7 +1661,7 @@ func (s *ClientService) BulkSetEnable(inboundSvc *InboundService, emails []strin
 					return e
 				}
 			}
-			return nil
+			return portalSetManualEnabled(tx, successEmails, enable)
 		}); err != nil {
 			return result, needRestart, err
 		}

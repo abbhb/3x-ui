@@ -440,6 +440,7 @@ export interface Client {
   preSharedKey?: string;
   privateKey?: string;
   publicKey?: string;
+  requireMGMA?: boolean;
   reset: number;
   resetDay: number;
   resetMax: number;
@@ -494,6 +495,7 @@ export interface ClientRecord {
   preSharedKey: string;
   privateKey: string;
   publicKey: string;
+  requireMGMA: boolean;
   reset: number;
   resetDay: number;
   resetMax: number;
@@ -865,6 +867,13 @@ export interface LogEntry {
   ToAddress: string;
 }
 
+export interface MGMAIssued {
+  expires_at?: string | null;
+  issued_at: string;
+  ttl_seconds: number;
+  url: string;
+}
+
 export interface MLDSA65Response {
   seed: string;
   verify: string;
@@ -1049,6 +1058,210 @@ export interface Policy {
   mark_prefix: number;
   namespace: string;
   prefix: string;
+}
+
+export interface PortalAccountView {
+  client_id?: number | null;
+  created_at: number;
+  id: number;
+  is_active: boolean;
+  runtime_pending: boolean;
+  subscription?: PortalSubscription | null;
+  usage: PortalUsage;
+  user_id?: number | null;
+  username: string;
+  wallet_balance_minor: number;
+}
+
+export interface PortalIPBlock {
+  actor_admin: string;
+  created_at: number;
+  expires_at: number;
+  id: number;
+  network: string;
+  reason: string;
+  revoked_at: number;
+  source: string;
+}
+
+export interface PortalInvitation {
+  actor_admin: string;
+  created_at: number;
+  disabled_at: number;
+  expires_at: number;
+  id: number;
+  max_uses: number;
+  note: string;
+  prefix: string;
+  starts_at: number;
+  use_count: number;
+}
+
+export interface PortalInvitationCreated {
+  actor_admin: string;
+  code: string;
+  created_at: number;
+  disabled_at: number;
+  expires_at: number;
+  id: number;
+  max_uses: number;
+  note: string;
+  prefix: string;
+  starts_at: number;
+  use_count: number;
+}
+
+export interface PortalInvitationUse {
+  account_id: number;
+  created_at: number;
+  id: number;
+  invitation_id: number;
+  source_ip: string;
+}
+
+export interface PortalMutation {
+  actor: string;
+  amount_minor: number;
+  days: number;
+  kind: string;
+  note: string;
+  plan_id: number;
+}
+
+export interface PortalMutationResult {
+  client_id?: number | null;
+  created_at: number;
+  id: number;
+  is_active: boolean;
+  purchase_id: number;
+  replayed: boolean;
+  runtime_change_id: number;
+  runtime_pending: boolean;
+  subscription?: PortalSubscription | null;
+  usage: PortalUsage;
+  user_id?: number | null;
+  username: string;
+  wallet_balance_minor: number;
+}
+
+export interface PortalNextPlan {
+  add_remaining_traffic: boolean;
+  client_id: number;
+  data_limit: number;
+  expire: number;
+  fire_on_either: boolean;
+  last_error: string;
+  paused: boolean;
+}
+
+export interface PortalPlan {
+  compatibility_pending: boolean;
+  created_at: number;
+  currency: string;
+  data_limit: number;
+  description: string;
+  duration_days: number;
+  host_ids: number[];
+  id: number;
+  inbound_ids: number[];
+  is_visible: boolean;
+  name: string;
+  price_minor: number;
+  updated_at: number;
+}
+
+export interface PortalPlanSnapshot {
+  currency: string;
+  data_limit: number;
+  duration_days: number;
+  host_ids: number[];
+  inbound_ids: number[];
+  plan_id: number;
+  plan_name: string;
+  price_minor: number;
+}
+
+export interface PortalPurchase {
+  account_id: number;
+  actor_admin: string;
+  amount_minor: number;
+  balance_after_minor: number;
+  balance_before_minor: number;
+  created_at: number;
+  currency: string;
+  data_limit: number;
+  duration_days: number;
+  effective_expires_at: number;
+  host_ids: number[];
+  id: number;
+  inbound_ids: number[];
+  kind: string;
+  plan_id: number;
+  plan_name: string;
+  price_minor: number;
+}
+
+export interface PortalRuntimeChange {
+  account_id: number;
+  client_id: number;
+  created_at: number;
+  finished_at: number;
+  id: number;
+  last_attempt_at: number;
+  last_error: string;
+}
+
+export interface PortalSettings {
+  auto_block_enabled: boolean;
+  auto_block_seconds: number;
+  custom_cidrs: string[];
+  enabled: boolean;
+  login_failure_limit: number;
+  login_window_seconds: number;
+  mode: string;
+  public_url: string;
+  registration_failure_limit: number;
+  registration_window_seconds: number;
+  single_use: boolean;
+  source_mode: string;
+  ttl_seconds: number;
+}
+
+export interface PortalSubscription {
+  account_id: number;
+  currency: string;
+  data_limit: number;
+  disabled_at: number;
+  duration_days: number;
+  expires_at: number;
+  host_ids: number[];
+  inbound_ids: number[];
+  plan_id: number;
+  plan_name: string;
+  price_minor: number;
+  price_paid_minor: number;
+  purchased_at: number;
+  starts_at: number;
+}
+
+export interface PortalUsage {
+  data_limit: number;
+  expire: number;
+  lifetime_used_traffic: number;
+  status: string;
+  used_traffic: number;
+}
+
+export interface PortalWalletTransaction {
+  account_id: number;
+  actor_admin: string;
+  amount_minor: number;
+  balance_after_minor: number;
+  created_at: number;
+  id: number;
+  kind: string;
+  note: string;
+  purchase_id?: number | null;
 }
 
 export interface ProbeResultUI {

@@ -138,6 +138,10 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	if err != nil {
 		return fmt.Errorf("resolve client traffic identities: %w", err)
 	}
+	traffics, err = portalFilterPendingLocalTraffic(tx, traffics)
+	if err != nil {
+		return err
+	}
 
 	emails := make([]string, 0, len(traffics))
 	for _, traffic := range traffics {

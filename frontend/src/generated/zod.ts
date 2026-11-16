@@ -465,6 +465,7 @@ export const ClientSchema = z.object({
   preSharedKey: z.string().optional(),
   privateKey: z.string().optional(),
   publicKey: z.string().optional(),
+  requireMGMA: z.boolean().optional(),
   reset: z.number().int(),
   resetDay: z.number().int(),
   resetMax: z.number().int(),
@@ -522,6 +523,7 @@ export const ClientRecordSchema = z.object({
   preSharedKey: z.string(),
   privateKey: z.string(),
   publicKey: z.string(),
+  requireMGMA: z.boolean(),
   reset: z.number().int(),
   resetDay: z.number().int(),
   resetMax: z.number().int(),
@@ -923,6 +925,14 @@ export const LogEntrySchema = z.object({
 });
 export type LogEntry = z.infer<typeof LogEntrySchema>;
 
+export const MGMAIssuedSchema = z.object({
+  expires_at: z.string().nullable().optional(),
+  issued_at: z.string(),
+  ttl_seconds: z.number().int(),
+  url: z.string(),
+});
+export type MGMAIssued = z.infer<typeof MGMAIssuedSchema>;
+
 export const MLDSA65ResponseSchema = z.object({
   seed: z.string(),
   verify: z.string(),
@@ -1121,6 +1131,226 @@ export const PolicySchema = z.object({
   prefix: z.string(),
 });
 export type Policy = z.infer<typeof PolicySchema>;
+
+export const PortalAccountViewSchema = z.object({
+  client_id: z.number().int().nullable().optional(),
+  created_at: z.number().int(),
+  id: z.number().int(),
+  is_active: z.boolean(),
+  runtime_pending: z.boolean(),
+  subscription: z.lazy(() => PortalSubscriptionSchema).nullable().optional(),
+  usage: z.lazy(() => PortalUsageSchema),
+  user_id: z.number().int().nullable().optional(),
+  username: z.string(),
+  wallet_balance_minor: z.number().int(),
+});
+export type PortalAccountView = z.infer<typeof PortalAccountViewSchema>;
+
+export const PortalIPBlockSchema = z.object({
+  actor_admin: z.string(),
+  created_at: z.number().int(),
+  expires_at: z.number().int(),
+  id: z.number().int(),
+  network: z.string(),
+  reason: z.string(),
+  revoked_at: z.number().int(),
+  source: z.string(),
+});
+export type PortalIPBlock = z.infer<typeof PortalIPBlockSchema>;
+
+export const PortalInvitationSchema = z.object({
+  actor_admin: z.string(),
+  created_at: z.number().int(),
+  disabled_at: z.number().int(),
+  expires_at: z.number().int(),
+  id: z.number().int(),
+  max_uses: z.number().int(),
+  note: z.string(),
+  prefix: z.string(),
+  starts_at: z.number().int(),
+  use_count: z.number().int(),
+});
+export type PortalInvitation = z.infer<typeof PortalInvitationSchema>;
+
+export const PortalInvitationCreatedSchema = z.object({
+  actor_admin: z.string(),
+  code: z.string(),
+  created_at: z.number().int(),
+  disabled_at: z.number().int(),
+  expires_at: z.number().int(),
+  id: z.number().int(),
+  max_uses: z.number().int(),
+  note: z.string(),
+  prefix: z.string(),
+  starts_at: z.number().int(),
+  use_count: z.number().int(),
+});
+export type PortalInvitationCreated = z.infer<typeof PortalInvitationCreatedSchema>;
+
+export const PortalInvitationUseSchema = z.object({
+  account_id: z.number().int(),
+  created_at: z.number().int(),
+  id: z.number().int(),
+  invitation_id: z.number().int(),
+  source_ip: z.string(),
+});
+export type PortalInvitationUse = z.infer<typeof PortalInvitationUseSchema>;
+
+export const PortalMutationSchema = z.object({
+  actor: z.string(),
+  amount_minor: z.number().int(),
+  days: z.number().int(),
+  kind: z.string(),
+  note: z.string(),
+  plan_id: z.number().int(),
+});
+export type PortalMutation = z.infer<typeof PortalMutationSchema>;
+
+export const PortalMutationResultSchema = z.object({
+  client_id: z.number().int().nullable().optional(),
+  created_at: z.number().int(),
+  id: z.number().int(),
+  is_active: z.boolean(),
+  purchase_id: z.number().int(),
+  replayed: z.boolean(),
+  runtime_change_id: z.number().int(),
+  runtime_pending: z.boolean(),
+  subscription: z.lazy(() => PortalSubscriptionSchema).nullable().optional(),
+  usage: z.lazy(() => PortalUsageSchema),
+  user_id: z.number().int().nullable().optional(),
+  username: z.string(),
+  wallet_balance_minor: z.number().int(),
+});
+export type PortalMutationResult = z.infer<typeof PortalMutationResultSchema>;
+
+export const PortalNextPlanSchema = z.object({
+  add_remaining_traffic: z.boolean(),
+  client_id: z.number().int(),
+  data_limit: z.number().int(),
+  expire: z.number().int(),
+  fire_on_either: z.boolean(),
+  last_error: z.string(),
+  paused: z.boolean(),
+});
+export type PortalNextPlan = z.infer<typeof PortalNextPlanSchema>;
+
+export const PortalPlanSchema = z.object({
+  compatibility_pending: z.boolean(),
+  created_at: z.number().int(),
+  currency: z.string(),
+  data_limit: z.number().int(),
+  description: z.string(),
+  duration_days: z.number().int(),
+  host_ids: z.array(z.number().int()),
+  id: z.number().int(),
+  inbound_ids: z.array(z.number().int()),
+  is_visible: z.boolean(),
+  name: z.string(),
+  price_minor: z.number().int(),
+  updated_at: z.number().int(),
+});
+export type PortalPlan = z.infer<typeof PortalPlanSchema>;
+
+export const PortalPlanSnapshotSchema = z.object({
+  currency: z.string(),
+  data_limit: z.number().int(),
+  duration_days: z.number().int(),
+  host_ids: z.array(z.number().int()),
+  inbound_ids: z.array(z.number().int()),
+  plan_id: z.number().int(),
+  plan_name: z.string(),
+  price_minor: z.number().int(),
+});
+export type PortalPlanSnapshot = z.infer<typeof PortalPlanSnapshotSchema>;
+
+export const PortalPurchaseSchema = z.object({
+  account_id: z.number().int(),
+  actor_admin: z.string(),
+  amount_minor: z.number().int(),
+  balance_after_minor: z.number().int(),
+  balance_before_minor: z.number().int(),
+  created_at: z.number().int(),
+  currency: z.string(),
+  data_limit: z.number().int(),
+  duration_days: z.number().int(),
+  effective_expires_at: z.number().int(),
+  host_ids: z.array(z.number().int()),
+  id: z.number().int(),
+  inbound_ids: z.array(z.number().int()),
+  kind: z.string(),
+  plan_id: z.number().int(),
+  plan_name: z.string(),
+  price_minor: z.number().int(),
+});
+export type PortalPurchase = z.infer<typeof PortalPurchaseSchema>;
+
+export const PortalRuntimeChangeSchema = z.object({
+  account_id: z.number().int(),
+  client_id: z.number().int(),
+  created_at: z.number().int(),
+  finished_at: z.number().int(),
+  id: z.number().int(),
+  last_attempt_at: z.number().int(),
+  last_error: z.string(),
+});
+export type PortalRuntimeChange = z.infer<typeof PortalRuntimeChangeSchema>;
+
+export const PortalSettingsSchema = z.object({
+  auto_block_enabled: z.boolean(),
+  auto_block_seconds: z.number().int(),
+  custom_cidrs: z.array(z.string()),
+  enabled: z.boolean(),
+  login_failure_limit: z.number().int(),
+  login_window_seconds: z.number().int(),
+  mode: z.string(),
+  public_url: z.string(),
+  registration_failure_limit: z.number().int(),
+  registration_window_seconds: z.number().int(),
+  single_use: z.boolean(),
+  source_mode: z.string(),
+  ttl_seconds: z.number().int(),
+});
+export type PortalSettings = z.infer<typeof PortalSettingsSchema>;
+
+export const PortalSubscriptionSchema = z.object({
+  account_id: z.number().int(),
+  currency: z.string(),
+  data_limit: z.number().int(),
+  disabled_at: z.number().int(),
+  duration_days: z.number().int(),
+  expires_at: z.number().int(),
+  host_ids: z.array(z.number().int()),
+  inbound_ids: z.array(z.number().int()),
+  plan_id: z.number().int(),
+  plan_name: z.string(),
+  price_minor: z.number().int(),
+  price_paid_minor: z.number().int(),
+  purchased_at: z.number().int(),
+  starts_at: z.number().int(),
+});
+export type PortalSubscription = z.infer<typeof PortalSubscriptionSchema>;
+
+export const PortalUsageSchema = z.object({
+  data_limit: z.number().int(),
+  expire: z.number().int(),
+  lifetime_used_traffic: z.number().int(),
+  status: z.string(),
+  used_traffic: z.number().int(),
+});
+export type PortalUsage = z.infer<typeof PortalUsageSchema>;
+
+export const PortalWalletTransactionSchema = z.object({
+  account_id: z.number().int(),
+  actor_admin: z.string(),
+  amount_minor: z.number().int(),
+  balance_after_minor: z.number().int(),
+  created_at: z.number().int(),
+  id: z.number().int(),
+  kind: z.string(),
+  note: z.string(),
+  purchase_id: z.number().int().nullable().optional(),
+});
+export type PortalWalletTransaction = z.infer<typeof PortalWalletTransactionSchema>;
 
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),

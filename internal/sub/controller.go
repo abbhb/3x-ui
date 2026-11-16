@@ -344,18 +344,23 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 // initRouter registers HTTP routes for subscription links and JSON endpoints
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
-	gLink := g.Group(a.subPath, setNoCacheHeaders)
+	gLink := g.Group(a.subPath, setNoCacheHeaders, a.mgmaAccess)
 	gLink.GET(":subid", a.subs)
 	gLink.HEAD(":subid", a.subs)
+	gLink.GET(":subid/", a.subs)
+	gLink.HEAD(":subid/", a.subs)
+	gLink.GET(":subid/info", a.portalUsageInfo)
+	gLink.GET(":subid/usage", a.portalUsageInfo)
+	gLink.GET(":subid/:format", a.mgmaExplicitFormat)
 	gLink.GET(":subid/hwid-status", a.hwidStatus)
 	gLink.HEAD(":subid/hwid-status", a.hwidStatus)
 	if a.jsonEnabled {
-		gJson := g.Group(a.subJsonPath, setNoCacheHeaders)
+		gJson := g.Group(a.subJsonPath, setNoCacheHeaders, a.mgmaAccess)
 		gJson.GET(":subid", a.subJsons)
 		gJson.HEAD(":subid", a.subJsons)
 	}
 	if a.clashEnabled {
-		gClash := g.Group(a.subClashPath, setNoCacheHeaders)
+		gClash := g.Group(a.subClashPath, setNoCacheHeaders, a.mgmaAccess)
 		gClash.GET(":subid", a.subClashs)
 		gClash.HEAD(":subid", a.subClashs)
 		if sameSubscriptionPath(a.subClashPath, subMihomoPath) {
@@ -363,14 +368,14 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		} else if owner := a.configuredSubscriptionPathOwner(subMihomoPath); owner != "" {
 			logger.Warningf("Mihomo subscription alias %q is unavailable because it conflicts with the configured %s path", subMihomoPath, owner)
 		} else {
-			gMihomo := g.Group(subMihomoPath, setNoCacheHeaders)
+			gMihomo := g.Group(subMihomoPath, setNoCacheHeaders, a.mgmaAccess)
 			gMihomo.GET(":subid", a.subClashs)
 			gMihomo.HEAD(":subid", a.subClashs)
 		}
 		if owner := a.configuredSubscriptionPathOwner(subClashLegacyPath); owner != "" {
 			logger.Warningf("Legacy Clash subscription alias %q is unavailable because it conflicts with the configured %s path", subClashLegacyPath, owner)
 		} else {
-			gLegacy := g.Group(subClashLegacyPath, setNoCacheHeaders)
+			gLegacy := g.Group(subClashLegacyPath, setNoCacheHeaders, a.mgmaAccess)
 			gLegacy.GET(":subid", a.subClashLegacy)
 			gLegacy.HEAD(":subid", a.subClashLegacy)
 		}

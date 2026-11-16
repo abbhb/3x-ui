@@ -444,6 +444,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "preSharedKey": "",
     "privateKey": "",
     "publicKey": "",
+    "requireMGMA": false,
     "reset": 0,
     "resetDay": 0,
     "resetMax": 0,
@@ -539,6 +540,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "preSharedKey": "",
     "privateKey": "",
     "publicKey": "",
+    "requireMGMA": false,
     "reset": 0,
     "resetDay": 0,
     "resetMax": 0,
@@ -1002,6 +1004,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "Outbound": "direct",
     "ToAddress": "example.com:443"
   },
+  "MGMAIssued": {
+    "expires_at": null,
+    "issued_at": "2025-01-01T00:00:00Z",
+    "ttl_seconds": 0,
+    "url": ""
+  },
   "MLDSA65Response": {
     "seed": "mldsa65-seed",
     "verify": "mldsa65-verify"
@@ -1201,6 +1209,224 @@ export const EXAMPLES: Record<string, unknown> = {
     "mark_prefix": 0,
     "namespace": "",
     "prefix": ""
+  },
+  "PortalAccountView": {
+    "client_id": null,
+    "created_at": 0,
+    "id": 0,
+    "is_active": false,
+    "runtime_pending": false,
+    "subscription": null,
+    "usage": {
+      "data_limit": 0,
+      "expire": 0,
+      "lifetime_used_traffic": 0,
+      "status": "",
+      "used_traffic": 0
+    },
+    "user_id": null,
+    "username": "",
+    "wallet_balance_minor": 0
+  },
+  "PortalIPBlock": {
+    "actor_admin": "",
+    "created_at": 0,
+    "expires_at": 0,
+    "id": 0,
+    "network": "",
+    "reason": "",
+    "revoked_at": 0,
+    "source": ""
+  },
+  "PortalInvitation": {
+    "actor_admin": "",
+    "created_at": 0,
+    "disabled_at": 0,
+    "expires_at": 0,
+    "id": 0,
+    "max_uses": 0,
+    "note": "",
+    "prefix": "",
+    "starts_at": 0,
+    "use_count": 0
+  },
+  "PortalInvitationCreated": {
+    "actor_admin": "",
+    "code": "",
+    "created_at": 0,
+    "disabled_at": 0,
+    "expires_at": 0,
+    "id": 0,
+    "max_uses": 0,
+    "note": "",
+    "prefix": "",
+    "starts_at": 0,
+    "use_count": 0
+  },
+  "PortalInvitationUse": {
+    "account_id": 0,
+    "created_at": 0,
+    "id": 0,
+    "invitation_id": 0,
+    "source_ip": ""
+  },
+  "PortalMutation": {
+    "actor": "",
+    "amount_minor": 0,
+    "days": 0,
+    "kind": "",
+    "note": "",
+    "plan_id": 0
+  },
+  "PortalMutationResult": {
+    "client_id": null,
+    "created_at": 0,
+    "id": 0,
+    "is_active": false,
+    "purchase_id": 0,
+    "replayed": false,
+    "runtime_change_id": 0,
+    "runtime_pending": false,
+    "subscription": null,
+    "usage": {
+      "data_limit": 0,
+      "expire": 0,
+      "lifetime_used_traffic": 0,
+      "status": "",
+      "used_traffic": 0
+    },
+    "user_id": null,
+    "username": "",
+    "wallet_balance_minor": 0
+  },
+  "PortalNextPlan": {
+    "add_remaining_traffic": false,
+    "client_id": 0,
+    "data_limit": 0,
+    "expire": 0,
+    "fire_on_either": false,
+    "last_error": "",
+    "paused": false
+  },
+  "PortalPlan": {
+    "compatibility_pending": false,
+    "created_at": 0,
+    "currency": "",
+    "data_limit": 0,
+    "description": "",
+    "duration_days": 0,
+    "host_ids": [
+      0
+    ],
+    "id": 0,
+    "inbound_ids": [
+      0
+    ],
+    "is_visible": false,
+    "name": "",
+    "price_minor": 0,
+    "updated_at": 0
+  },
+  "PortalPlanSnapshot": {
+    "currency": "",
+    "data_limit": 0,
+    "duration_days": 0,
+    "host_ids": [
+      0
+    ],
+    "inbound_ids": [
+      0
+    ],
+    "plan_id": 0,
+    "plan_name": "",
+    "price_minor": 0
+  },
+  "PortalPurchase": {
+    "account_id": 0,
+    "actor_admin": "",
+    "amount_minor": 0,
+    "balance_after_minor": 0,
+    "balance_before_minor": 0,
+    "created_at": 0,
+    "currency": "",
+    "data_limit": 0,
+    "duration_days": 0,
+    "effective_expires_at": 0,
+    "host_ids": [
+      0
+    ],
+    "id": 0,
+    "inbound_ids": [
+      0
+    ],
+    "kind": "",
+    "plan_id": 0,
+    "plan_name": "",
+    "price_minor": 0
+  },
+  "PortalRuntimeChange": {
+    "account_id": 0,
+    "client_id": 0,
+    "created_at": 0,
+    "finished_at": 0,
+    "id": 0,
+    "last_attempt_at": 0,
+    "last_error": ""
+  },
+  "PortalSettings": {
+    "auto_block_enabled": false,
+    "auto_block_seconds": 0,
+    "custom_cidrs": [
+      ""
+    ],
+    "enabled": false,
+    "login_failure_limit": 0,
+    "login_window_seconds": 0,
+    "mode": "",
+    "public_url": "",
+    "registration_failure_limit": 0,
+    "registration_window_seconds": 0,
+    "single_use": false,
+    "source_mode": "",
+    "ttl_seconds": 0
+  },
+  "PortalSubscription": {
+    "account_id": 0,
+    "currency": "",
+    "data_limit": 0,
+    "disabled_at": 0,
+    "duration_days": 0,
+    "expires_at": 0,
+    "host_ids": [
+      0
+    ],
+    "inbound_ids": [
+      0
+    ],
+    "plan_id": 0,
+    "plan_name": "",
+    "price_minor": 0,
+    "price_paid_minor": 0,
+    "purchased_at": 0,
+    "starts_at": 0
+  },
+  "PortalUsage": {
+    "data_limit": 0,
+    "expire": 0,
+    "lifetime_used_traffic": 0,
+    "status": "",
+    "used_traffic": 0
+  },
+  "PortalWalletTransaction": {
+    "account_id": 0,
+    "actor_admin": "",
+    "amount_minor": 0,
+    "balance_after_minor": 0,
+    "created_at": 0,
+    "id": 0,
+    "kind": "",
+    "note": "",
+    "purchase_id": null
   },
   "ProbeResultUI": {
     "cpuPct": 12.5,

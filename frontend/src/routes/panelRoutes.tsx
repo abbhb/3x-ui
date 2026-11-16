@@ -23,6 +23,7 @@ const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const ServiceHostsPage = lazy(() => import('@/pages/service-hosts/ServiceHostsPage'));
+const CommercePage = lazy(() => import('@/pages/commerce/CommercePage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
@@ -41,6 +42,7 @@ export const PANEL_ROUTES: PanelRoute[] = [
   { path: '/', titleKey: 'menu.dashboard', icon: DashboardOutlined, component: IndexPage },
   { path: '/inbounds', titleKey: 'menu.inbounds', icon: ImportOutlined, component: InboundsPage },
   { path: '/clients', titleKey: 'menu.clients', icon: TeamOutlined, component: ClientsPage },
+  { path: '/commerce', titleKey: 'menu.commerce', icon: TagsOutlined, component: CommercePage },
   { path: '/groups', titleKey: 'menu.groups', icon: TagsOutlined, component: GroupsPage },
   { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
   {

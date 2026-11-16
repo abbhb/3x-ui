@@ -686,6 +686,7 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	if err != nil {
 		return false, err
 	}
+	updated.RequireMGMA = existing.RequireMGMA || updated.RequireMGMA
 	updated.StrictHostBindings = existing.StrictHostBindings
 	if existing.StrictHostBindings {
 		oldID, _, oldHasID := strings.Cut(existing.Email, ".")
@@ -926,6 +927,7 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 			Where("id = ?", id).
 			Updates(map[string]any{
 				"sub_id":               merged.SubID,
+				"require_mgma":         merged.RequireMGMA,
 				"uuid":                 merged.UUID,
 				"password":             merged.Password,
 				"auth":                 merged.Auth,
@@ -1019,6 +1021,10 @@ func (s *ClientService) update(inboundSvc *InboundService, id int, updated model
 	if err := database.GetDB().Model(&model.ClientRecord{}).
 		Where("id = ?", id).
 		UpdateColumn("enable", updated.Enable).Error; err != nil {
+		return needRestart, err
+	}
+
+	if err := portalSetManualEnabled(database.GetDB(), []string{updated.Email}, updated.Enable); err != nil {
 		return needRestart, err
 	}
 

@@ -1,0 +1,320 @@
+{
+  "access": [
+    {
+      "client_id": 7,
+      "consumed_at": 0,
+      "digest": "930815bca6d54e102a2c90f918b7254690a7a8243e03a8a46e4fb6b0bd266dbe",
+      "expires_at": 0,
+      "generation": 1,
+      "issued_at": 1793491200000,
+      "manually_disabled": false
+    },
+    {
+      "client_id": 9,
+      "consumed_at": 0,
+      "digest": "",
+      "expires_at": 0,
+      "generation": 1,
+      "issued_at": 0,
+      "manually_disabled": true
+    }
+  ],
+  "accounts": [
+    {
+      "client_id": 7,
+      "created_at": 1793491200000,
+      "id": 5,
+      "is_active": true,
+      "password_hash": "$2b$10$abcdefghijklmnopqrstuu0sWZmk17w8plDibgv.s.Cyf0pXRxXW.",
+      "updated_at": 1793491200000,
+      "username": "sample_a",
+      "wallet_balance_minor": 1701
+    },
+    {
+      "client_id": null,
+      "created_at": 1793491200000,
+      "id": 6,
+      "is_active": false,
+      "password_hash": "$2b$10$abcdefghijklmnopqrstuu0sWZmk17w8plDibgv.s.Cyf0pXRxXW.",
+      "updated_at": 1793491200000,
+      "username": "unactivated",
+      "wallet_balance_minor": 0
+    }
+  ],
+  "clients": [
+    {
+      "client": {
+        "auth": "synthetic-hy2-a",
+        "clientHostRuleIds": [
+          1001,
+          1002,
+          1003
+        ],
+        "email": "7.sample_a",
+        "enable": true,
+        "expiryTime": 4102444800000,
+        "flow": "xtls-rprx-vision",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "requireMGMA": true,
+        "reset": 0,
+        "resetDay": 0,
+        "resetWeekday": 0,
+        "strictHostBindings": true,
+        "subId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "totalGB": 1000000000,
+        "trafficReset": "never"
+      },
+      "inboundIds": [
+        101,
+        102,
+        103
+      ],
+      "traffic": {
+        "down": 123456,
+        "resetCount": 0,
+        "up": 0
+      }
+    },
+    {
+      "client": {
+        "auth": "synthetic-hy2-b",
+        "clientHostRuleIds": [
+          1001,
+          1002,
+          1003
+        ],
+        "email": "9.sample_b",
+        "enable": false,
+        "expiryTime": 0,
+        "flow": "xtls-rprx-vision",
+        "id": "22222222-2222-4222-8222-222222222222",
+        "requireMGMA": true,
+        "reset": 0,
+        "resetDay": 0,
+        "resetWeekday": 0,
+        "strictHostBindings": true,
+        "subId": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "totalGB": 0,
+        "trafficReset": "never"
+      },
+      "inboundIds": [
+        101,
+        102,
+        103
+      ],
+      "traffic": {
+        "down": 0,
+        "resetCount": 0,
+        "up": 0
+      }
+    }
+  ],
+  "invitation_uses": [
+    {
+      "account_id": 5,
+      "created_at": 1793491200000,
+      "id": 1,
+      "invitation_id": 2,
+      "source_ip": "192.0.2.1"
+    }
+  ],
+  "invitations": [
+    {
+      "actor_admin": "synthetic-admin",
+      "created_at": 1793491200000,
+      "digest": "4fc98cef01dc6df5903258c084662f5e8f7fb22763986c0d46aa130035736351",
+      "disabled_at": 0,
+      "expires_at": 0,
+      "id": 2,
+      "max_uses": 2,
+      "note": "synthetic",
+      "prefix": "IIIIIIII",
+      "starts_at": 0,
+      "use_count": 1
+    }
+  ],
+  "ip_blocks": [
+    {
+      "actor_admin": "synthetic-admin",
+      "created_at": 1793491200000,
+      "expires_at": 0,
+      "id": 1,
+      "network": "203.0.113.8/32",
+      "reason": "synthetic",
+      "revoked_at": 0,
+      "source": "manual"
+    }
+  ],
+  "legacy_key_sha256": "2d8f6cdc4033841680d841aabf361e0aebd1ef757f720b8d4ecb08007924b3d0",
+  "legacy_users": [
+    {
+      "client_id": 7,
+      "created_at": 1793491200000,
+      "revoked_at": 0,
+      "username": "sample_a"
+    },
+    {
+      "client_id": 9,
+      "created_at": 1793491200000,
+      "revoked_at": 0,
+      "username": "sample_b"
+    }
+  ],
+  "next_plans": [
+    {
+      "add_remaining_traffic": true,
+      "client_id": 9,
+      "data_limit": 100,
+      "expire": 0,
+      "fire_on_either": true,
+      "paused": true
+    }
+  ],
+  "pepper_sha256": "1b5a57110faccbc00b48e8320bb2506d1616475b969147b329d13daa4e26de88",
+  "plans": [
+    {
+      "compatibility_pending": false,
+      "created_at": 1793491200000,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "description": "Synthetic only",
+      "duration_days": 30,
+      "host_ids": [
+        1001,
+        1002,
+        1003
+      ],
+      "id": 4,
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "is_visible": true,
+      "legacy_metadata": "{\"group_members\": {}, \"local_node_selections\": {}, \"external_selections\": []}",
+      "name": "Synthetic plan",
+      "price_minor": 1299,
+      "updated_at": 1793491200000
+    }
+  ],
+  "purchases": [
+    {
+      "account_id": 5,
+      "actor_admin": "",
+      "amount_minor": 1299,
+      "balance_after_minor": 1701,
+      "balance_before_minor": 3000,
+      "created_at": 1793491200000,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "duration_days": 30,
+      "effective_expires_at": 4102444800000,
+      "host_ids": [
+        1001,
+        1002,
+        1003
+      ],
+      "id": 10,
+      "idempotency_key": "source-purchase",
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "kind": "self_purchase",
+      "plan_id": 4,
+      "plan_name": "Synthetic plan",
+      "price_minor": 1299
+    }
+  ],
+  "reserved_ids": [
+    7,
+    9
+  ],
+  "schema": "marzban-portal-to-3x-ui/v1",
+  "security_attempts": [
+    {
+      "failure_count": 2,
+      "id": 1,
+      "kind": "portal_login",
+      "source_ip": "192.0.2.3",
+      "updated_at": 1793491200000,
+      "window_start": 1793491200000
+    }
+  ],
+  "settings": {
+    "auto_block_enabled": true,
+    "auto_block_seconds": 86400,
+    "custom_cidrs": [],
+    "enabled": false,
+    "login_failure_limit": 8,
+    "login_window_seconds": 900,
+    "mode": "dual",
+    "public_url": "",
+    "registration_failure_limit": 5,
+    "registration_window_seconds": 600,
+    "single_use": false,
+    "source_mode": "any",
+    "ttl_seconds": 0
+  },
+  "subscriptions": [
+    {
+      "account_id": 5,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "disabled_at": 0,
+      "duration_days": 30,
+      "expires_at": 4102444800000,
+      "host_ids": [
+        1001,
+        1002,
+        1003
+      ],
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "plan_id": 4,
+      "plan_name": "Synthetic plan",
+      "price_minor": 1299,
+      "price_paid_minor": 1299,
+      "purchased_at": 1793491200000,
+      "starts_at": 1793491200000
+    }
+  ],
+  "usage_history": [
+    {
+      "client_id": 7,
+      "id": 1,
+      "reset_at": 1793491200000,
+      "used_traffic": 97
+    }
+  ],
+  "wallet": [
+    {
+      "account_id": 5,
+      "actor_admin": "synthetic-admin",
+      "amount_minor": 3000,
+      "balance_after_minor": 3000,
+      "created_at": 1793491200000,
+      "id": 1,
+      "idempotency_key": "source-credit",
+      "kind": "admin_credit",
+      "note": "synthetic credit",
+      "purchase_id": null
+    },
+    {
+      "account_id": 5,
+      "actor_admin": "",
+      "amount_minor": -1299,
+      "balance_after_minor": 1701,
+      "created_at": 1793491200000,
+      "id": 2,
+      "idempotency_key": "source-purchase",
+      "kind": "purchase_debit",
+      "note": "Purchase: Synthetic plan",
+      "purchase_id": 10
+    }
+  ]
+}

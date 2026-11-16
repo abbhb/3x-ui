@@ -35,6 +35,7 @@ export const ClientRecordSchema = z
     // Host rules the client is bound to; null/omitted preserves, empty clears.
     clientHostRuleIds: z.array(z.number().int()).nullable().optional(),
     strictHostBindings: z.boolean().optional(),
+    requireMGMA: z.boolean().optional(),
     totalGB: z.number().optional(),
     expiryTime: z.number().optional(),
     limitIp: z.number().optional(),
