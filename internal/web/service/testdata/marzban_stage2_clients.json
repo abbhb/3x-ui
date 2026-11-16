@@ -1,0 +1,50 @@
+[
+  {
+    "client": {
+      "email": "7.sample_a",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "auth": "synthetic-hy2-a",
+      "flow": "xtls-rprx-vision",
+      "subId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "enable": true,
+      "totalGB": 1000000000,
+      "expiryTime": 4102444800000,
+      "reset": 0,
+      "resetDay": 0,
+      "resetWeekday": 0,
+      "trafficReset": "never",
+      "clientHostRuleIds": [1003, 1004],
+      "strictHostBindings": true
+    },
+    "inboundIds": [101, 102, 103],
+    "traffic": {
+      "up": 0,
+      "down": 123456,
+      "resetCount": 0
+    }
+  },
+  {
+    "client": {
+      "email": "9.sample_b",
+      "id": "22222222-2222-4222-8222-222222222222",
+      "auth": "synthetic-hy2-b",
+      "flow": "xtls-rprx-vision",
+      "subId": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "enable": false,
+      "totalGB": 0,
+      "expiryTime": 0,
+      "reset": 0,
+      "resetDay": 0,
+      "resetWeekday": 0,
+      "trafficReset": "never",
+      "clientHostRuleIds": [1001, 1003, 1004],
+      "strictHostBindings": true
+    },
+    "inboundIds": [101, 103],
+    "traffic": {
+      "up": 0,
+      "down": 0,
+      "resetCount": 0
+    }
+  }
+]

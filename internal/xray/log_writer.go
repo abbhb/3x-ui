@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 )
 
@@ -101,6 +103,9 @@ func (lw *LogWriter) startCrashLocked(output string) bool {
 
 func (lw *LogWriter) processLineLocked(line string) {
 	msg := strings.TrimSpace(line)
+	if hostops.Observations.Feed(msg) {
+		return
+	}
 	if msg == "" {
 		return
 	}

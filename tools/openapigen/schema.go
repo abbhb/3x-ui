@@ -20,6 +20,7 @@ type Alias struct {
 }
 
 type Field struct {
+	Embedded bool
 	JSONName string
 	GoName   string
 	Type     TypeRef
@@ -146,15 +147,30 @@ func flattenEmbedded(schemas []Schema) []Schema {
 	for _, s := range schemas {
 		byName[s.Name] = s
 	}
-	out := make([]Schema, 0, len(schemas))
-	for _, s := range schemas {
+	resolvedByName := make(map[string]Schema, len(schemas))
+	visiting := make(map[string]bool)
+	var resolve func(Schema) Schema
+	resolve = func(s Schema) Schema {
+		if cached, ok := resolvedByName[s.Name]; ok {
+			return cached
+		}
+		if visiting[s.Name] {
+			return s
+		}
+		visiting[s.Name] = true
 		var resolved []Field
 		seen := make(map[string]bool, len(s.Fields))
+		explicit := make(map[string]bool)
 		for _, f := range s.Fields {
-			if f.Type.Kind == KindRef && f.Type.Name != "nullable" {
-				if embedded, ok := byName[f.Type.Name]; ok && f.GoName == f.Type.Name {
-					for _, ef := range embedded.Fields {
-						if seen[ef.JSONName] {
+			if !f.Embedded {
+				explicit[f.JSONName] = true
+			}
+		}
+		for _, f := range s.Fields {
+			if f.Embedded && f.Type.Kind == KindRef && f.Type.Name != "nullable" {
+				if embedded, ok := byName[f.Type.Name]; ok {
+					for _, ef := range resolve(embedded).Fields {
+						if seen[ef.JSONName] || explicit[ef.JSONName] {
 							continue
 						}
 						seen[ef.JSONName] = true
@@ -170,7 +186,13 @@ func flattenEmbedded(schemas []Schema) []Schema {
 			resolved = append(resolved, f)
 		}
 		s.Fields = resolved
-		out = append(out, s)
+		visiting[s.Name] = false
+		resolvedByName[s.Name] = s
+		return s
+	}
+	out := make([]Schema, 0, len(schemas))
+	for _, s := range schemas {
+		out = append(out, resolve(s))
 	}
 	return out
 }

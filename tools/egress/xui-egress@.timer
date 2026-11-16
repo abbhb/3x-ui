@@ -1,0 +1,10 @@
+[Unit]
+Description=Reconcile 3x-ui IPv6 egress (%i)
+
+[Timer]
+OnBootSec=5
+OnUnitInactiveSec=5
+AccuracySec=1
+
+[Install]
+WantedBy=timers.target

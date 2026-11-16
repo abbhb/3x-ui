@@ -108,7 +108,7 @@ class ExportTests(unittest.TestCase):
         self.db.executescript("""
             INSERT INTO portal_accounts VALUES(1,7);
             INSERT INTO portal_subscriptions VALUES(1,1,1);
-            INSERT INTO subscription_plans VALUES(1,'{"TEST_VISION": ["alias-a"]}');
+            INSERT INTO subscription_plans VALUES(1,'{"TEST_VISION": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]}');
         """)
         with self.assertRaisesRegex(migration.MigrationError, "host-specific"):
             self.convert()
@@ -120,6 +120,47 @@ class ExportTests(unittest.TestCase):
             INSERT INTO subscription_plans VALUES(1,'null');
         """)
         self.assertEqual(len(self.convert()[0]), 2)
+
+    def route_options(self):
+        return {"route_map": {"TEST_VISION": {"a" * 64: [1001], "b" * 64: [1004]},
+                              "TEST_XHTTP": {"c" * 64: [1002]}, "TEST_HY2": {"d" * 64: [1003]}},
+                "target_hosts": [{"id": ident, "inboundId": inbound} for ident, inbound in
+                                 [(1001, 101), (1004, 101), (1002, 102), (1003, 103)]]}
+
+    def test_concrete_route_grants_keep_empty_inbound_selection_denied(self):
+        self.db.execute("INSERT INTO portal_accounts VALUES(1,7)")
+        self.db.execute("INSERT INTO portal_subscriptions VALUES(1,1,1)")
+        self.db.execute("INSERT INTO subscription_plans VALUES(1,?)", (json.dumps({
+            "TEST_VISION": ["b" * 64], "TEST_XHTTP": []}),))
+        clients, _ = self.convert(**self.route_options())
+        self.assertEqual(clients[0]["client"]["clientHostRuleIds"], [1003, 1004])
+        self.assertEqual(clients[0]["inboundIds"], [101, 102, 103])
+        self.assertEqual(clients[1]["client"]["clientHostRuleIds"], [1001, 1003, 1004])
+        fixture = ROOT / "internal/web/service/testdata/marzban_stage2_clients.json"
+        self.assertEqual(clients, json.loads(fixture.read_text()))
+
+    def test_route_projection_rejects_collapsed_grants_foreign_hosts_and_deny_all(self):
+        options = self.route_options()
+        options["route_map"]["TEST_VISION"]["b" * 64] = [1001]
+        with self.assertRaisesRegex(migration.MigrationError, "multiply assigned"):
+            self.convert(**options)
+        options = self.route_options()
+        options["target_hosts"][0]["inboundId"] = 103
+        with self.assertRaisesRegex(migration.MigrationError, "cross-inbound"):
+            self.convert(**options)
+        self.db.execute("INSERT INTO portal_accounts VALUES(1,7)")
+        self.db.execute("INSERT INTO portal_subscriptions VALUES(1,1,1)")
+        self.db.execute("INSERT INTO subscription_plans VALUES(1,?)", (json.dumps({tag: [] for tag in self.mapping}),))
+        clients, _ = self.convert(**self.route_options())
+        self.assertEqual(clients[0]["client"]["clientHostRuleIds"], [])
+        self.assertTrue(clients[0]["client"]["strictHostBindings"])
+
+    def test_missing_selected_route_never_expands_to_all_native_hosts(self):
+        self.db.execute("INSERT INTO portal_accounts VALUES(1,7)")
+        self.db.execute("INSERT INTO portal_subscriptions VALUES(1,1,1)")
+        self.db.execute("INSERT INTO subscription_plans VALUES(1,?)", (json.dumps({"TEST_VISION": ["e" * 64]}),))
+        with self.assertRaisesRegex(migration.MigrationError, "unmapped concrete route"):
+            self.convert(**self.route_options())
 
     def test_expired_and_exhausted_active_users_import_disabled(self):
         self.db.execute("UPDATE users SET expire=100, used_traffic=data_limit WHERE id=7")

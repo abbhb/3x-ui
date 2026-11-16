@@ -1163,6 +1163,11 @@ export default function ClientFormModal({
                         <Col xs={24} md={12}>
                           <Form.Item
                             label={t('pages.clients.hostRuleOverride')}
+                            extra={
+                              client?.strictHostBindings
+                                ? t('pages.serviceHosts.strictGrantHelp')
+                                : undefined
+                            }
                             htmlFor={`${uid}-host-rule-override`}
                           >
                             <Select

@@ -28,6 +28,9 @@ func (s *SubService) clientHostBinding(inbound *model.Inbound, client model.Clie
 	ids := model.EffectiveClientHostRuleIds(client)
 	db := database.GetDB()
 	if len(ids) == 0 || db == nil {
+		if client.StrictHostBindings {
+			return hostBindingClosed, nil
+		}
 		return hostBindingNone, nil
 	}
 	var rows []model.Host
@@ -52,6 +55,9 @@ func (s *SubService) clientHostBinding(inbound *model.Inbound, client model.Clie
 	}
 	if len(here) > 0 {
 		return hostBindingBound, here
+	}
+	if client.StrictHostBindings {
+		return hostBindingClosed, nil
 	}
 	if len(gone) == 0 {
 		return hostBindingNone, nil

@@ -97,6 +97,7 @@ var monitorScopeAllow = map[string]struct{}{
 // nodeSyncScopeAllow is the node-sync route/method allowlist relative to
 // /panel/api; Gin patterns prevent concrete parameters broadening authority.
 var nodeSyncScopeAllow = map[string]map[string]struct{}{
+	"/server/hostRuntime":          {http.MethodGet: {}},
 	"/server/status":               {http.MethodGet: {}},
 	"/inbounds/list":               {http.MethodGet: {}},
 	"/inbounds/add":                {http.MethodPost: {}},
@@ -127,6 +128,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 }
 
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
+	"/server/hostEgress":  {http.MethodPost: {}},
 	"/server/updatePanel": {http.MethodPost: {}},
 }
 
@@ -203,6 +205,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api.Use(middleware.CSRFMiddleware(getRemoteIp))
 
 	api.GET("/openapi.json", ServeOpenAPISpec)
+	NewServiceHostController(api)
 
 	// Inbounds API
 	inbounds := api.Group("/inbounds")

@@ -1566,6 +1566,21 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Allocation": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "identity": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "identity"
+    ],
+    "type": "object"
+  },
   "AmneziaWGLogs": {
     "description": "AmneziaWGLogs is what the overview's AmneziaWG log view renders: the live\nper-peer activity of every running embedded interface, plus the panel's\nown recent AmneziaWG lifecycle log lines that explain a peer being absent\nfrom Peers at all.",
     "properties": {
@@ -1722,7 +1737,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "clientHostRuleIds": {
-        "description": "ClientHostRuleIds binds the client to these host rules, one link each; nil preserves, empty\nclears, and bindings with no usable host leave that inbound out of the subscription.",
+        "description": "ClientHostRuleIds selects host rules per inbound; nil preserves and empty clears.\nStrictHostBindings makes this a closed allowlist across all attached inbounds.",
         "example": [
           1,
           2
@@ -1831,6 +1846,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "security": {
         "description": "Security method (e.g., \"auto\", \"aes-128-gcm\")",
         "type": "string"
+      },
+      "strictHostBindings": {
+        "description": "Migration-only closed allowlist. Created once; ordinary edits cannot downgrade it.",
+        "type": "boolean"
       },
       "subId": {
         "description": "Subscription identifier",
@@ -2057,6 +2076,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "security": {
         "type": "string"
       },
+      "strictHostBindings": {
+        "type": "boolean"
+      },
       "subId": {
         "type": "string"
       },
@@ -2109,6 +2131,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "reverse",
       "secret",
       "security",
+      "strictHostBindings",
       "subId",
       "tgId",
       "totalGB",
@@ -2896,6 +2919,37 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "HostEndpoint": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "family": {
+        "type": "string"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "address",
+      "disabled",
+      "family",
+      "id",
+      "name",
+      "port"
+    ],
+    "type": "object"
+  },
   "HostGroup": {
     "properties": {
       "allowInsecure": {
@@ -3083,6 +3137,136 @@ export const SCHEMAS: Record<string, unknown> = {
       "tags",
       "verifyPeerCertByName",
       "vlessRoute"
+    ],
+    "type": "object"
+  },
+  "HostInstanceReport": {
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "inbounds": {
+        "items": {
+          "$ref": "#/components/schemas/InboundRef"
+        },
+        "type": "array"
+      },
+      "installed": {
+        "type": "boolean"
+      },
+      "name": {
+        "type": "string"
+      },
+      "nodeId": {
+        "type": "integer"
+      },
+      "observer": {
+        "$ref": "#/components/schemas/ObservationSnapshot"
+      },
+      "policy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Policy"
+          }
+        ],
+        "nullable": true
+      },
+      "status": {
+        "$ref": "#/components/schemas/Status"
+      }
+    },
+    "required": [
+      "inbounds",
+      "installed",
+      "name",
+      "nodeId",
+      "observer",
+      "status"
+    ],
+    "type": "object"
+  },
+  "HostLineView": {
+    "properties": {
+      "egressMode": {
+        "type": "string"
+      },
+      "enable": {
+        "type": "boolean"
+      },
+      "endpoints": {
+        "items": {
+          "$ref": "#/components/schemas/HostEndpoint"
+        },
+        "type": "array"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "listen": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "nodeId": {
+        "type": "integer"
+      },
+      "note": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "protocol": {
+        "type": "string"
+      },
+      "tag": {
+        "type": "string"
+      },
+      "transport": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "egressMode",
+      "enable",
+      "endpoints",
+      "id",
+      "listen",
+      "name",
+      "nodeId",
+      "note",
+      "port",
+      "protocol",
+      "tag",
+      "transport"
+    ],
+    "type": "object"
+  },
+  "HostServiceInstance": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      },
+      "xrayState": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "id",
+      "name",
+      "status",
+      "xrayState"
     ],
     "type": "object"
   },
@@ -3451,6 +3635,25 @@ export const SCHEMAS: Record<string, unknown> = {
       "ssMethod",
       "tag",
       "tlsFlowCapable"
+    ],
+    "type": "object"
+  },
+  "InboundRef": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "protocol": {
+        "type": "string"
+      },
+      "tag": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "protocol",
+      "tag"
     ],
     "type": "object"
   },
@@ -4139,6 +4342,83 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Observation": {
+    "properties": {
+      "clientFamily": {
+        "type": "string"
+      },
+      "egressFamily": {
+        "type": "string"
+      },
+      "id": {
+        "type": "string"
+      },
+      "inbound": {
+        "type": "string"
+      },
+      "local": {
+        "type": "string"
+      },
+      "network": {
+        "type": "string"
+      },
+      "outbound": {
+        "type": "string"
+      },
+      "remote": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      },
+      "target": {
+        "type": "string"
+      },
+      "timestamp": {
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "clientFamily",
+      "egressFamily",
+      "id",
+      "inbound",
+      "local",
+      "network",
+      "outbound",
+      "remote",
+      "source",
+      "target",
+      "timestamp",
+      "user"
+    ],
+    "type": "object"
+  },
+  "ObservationSnapshot": {
+    "properties": {
+      "dropped": {
+        "type": "integer"
+      },
+      "ready": {
+        "type": "boolean"
+      },
+      "records": {
+        "items": {
+          "$ref": "#/components/schemas/Observation"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "dropped",
+      "ready",
+      "records"
+    ],
+    "type": "object"
+  },
   "OutboundTraffics": {
     "description": "OutboundTraffics tracks traffic statistics for Xray outbound connections.",
     "properties": {
@@ -4258,6 +4538,40 @@ export const SCHEMAS: Record<string, unknown> = {
       "online",
       "tag",
       "up"
+    ],
+    "type": "object"
+  },
+  "Policy": {
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "inbounds": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "interface": {
+        "type": "string"
+      },
+      "mark_prefix": {
+        "type": "integer"
+      },
+      "namespace": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "enabled",
+      "inbounds",
+      "interface",
+      "mark_prefix",
+      "namespace",
+      "prefix"
     ],
     "type": "object"
   },
@@ -4470,6 +4784,43 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Report": {
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "inbounds": {
+        "items": {
+          "$ref": "#/components/schemas/InboundRef"
+        },
+        "type": "array"
+      },
+      "installed": {
+        "type": "boolean"
+      },
+      "observer": {
+        "$ref": "#/components/schemas/ObservationSnapshot"
+      },
+      "policy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Policy"
+          }
+        ],
+        "nullable": true
+      },
+      "status": {
+        "$ref": "#/components/schemas/Status"
+      }
+    },
+    "required": [
+      "inbounds",
+      "installed",
+      "observer",
+      "status"
+    ],
+    "type": "object"
+  },
   "ServerSettings": {
     "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
     "properties": {
@@ -4618,6 +4969,173 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ServiceHost": {
+    "description": "ServiceHost is a physical machine. Host remains a subscription endpoint rule.",
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "id",
+      "name",
+      "note",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "ServiceHostDetail": {
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "lines": {
+        "items": {
+          "$ref": "#/components/schemas/HostLineView"
+        },
+        "type": "array"
+      },
+      "name": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "services": {
+        "items": {
+          "$ref": "#/components/schemas/HostServiceInstance"
+        },
+        "type": "array"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "id",
+      "lines",
+      "name",
+      "note",
+      "services",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "ServiceHostInput": {
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "nodeIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "note": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "nodeIds",
+      "note"
+    ],
+    "type": "object"
+  },
+  "ServiceHostMember": {
+    "description": "NodeId=0 represents this panel's local core. A service belongs to one machine.",
+    "properties": {
+      "hostId": {
+        "type": "integer"
+      },
+      "nodeId": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "hostId",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "ServiceHostView": {
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "services": {
+        "items": {
+          "$ref": "#/components/schemas/HostServiceInstance"
+        },
+        "type": "array"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "id",
+      "name",
+      "note",
+      "services",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "ServiceLine": {
+    "description": "Classify an entire service-side inbound, never an indistinguishable address alias.",
+    "properties": {
+      "egressMode": {
+        "type": "string"
+      },
+      "inboundId": {
+        "type": "integer"
+      },
+      "note": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "egressMode",
+      "inboundId",
+      "note"
+    ],
+    "type": "object"
+  },
   "Setting": {
     "description": "Setting stores key-value configuration settings for the 3x-ui panel.",
     "properties": {
@@ -4719,6 +5237,52 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "sponsors"
+    ],
+    "type": "object"
+  },
+  "Status": {
+    "properties": {
+      "blockedUsers": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "pid": {
+        "type": "integer"
+      },
+      "policyHash": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "users": {
+        "items": {
+          "$ref": "#/components/schemas/Allocation"
+        },
+        "type": "array"
+      },
+      "verified": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "blockedUsers",
+      "enabled",
+      "pid",
+      "policyHash",
+      "reason",
+      "updatedAt",
+      "users",
+      "verified"
     ],
     "type": "object"
   },

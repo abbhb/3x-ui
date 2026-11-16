@@ -1,0 +1,54 @@
+// Installed only into a disposable copy of the pinned Xray module.
+package internet
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strconv"
+	"sync/atomic"
+	"time"
+
+	"github.com/xtls/xray-core/common/log"
+	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/session"
+)
+
+var xuiObserverSequence atomic.Uint64
+var xuiObserverEnabled = os.Getenv("XUI_CONNECTION_OBSERVER") == "1"
+
+func init() {
+	if !xuiObserverEnabled { return }
+	for _, arg := range os.Args[1:] { if arg == "-test" { return } }
+	for _, arg := range os.Args[1:] {
+		if arg == "run" || arg == "-c" || arg == "-config" {
+			fmt.Fprintln(os.Stdout, `MZCONN {"version":1,"event":"ready"}`)
+			return
+		}
+	}
+}
+
+// The original resolver, happy-eyeballs selection and socket creation are unchanged.
+func DialSystem(ctx context.Context, dest net.Destination, sockopt *SocketConfig) (net.Conn, error) {
+	conn, err := xuiOriginalDialSystem(ctx, dest, sockopt)
+	if err != nil || conn == nil || !xuiObserverEnabled { return conn, err }
+	inbound := session.InboundFromContext(ctx)
+	if inbound == nil || inbound.User == nil || inbound.User.Email == "" { return conn, err }
+	if conn.LocalAddr() == nil || conn.RemoteAddr() == nil { return conn, err }
+	target, outbound := dest.String(), ""
+	if path := session.OutboundsFromContext(ctx); len(path)>0 {
+		outbound = path[len(path)-1].Tag
+		if path[0].Target.IsValid() { target=path[0].Target.String() }
+	}
+	if access:=log.AccessMessageFromContext(ctx);access!=nil { target=fmt.Sprint(access.To) }
+	now:=time.Now().UTC()
+	data, marshalErr:=json.Marshal(map[string]any{
+		"version":1,"event":"dial", "id":strconv.FormatInt(now.UnixNano(),10)+"-"+strconv.FormatUint(xuiObserverSequence.Add(1),10),
+		"timestamp":now.Format(time.RFC3339Nano),"user":inbound.User.Email,"source":inbound.Source.String(),
+		"target":target,"network":dest.Network.String(),"inbound":inbound.Tag,"outbound":outbound,
+		"local":conn.LocalAddr().String(),"remote":conn.RemoteAddr().String(),
+	})
+	if marshalErr==nil && len(data)<=8000 { fmt.Fprintf(os.Stdout,"MZCONN %s\n",data) }
+	return conn,err
+}

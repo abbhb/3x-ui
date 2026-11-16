@@ -403,6 +403,12 @@ export const AllSettingViewSchema = z.object({
 });
 export type AllSettingView = z.infer<typeof AllSettingViewSchema>;
 
+export const AllocationSchema = z.object({
+  address: z.string(),
+  identity: z.string(),
+});
+export type Allocation = z.infer<typeof AllocationSchema>;
+
 export const AmneziaWGLogsSchema = z.object({
   events: z.array(z.string()),
   peers: z.array(z.lazy(() => PeerActivitySchema)),
@@ -466,6 +472,7 @@ export const ClientSchema = z.object({
   reverse: z.lazy(() => ClientReverseSchema).nullable().optional(),
   secret: z.string().optional(),
   security: z.string(),
+  strictHostBindings: z.boolean().optional(),
   subId: z.string(),
   tgId: z.number().int(),
   totalGB: z.number().int(),
@@ -522,6 +529,7 @@ export const ClientRecordSchema = z.object({
   reverse: z.unknown(),
   secret: z.string(),
   security: z.string(),
+  strictHostBindings: z.boolean(),
   subId: z.string(),
   tgId: z.number().int(),
   totalGB: z.number().int(),
@@ -718,6 +726,16 @@ export const HostSchema = z.object({
 });
 export type Host = z.infer<typeof HostSchema>;
 
+export const HostEndpointSchema = z.object({
+  address: z.string(),
+  disabled: z.boolean(),
+  family: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+  port: z.number().int(),
+});
+export type HostEndpoint = z.infer<typeof HostEndpointSchema>;
+
 export const HostGroupSchema = z.object({
   allowInsecure: z.boolean(),
   alpn: z.array(z.string()),
@@ -756,6 +774,43 @@ export const HostGroupSchema = z.object({
   vlessRoute: z.string(),
 });
 export type HostGroup = z.infer<typeof HostGroupSchema>;
+
+export const HostInstanceReportSchema = z.object({
+  error: z.string().optional(),
+  inbounds: z.array(z.lazy(() => InboundRefSchema)),
+  installed: z.boolean(),
+  name: z.string(),
+  nodeId: z.number().int(),
+  observer: z.lazy(() => ObservationSnapshotSchema),
+  policy: z.lazy(() => PolicySchema).nullable().optional(),
+  status: z.lazy(() => StatusSchema),
+});
+export type HostInstanceReport = z.infer<typeof HostInstanceReportSchema>;
+
+export const HostLineViewSchema = z.object({
+  egressMode: z.string(),
+  enable: z.boolean(),
+  endpoints: z.array(z.lazy(() => HostEndpointSchema)),
+  id: z.number().int(),
+  listen: z.string(),
+  name: z.string(),
+  nodeId: z.number().int(),
+  note: z.string(),
+  port: z.number().int(),
+  protocol: z.string(),
+  tag: z.string(),
+  transport: z.string(),
+});
+export type HostLineView = z.infer<typeof HostLineViewSchema>;
+
+export const HostServiceInstanceSchema = z.object({
+  address: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+  status: z.string(),
+  xrayState: z.string(),
+});
+export type HostServiceInstance = z.infer<typeof HostServiceInstanceSchema>;
 
 export const HwidSlotStatusSchema = z.object({
   active: z.boolean(),
@@ -840,6 +895,13 @@ export const InboundOptionSchema = z.object({
   wgPublicKey: z.string().optional(),
 });
 export type InboundOption = z.infer<typeof InboundOptionSchema>;
+
+export const InboundRefSchema = z.object({
+  id: z.number().int(),
+  protocol: z.string(),
+  tag: z.string(),
+});
+export type InboundRef = z.infer<typeof InboundRefSchema>;
 
 export const InboundTrafficSummarySchema = z.object({
   down: z.number().int(),
@@ -996,6 +1058,29 @@ export const NodeViewSchema = z.object({
 });
 export type NodeView = z.infer<typeof NodeViewSchema>;
 
+export const ObservationSchema = z.object({
+  clientFamily: z.string(),
+  egressFamily: z.string(),
+  id: z.string(),
+  inbound: z.string(),
+  local: z.string(),
+  network: z.string(),
+  outbound: z.string(),
+  remote: z.string(),
+  source: z.string(),
+  target: z.string(),
+  timestamp: z.string(),
+  user: z.string(),
+});
+export type Observation = z.infer<typeof ObservationSchema>;
+
+export const ObservationSnapshotSchema = z.object({
+  dropped: z.number().int(),
+  ready: z.boolean(),
+  records: z.array(z.lazy(() => ObservationSchema)),
+});
+export type ObservationSnapshot = z.infer<typeof ObservationSnapshotSchema>;
+
 export const OutboundTrafficsSchema = z.object({
   down: z.number().int(),
   id: z.number().int(),
@@ -1026,6 +1111,16 @@ export const PeerActivitySchema = z.object({
   up: z.number().int(),
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
+
+export const PolicySchema = z.object({
+  enabled: z.boolean(),
+  inbounds: z.array(z.string()),
+  interface: z.string(),
+  mark_prefix: z.number().int(),
+  namespace: z.string(),
+  prefix: z.string(),
+});
+export type Policy = z.infer<typeof PolicySchema>;
 
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),
@@ -1074,6 +1169,16 @@ export const RealityScanResultSchema = z.object({
 });
 export type RealityScanResult = z.infer<typeof RealityScanResultSchema>;
 
+export const ReportSchema = z.object({
+  error: z.string().optional(),
+  inbounds: z.array(z.lazy(() => InboundRefSchema)),
+  installed: z.boolean(),
+  observer: z.lazy(() => ObservationSnapshotSchema),
+  policy: z.lazy(() => PolicySchema).nullable().optional(),
+  status: z.lazy(() => StatusSchema),
+});
+export type Report = z.infer<typeof ReportSchema>;
+
 export const ServerSettingsSchema = z.object({
   contentPaddingAddition: z.string().optional(),
   disableCookies: z.boolean(),
@@ -1116,6 +1221,56 @@ export const ServerSettingsSchema = z.object({
 });
 export type ServerSettings = z.infer<typeof ServerSettingsSchema>;
 
+export const ServiceHostSchema = z.object({
+  createdAt: z.number().int(),
+  id: z.number().int(),
+  name: z.string(),
+  note: z.string(),
+  updatedAt: z.number().int(),
+});
+export type ServiceHost = z.infer<typeof ServiceHostSchema>;
+
+export const ServiceHostDetailSchema = z.object({
+  createdAt: z.number().int(),
+  id: z.number().int(),
+  lines: z.array(z.lazy(() => HostLineViewSchema)),
+  name: z.string(),
+  note: z.string(),
+  services: z.array(z.lazy(() => HostServiceInstanceSchema)),
+  updatedAt: z.number().int(),
+});
+export type ServiceHostDetail = z.infer<typeof ServiceHostDetailSchema>;
+
+export const ServiceHostInputSchema = z.object({
+  name: z.string(),
+  nodeIds: z.array(z.number().int()),
+  note: z.string(),
+});
+export type ServiceHostInput = z.infer<typeof ServiceHostInputSchema>;
+
+export const ServiceHostMemberSchema = z.object({
+  hostId: z.number().int(),
+  nodeId: z.number().int(),
+});
+export type ServiceHostMember = z.infer<typeof ServiceHostMemberSchema>;
+
+export const ServiceHostViewSchema = z.object({
+  createdAt: z.number().int(),
+  id: z.number().int(),
+  name: z.string(),
+  note: z.string(),
+  services: z.array(z.lazy(() => HostServiceInstanceSchema)),
+  updatedAt: z.number().int(),
+});
+export type ServiceHostView = z.infer<typeof ServiceHostViewSchema>;
+
+export const ServiceLineSchema = z.object({
+  egressMode: z.string(),
+  inboundId: z.number().int(),
+  note: z.string(),
+});
+export type ServiceLine = z.infer<typeof ServiceLineSchema>;
+
 export const SettingSchema = z.object({
   id: z.number().int(),
   key: z.string(),
@@ -1142,6 +1297,18 @@ export const SponsorListSchema = z.object({
   sponsors: z.array(z.lazy(() => SponsorSchema)),
 });
 export type SponsorList = z.infer<typeof SponsorListSchema>;
+
+export const StatusSchema = z.object({
+  blockedUsers: z.array(z.string()),
+  enabled: z.boolean(),
+  pid: z.number().int(),
+  policyHash: z.string(),
+  reason: z.string(),
+  updatedAt: z.number().int(),
+  users: z.array(z.lazy(() => AllocationSchema)),
+  verified: z.boolean(),
+});
+export type Status = z.infer<typeof StatusSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),

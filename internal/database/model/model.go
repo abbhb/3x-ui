@@ -953,9 +953,11 @@ type Client struct {
 	PrivateKey string         `json:"privateKey,omitempty"`
 	PublicKey  string         `json:"publicKey,omitempty"`
 	AllowedIPs []string       `json:"allowedIPs,omitempty"`
-	// ClientHostRuleIds binds the client to these host rules, one link each; nil preserves, empty
-	// clears, and bindings with no usable host leave that inbound out of the subscription.
+	// ClientHostRuleIds selects host rules per inbound; nil preserves and empty clears.
+	// StrictHostBindings makes this a closed allowlist across all attached inbounds.
 	ClientHostRuleIds []int `json:"clientHostRuleIds,omitempty" example:"[1,2]"`
+	// Migration-only closed allowlist. Created once; ordinary edits cannot downgrade it.
+	StrictHostBindings bool `json:"strictHostBindings,omitempty"`
 	// AllowedIPsByInbound optionally overrides AllowedIPs on a per-inbound
 	// basis, keyed by inbound id. Lets one identity attached to both
 	// WireGuard and AmneziaWG carry two genuinely different addresses in a
@@ -990,42 +992,43 @@ type Client struct {
 }
 
 type ClientRecord struct {
-	Id                int            `json:"id" gorm:"primaryKey;autoIncrement"`
-	Email             string         `json:"email" gorm:"uniqueIndex;not null"`
-	SubID             string         `json:"subId" gorm:"index;column:sub_id"`
-	UUID              string         `json:"uuid" gorm:"column:uuid"`
-	Password          string         `json:"password"`
-	Auth              string         `json:"auth"`
-	Flow              string         `json:"flow"`
-	Security          string         `json:"security"`
-	Reverse           string         `json:"reverse" gorm:"column:reverse"`
-	ClientHostRuleIds []int          `json:"clientHostRuleIds,omitempty" gorm:"serializer:json;column:client_host_rule_ids" example:"[1,2]"`
-	PrivateKey        string         `json:"privateKey" gorm:"column:wg_private_key"`
-	PublicKey         string         `json:"publicKey" gorm:"column:wg_public_key"`
-	AllowedIPs        string         `json:"allowedIPs" gorm:"column:wg_allowed_ips"`
-	PreSharedKey      string         `json:"preSharedKey" gorm:"column:wg_pre_shared_key"`
-	KeepAlive         KeepAliveValue `json:"keepAlive" gorm:"-"` // Numeric values or AmneziaWG ranges.
-	KeepAliveLegacy   int            `json:"-" gorm:"column:wg_keep_alive;default:0"`
-	KeepAliveRange    KeepAliveValue `json:"-" gorm:"column:wg_keep_alive_range;type:text;default:''"`
-	ForwardedPorts    string         `json:"forwardedPorts" gorm:"column:wg_forwarded_ports"`
-	Secret            string         `json:"secret" gorm:"column:secret"`
-	AdTag             string         `json:"adTag" gorm:"column:ad_tag;default:''"`
-	LimitIP           int            `json:"limitIp" gorm:"column:limit_ip"`
-	LimitHwid         int            `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
-	TotalGB           int64          `json:"totalGB" gorm:"column:total_gb"`
-	ExpiryTime        int64          `json:"expiryTime" gorm:"column:expiry_time"`
-	Enable            bool           `json:"enable" gorm:"default:true"`
-	TgID              int64          `json:"tgId" gorm:"column:tg_id;index:idx_clients_tg_id"`
-	Group             string         `json:"group" gorm:"column:group_name;default:'';index:idx_client_record_group"`
-	Comment           string         `json:"comment"`
-	Reset             int            `json:"reset" gorm:"default:0"`
-	ResetDay          int            `json:"resetDay" gorm:"column:reset_day;default:0"`
-	ResetWeekday      int            `json:"resetWeekday" gorm:"column:reset_weekday;default:0"`
-	ResetMax          int            `json:"resetMax" gorm:"column:reset_max;default:0"`
-	TrafficReset      string         `json:"trafficReset" gorm:"column:traffic_reset;default:never;index:idx_clients_traffic_reset"`
-	TrafficResetDay   int            `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
-	CreatedAt         int64          `json:"createdAt" gorm:"autoCreateTime:milli"`
-	UpdatedAt         int64          `json:"updatedAt" gorm:"autoUpdateTime:milli"`
+	Id                 int            `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email              string         `json:"email" gorm:"uniqueIndex;not null"`
+	SubID              string         `json:"subId" gorm:"index;column:sub_id"`
+	UUID               string         `json:"uuid" gorm:"column:uuid"`
+	Password           string         `json:"password"`
+	Auth               string         `json:"auth"`
+	Flow               string         `json:"flow"`
+	Security           string         `json:"security"`
+	Reverse            string         `json:"reverse" gorm:"column:reverse"`
+	ClientHostRuleIds  []int          `json:"clientHostRuleIds,omitempty" gorm:"serializer:json;column:client_host_rule_ids" example:"[1,2]"`
+	StrictHostBindings bool           `json:"strictHostBindings" gorm:"column:strict_host_bindings;default:false;<-:create"`
+	PrivateKey         string         `json:"privateKey" gorm:"column:wg_private_key"`
+	PublicKey          string         `json:"publicKey" gorm:"column:wg_public_key"`
+	AllowedIPs         string         `json:"allowedIPs" gorm:"column:wg_allowed_ips"`
+	PreSharedKey       string         `json:"preSharedKey" gorm:"column:wg_pre_shared_key"`
+	KeepAlive          KeepAliveValue `json:"keepAlive" gorm:"-"` // Numeric values or AmneziaWG ranges.
+	KeepAliveLegacy    int            `json:"-" gorm:"column:wg_keep_alive;default:0"`
+	KeepAliveRange     KeepAliveValue `json:"-" gorm:"column:wg_keep_alive_range;type:text;default:''"`
+	ForwardedPorts     string         `json:"forwardedPorts" gorm:"column:wg_forwarded_ports"`
+	Secret             string         `json:"secret" gorm:"column:secret"`
+	AdTag              string         `json:"adTag" gorm:"column:ad_tag;default:''"`
+	LimitIP            int            `json:"limitIp" gorm:"column:limit_ip"`
+	LimitHwid          int            `json:"limitHwid" gorm:"column:limit_hwid;default:0"`
+	TotalGB            int64          `json:"totalGB" gorm:"column:total_gb"`
+	ExpiryTime         int64          `json:"expiryTime" gorm:"column:expiry_time"`
+	Enable             bool           `json:"enable" gorm:"default:true"`
+	TgID               int64          `json:"tgId" gorm:"column:tg_id;index:idx_clients_tg_id"`
+	Group              string         `json:"group" gorm:"column:group_name;default:'';index:idx_client_record_group"`
+	Comment            string         `json:"comment"`
+	Reset              int            `json:"reset" gorm:"default:0"`
+	ResetDay           int            `json:"resetDay" gorm:"column:reset_day;default:0"`
+	ResetWeekday       int            `json:"resetWeekday" gorm:"column:reset_weekday;default:0"`
+	ResetMax           int            `json:"resetMax" gorm:"column:reset_max;default:0"`
+	TrafficReset       string         `json:"trafficReset" gorm:"column:traffic_reset;default:never;index:idx_clients_traffic_reset"`
+	TrafficResetDay    int            `json:"trafficResetDay" gorm:"column:traffic_reset_day;default:1"`
+	CreatedAt          int64          `json:"createdAt" gorm:"autoCreateTime:milli"`
+	UpdatedAt          int64          `json:"updatedAt" gorm:"autoUpdateTime:milli"`
 	// Owned solely by the node-snapshot sweep, which soft-orphans instead of
 	// deleting; orphans from any other cause stay at zero and are never reaped.
 	SyncOrphanedAt int64 `json:"-" gorm:"column:sync_orphaned_at;default:0"`
@@ -1307,29 +1310,30 @@ func nonEmptyForwardedPorts(spec string) *string {
 
 func (c *Client) ToRecord() *ClientRecord {
 	rec := &ClientRecord{
-		Email:             c.Email,
-		SubID:             c.SubID,
-		UUID:              c.ID,
-		Password:          c.Password,
-		Auth:              c.Auth,
-		Flow:              c.Flow,
-		Security:          c.Security,
-		ClientHostRuleIds: CloneClientHostRuleIds(c.ClientHostRuleIds),
-		LimitIP:           c.LimitIP,
-		TotalGB:           c.TotalGB,
-		ExpiryTime:        c.ExpiryTime,
-		Enable:            c.Enable,
-		TgID:              c.TgID,
-		Group:             strings.TrimSpace(c.Group),
-		Comment:           c.Comment,
-		Reset:             c.Reset,
-		ResetDay:          c.ResetDay,
-		ResetWeekday:      c.ResetWeekday,
-		ResetMax:          c.ResetMax,
-		TrafficReset:      c.TrafficReset,
-		TrafficResetDay:   c.TrafficResetDay,
-		CreatedAt:         c.CreatedAt,
-		UpdatedAt:         c.UpdatedAt,
+		Email:              c.Email,
+		SubID:              c.SubID,
+		UUID:               c.ID,
+		Password:           c.Password,
+		Auth:               c.Auth,
+		Flow:               c.Flow,
+		Security:           c.Security,
+		ClientHostRuleIds:  CloneClientHostRuleIds(c.ClientHostRuleIds),
+		StrictHostBindings: c.StrictHostBindings,
+		LimitIP:            c.LimitIP,
+		TotalGB:            c.TotalGB,
+		ExpiryTime:         c.ExpiryTime,
+		Enable:             c.Enable,
+		TgID:               c.TgID,
+		Group:              strings.TrimSpace(c.Group),
+		Comment:            c.Comment,
+		Reset:              c.Reset,
+		ResetDay:           c.ResetDay,
+		ResetWeekday:       c.ResetWeekday,
+		ResetMax:           c.ResetMax,
+		TrafficReset:       c.TrafficReset,
+		TrafficResetDay:    c.TrafficResetDay,
+		CreatedAt:          c.CreatedAt,
+		UpdatedAt:          c.UpdatedAt,
 
 		PrivateKey:     c.PrivateKey,
 		PublicKey:      c.PublicKey,
@@ -1367,29 +1371,30 @@ func splitWireguardAllowedIPs(csv string) []string {
 
 func (r *ClientRecord) ToClient() *Client {
 	c := &Client{
-		ID:                r.UUID,
-		Email:             r.Email,
-		SubID:             r.SubID,
-		Password:          r.Password,
-		Auth:              r.Auth,
-		Flow:              r.Flow,
-		Security:          r.Security,
-		ClientHostRuleIds: CloneClientHostRuleIds(r.ClientHostRuleIds),
-		LimitIP:           r.LimitIP,
-		TotalGB:           r.TotalGB,
-		ExpiryTime:        r.ExpiryTime,
-		Enable:            r.Enable,
-		TgID:              r.TgID,
-		Group:             r.Group,
-		Comment:           r.Comment,
-		Reset:             r.Reset,
-		ResetDay:          r.ResetDay,
-		ResetWeekday:      r.ResetWeekday,
-		ResetMax:          r.ResetMax,
-		TrafficReset:      r.TrafficReset,
-		TrafficResetDay:   r.TrafficResetDay,
-		CreatedAt:         r.CreatedAt,
-		UpdatedAt:         r.UpdatedAt,
+		ID:                 r.UUID,
+		Email:              r.Email,
+		SubID:              r.SubID,
+		Password:           r.Password,
+		Auth:               r.Auth,
+		Flow:               r.Flow,
+		Security:           r.Security,
+		ClientHostRuleIds:  CloneClientHostRuleIds(r.ClientHostRuleIds),
+		StrictHostBindings: r.StrictHostBindings,
+		LimitIP:            r.LimitIP,
+		TotalGB:            r.TotalGB,
+		ExpiryTime:         r.ExpiryTime,
+		Enable:             r.Enable,
+		TgID:               r.TgID,
+		Group:              r.Group,
+		Comment:            r.Comment,
+		Reset:              r.Reset,
+		ResetDay:           r.ResetDay,
+		ResetWeekday:       r.ResetWeekday,
+		ResetMax:           r.ResetMax,
+		TrafficReset:       r.TrafficReset,
+		TrafficResetDay:    r.TrafficResetDay,
+		CreatedAt:          r.CreatedAt,
+		UpdatedAt:          r.UpdatedAt,
 
 		PrivateKey:     r.PrivateKey,
 		PublicKey:      r.PublicKey,

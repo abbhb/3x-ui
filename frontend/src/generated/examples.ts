@@ -372,6 +372,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "webListen": "",
     "webPort": 1
   },
+  "Allocation": {
+    "address": "",
+    "identity": ""
+  },
   "AmneziaWGLogs": {
     "events": [
       "2025/01/01 12:00:00 amneziawg: started interface awg1 for inbound 1"
@@ -447,6 +451,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "reverse": null,
     "secret": "ee1234567890abcdef1234567890abcd7777772e636c6f7564666c6172652e636f6d",
     "security": "",
+    "strictHostBindings": false,
     "subId": "",
     "tgId": 0,
     "totalGB": 0,
@@ -541,6 +546,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "reverse": null,
     "secret": "",
     "security": "",
+    "strictHostBindings": false,
     "subId": "",
     "tgId": 0,
     "totalGB": 0,
@@ -739,6 +745,14 @@ export const EXAMPLES: Record<string, unknown> = {
     "verifyPeerCertByName": "",
     "vlessRoute": "443"
   },
+  "HostEndpoint": {
+    "address": "",
+    "disabled": false,
+    "family": "",
+    "id": 0,
+    "name": "",
+    "port": 0
+  },
   "HostGroup": {
     "allowInsecure": false,
     "alpn": [
@@ -791,6 +805,87 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "verifyPeerCertByName": "",
     "vlessRoute": ""
+  },
+  "HostInstanceReport": {
+    "error": "",
+    "inbounds": [
+      {
+        "id": 0,
+        "protocol": "",
+        "tag": ""
+      }
+    ],
+    "installed": false,
+    "name": "",
+    "nodeId": 0,
+    "observer": {
+      "dropped": 0,
+      "ready": false,
+      "records": [
+        {
+          "clientFamily": "",
+          "egressFamily": "",
+          "id": "",
+          "inbound": "",
+          "local": "",
+          "network": "",
+          "outbound": "",
+          "remote": "",
+          "source": "",
+          "target": "",
+          "timestamp": "",
+          "user": ""
+        }
+      ]
+    },
+    "policy": null,
+    "status": {
+      "blockedUsers": [
+        ""
+      ],
+      "enabled": false,
+      "pid": 0,
+      "policyHash": "",
+      "reason": "",
+      "updatedAt": 0,
+      "users": [
+        {
+          "address": "",
+          "identity": ""
+        }
+      ],
+      "verified": false
+    }
+  },
+  "HostLineView": {
+    "egressMode": "",
+    "enable": false,
+    "endpoints": [
+      {
+        "address": "",
+        "disabled": false,
+        "family": "",
+        "id": 0,
+        "name": "",
+        "port": 0
+      }
+    ],
+    "id": 0,
+    "listen": "",
+    "name": "",
+    "nodeId": 0,
+    "note": "",
+    "port": 0,
+    "protocol": "",
+    "tag": "",
+    "transport": ""
+  },
+  "HostServiceInstance": {
+    "address": "",
+    "id": 0,
+    "name": "",
+    "status": "",
+    "xrayState": ""
   },
   "HwidSlotStatus": {
     "active": true,
@@ -885,6 +980,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "wgDns": "",
     "wgMtu": 0,
     "wgPublicKey": ""
+  },
+  "InboundRef": {
+    "id": 0,
+    "protocol": "",
+    "tag": ""
   },
   "InboundTrafficSummary": {
     "down": 2097152,
@@ -1033,6 +1133,40 @@ export const EXAMPLES: Record<string, unknown> = {
     "xrayState": "running",
     "xrayVersion": "25.10.31"
   },
+  "Observation": {
+    "clientFamily": "",
+    "egressFamily": "",
+    "id": "",
+    "inbound": "",
+    "local": "",
+    "network": "",
+    "outbound": "",
+    "remote": "",
+    "source": "",
+    "target": "",
+    "timestamp": "",
+    "user": ""
+  },
+  "ObservationSnapshot": {
+    "dropped": 0,
+    "ready": false,
+    "records": [
+      {
+        "clientFamily": "",
+        "egressFamily": "",
+        "id": "",
+        "inbound": "",
+        "local": "",
+        "network": "",
+        "outbound": "",
+        "remote": "",
+        "source": "",
+        "target": "",
+        "timestamp": "",
+        "user": ""
+      }
+    ]
+  },
   "OutboundTraffics": {
     "down": 0,
     "id": 0,
@@ -1057,6 +1191,16 @@ export const EXAMPLES: Record<string, unknown> = {
     "online": true,
     "tag": "inbound-51820",
     "up": 1048576
+  },
+  "Policy": {
+    "enabled": false,
+    "inbounds": [
+      ""
+    ],
+    "interface": "",
+    "mark_prefix": 0,
+    "namespace": "",
+    "prefix": ""
   },
   "ProbeResultUI": {
     "cpuPct": 12.5,
@@ -1108,6 +1252,55 @@ export const EXAMPLES: Record<string, unknown> = {
     "tlsVersion": "1.3",
     "x25519": true
   },
+  "Report": {
+    "error": "",
+    "inbounds": [
+      {
+        "id": 0,
+        "protocol": "",
+        "tag": ""
+      }
+    ],
+    "installed": false,
+    "observer": {
+      "dropped": 0,
+      "ready": false,
+      "records": [
+        {
+          "clientFamily": "",
+          "egressFamily": "",
+          "id": "",
+          "inbound": "",
+          "local": "",
+          "network": "",
+          "outbound": "",
+          "remote": "",
+          "source": "",
+          "target": "",
+          "timestamp": "",
+          "user": ""
+        }
+      ]
+    },
+    "policy": null,
+    "status": {
+      "blockedUsers": [
+        ""
+      ],
+      "enabled": false,
+      "pid": 0,
+      "policyHash": "",
+      "reason": "",
+      "updatedAt": 0,
+      "users": [
+        {
+          "address": "",
+          "identity": ""
+        }
+      ],
+      "verified": false
+    }
+  },
   "ServerSettings": {
     "contentPaddingAddition": "",
     "disableCookies": false,
@@ -1148,6 +1341,86 @@ export const EXAMPLES: Record<string, unknown> = {
     "subnetCidr": 0,
     "subnetIp": ""
   },
+  "ServiceHost": {
+    "createdAt": 0,
+    "id": 0,
+    "name": "",
+    "note": "",
+    "updatedAt": 0
+  },
+  "ServiceHostDetail": {
+    "createdAt": 0,
+    "id": 0,
+    "lines": [
+      {
+        "egressMode": "",
+        "enable": false,
+        "endpoints": [
+          {
+            "address": "",
+            "disabled": false,
+            "family": "",
+            "id": 0,
+            "name": "",
+            "port": 0
+          }
+        ],
+        "id": 0,
+        "listen": "",
+        "name": "",
+        "nodeId": 0,
+        "note": "",
+        "port": 0,
+        "protocol": "",
+        "tag": "",
+        "transport": ""
+      }
+    ],
+    "name": "",
+    "note": "",
+    "services": [
+      {
+        "address": "",
+        "id": 0,
+        "name": "",
+        "status": "",
+        "xrayState": ""
+      }
+    ],
+    "updatedAt": 0
+  },
+  "ServiceHostInput": {
+    "name": "",
+    "nodeIds": [
+      0
+    ],
+    "note": ""
+  },
+  "ServiceHostMember": {
+    "hostId": 0,
+    "nodeId": 0
+  },
+  "ServiceHostView": {
+    "createdAt": 0,
+    "id": 0,
+    "name": "",
+    "note": "",
+    "services": [
+      {
+        "address": "",
+        "id": 0,
+        "name": "",
+        "status": "",
+        "xrayState": ""
+      }
+    ],
+    "updatedAt": 0
+  },
+  "ServiceLine": {
+    "egressMode": "",
+    "inboundId": 0,
+    "note": ""
+  },
   "Setting": {
     "id": 0,
     "key": "",
@@ -1185,6 +1458,23 @@ export const EXAMPLES: Record<string, unknown> = {
         "until": "2026-11-01T00:00:00Z"
       }
     ]
+  },
+  "Status": {
+    "blockedUsers": [
+      ""
+    ],
+    "enabled": false,
+    "pid": 0,
+    "policyHash": "",
+    "reason": "",
+    "updatedAt": 0,
+    "users": [
+      {
+        "address": "",
+        "identity": ""
+      }
+    ],
+    "verified": false
   },
   "SubBalancer": {
     "createdAt": 1710000000000,

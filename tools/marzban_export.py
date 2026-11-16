@@ -166,7 +166,7 @@ def inbound_map(core, mapping, inventory, excluded):
 def restricted_users(db, tables):
     portal = {"portal_accounts", "portal_subscriptions", "subscription_plans"}
     require(not (tables & portal) or portal <= tables, "incomplete portal schema")
-    restricted = set()
+    restricted = {}
     if portal <= tables:
         for row in db.execute("""SELECT a.user_id, p.local_node_selections
             FROM portal_accounts a JOIN portal_subscriptions s ON s.account_id=a.id
@@ -176,18 +176,50 @@ def restricted_users(db, tables):
                 require(selections is None or isinstance(selections, dict),
                         "invalid plan local_node_selections")
                 if selections:
-                    restricted.add(row[0])
+                    require(all(isinstance(tag, str) and (routes is None or
+                            isinstance(routes, list) and all(isinstance(key, str) and re.fullmatch(r"[a-f0-9]{64}", key) for key in routes))
+                            for tag, routes in selections.items()), "invalid plan route selections")
+                    restricted[row[0]] = selections
     return restricted
 
 
+def route_bindings(route_map, hosts, mapping):
+    """Explicit source route SHA256 -> native host rows, with no merged grants."""
+    require(isinstance(route_map, dict), "route map must be an object")
+    if isinstance(hosts, dict):
+        require(hosts.get("success") is True, "target host inventory API reported failure")
+        hosts = hosts.get("obj")
+    require(isinstance(hosts, list), "target host inventory must be a list")
+    inventory = {}
+    for host in hosts:
+        require(isinstance(host, dict), "invalid target host inventory")
+        ident = integer(host.get("id"), "target host ID", minimum=1)
+        require(ident not in inventory, "duplicate target host ID")
+        inventory[ident] = integer(host.get("inboundId"), "host inbound ID", minimum=1)
+    assigned = set()
+    for tag, routes in route_map.items():
+        require(tag in mapping and isinstance(routes, dict), "route map references an unmapped inbound")
+        for key, ids in routes.items():
+            require(re.fullmatch(r"[a-f0-9]{64}", key) and isinstance(ids, list) and ids,
+                    "source route map needs SHA256 route IDs and nonempty host ID lists")
+            for ident in ids:
+                integer(ident, "mapped host ID", minimum=1)
+                require(ident in inventory and inventory[ident] in mapping[tag] and ident not in assigned,
+                        "unknown, cross-inbound or multiply assigned target host ID")
+                assigned.add(ident)
+    return route_map
+
+
 def convert(db, core, mapping, inventory, *, user_ids=(), excluded=(),
-            allow_unmapped=False, traffic_policy=None, now=None):
+            allow_unmapped=False, traffic_policy=None, now=None, route_map=None, target_hosts=None):
     """Return native payloads plus private identity/provenance records."""
     tables = table_names(db)
     require({"users", "proxies", "exclude_inbounds_association", "next_plans"} <= tables,
             "unsupported Marzban schema: required tables missing")
     source, targets = inbound_map(core, mapping, inventory, set(excluded))
     restricted = restricted_users(db, tables)
+    if route_map is not None:
+        route_map = route_bindings(route_map, target_hosts, mapping)
     pending = {row[0] for row in db.execute("SELECT user_id FROM next_plans")}
     users = list(db.execute("SELECT * FROM users ORDER BY id"))
     selected = set(user_ids)
@@ -201,7 +233,8 @@ def convert(db, core, mapping, inventory, *, user_ids=(), excluded=(),
     for user in users:
         uid = integer(user["id"], "legacy user ID", minimum=1)
         label = f"user ID {uid}"
-        require(uid not in restricted, f"{label}: host-specific plan grants require host-rule migration")
+        require(uid not in restricted or route_map is not None,
+                f"{label}: host-specific plan grants require host-rule migration")
         require(uid not in pending, f"{label}: pending next plan is unsupported")
         status = user["status"].lower()
         require(status in ("active", "disabled", "limited", "expired"),
@@ -269,6 +302,19 @@ def convert(db, core, mapping, inventory, *, user_ids=(), excluded=(),
                         f"{label}: no-flow target must have disableFlow=true")
         if flow:
             client["flow"] = flow
+        if route_map is not None:
+            granted = set()
+            for tag in mapped:
+                require(tag in route_map, f"{label}: missing route map for an allowed inbound")
+                selected_routes = restricted.get(uid, {}).get(tag)
+                if selected_routes is None:
+                    selected_routes = list(route_map[tag])
+                require(set(selected_routes) <= route_map[tag].keys(),
+                        f"{label}: source plan selects an unmapped concrete route")
+                for key in selected_routes:
+                    granted.update(route_map[tag][key])
+            client["clientHostRuleIds"] = sorted(granted)
+            client["strictHostBindings"] = True
         require(email not in seen_emails and sub_id not in seen_subs,
                 f"{label}: duplicate identity or subscription token")
         seen_emails.add(email)
@@ -315,11 +361,17 @@ def export_bundle(args):
     core, core_hash = read_json(args.core, "source core")
     mapping, map_hash = read_json(args.inbound_map, "inbound map")
     inventory, inventory_hash = read_json(args.target_inbounds, "target inventory")
+    route_map, target_hosts = None, None
+    extra_sources = {}
+    if args.route_map or args.target_hosts:
+        require(args.route_map and args.target_hosts, "--route-map and --target-hosts must be used together")
+        route_map, extra_sources["route_map_sha256"] = read_json(args.route_map, "route map")
+        target_hosts, extra_sources["target_hosts_sha256"] = read_json(args.target_hosts, "target host inventory")
     with snapshot(args.database) as (db, db_hash):
         clients, identities = convert(db, core, mapping, inventory, user_ids=args.user_id,
                                       excluded=args.excluded_inbound_tag,
                                       allow_unmapped=args.allow_unmapped_inbounds,
-                                      traffic_policy=args.traffic_policy)
+                                      traffic_policy=args.traffic_policy, route_map=route_map, target_hosts=target_hosts)
         all_ids = {row[0] for row in db.execute("SELECT id FROM users")}
     members = {"clients.json": encode(clients), "identities.json": encode(identities),
                "import-request.json": encode({"data": json.dumps(clients, ensure_ascii=False)})}
@@ -339,8 +391,9 @@ def export_bundle(args):
                 "traffic_policy": args.traffic_policy or "zero-usage-only",
                 "historical_traffic_direction_known": False,
                 "reset_count_is_synthetic_zero": True,
+                "host_bindings_projected": route_map is not None,
                 "sources": {"database_sha256": db_hash, "core_sha256": core_hash,
-                            "inbound_map_sha256": map_hash, "target_inbounds_sha256": inventory_hash},
+                            "inbound_map_sha256": map_hash, "target_inbounds_sha256": inventory_hash, **extra_sources},
                 "excluded_source_tags": sorted(set(args.excluded_inbound_tag)),
                 "allocations": allocations,
                 "not_migrated": ["portal_and_commerce", "mgma_subscription_gateway",
@@ -404,6 +457,8 @@ def main(argv=None):
     export.add_argument("--allow-unmapped-inbounds", action="store_true")
     export.add_argument("--traffic-policy", choices=["preserve-total-as-download"])
     export.add_argument("--ipv6-allocation", action="append", default=[], metavar="NAME=SNAPSHOT")
+    export.add_argument("--route-map", help="source concrete route SHA256 -> native host IDs, grouped by inbound")
+    export.add_argument("--target-hosts", help="native /hosts/raw inventory for grant validation")
     verify = commands.add_parser("verify", help="verify bundle checksums and request consistency")
     verify.add_argument("directory")
     args = parser.parse_args(argv)
