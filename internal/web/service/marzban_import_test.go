@@ -17,12 +17,18 @@ func TestMarzbanStage1NativeImport(t *testing.T) {
 	setupBulkDB(t)
 	db := database.GetDB()
 	for _, inbound := range []model.Inbound{
-		{Id: 101, Tag: "test-migration-vision", Enable: true, Port: 26101, Protocol: model.VLESS,
-			Settings: `{"clients":[]}`, StreamSettings: `{"network":"tcp","security":"reality"}`},
-		{Id: 102, Tag: "test-migration-xhttp", Enable: true, Port: 26102, Protocol: model.VLESS,
-			Settings: `{"clients":[]}`, StreamSettings: `{"network":"xhttp","security":"tls"}`, DisableFlow: true},
-		{Id: 103, Tag: "test-migration-hy2", Enable: true, Port: 26103, Protocol: model.Hysteria,
-			Settings: `{"clients":[]}`, StreamSettings: `{"network":"hysteria","security":"tls"}`},
+		{
+			Id: 101, Tag: "test-migration-vision", Enable: true, Port: 26101, Protocol: model.VLESS,
+			Settings: `{"clients":[]}`, StreamSettings: `{"network":"tcp","security":"reality"}`,
+		},
+		{
+			Id: 102, Tag: "test-migration-xhttp", Enable: true, Port: 26102, Protocol: model.VLESS,
+			Settings: `{"clients":[]}`, StreamSettings: `{"network":"xhttp","security":"tls"}`, DisableFlow: true,
+		},
+		{
+			Id: 103, Tag: "test-migration-hy2", Enable: true, Port: 26103, Protocol: model.Hysteria,
+			Settings: `{"clients":[]}`, StreamSettings: `{"network":"hysteria","security":"tls"}`,
+		},
 	} {
 		if err := db.Create(&inbound).Error; err != nil {
 			t.Fatal(err)
