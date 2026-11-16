@@ -958,6 +958,8 @@ type Client struct {
 	ClientHostRuleIds []int `json:"clientHostRuleIds,omitempty" example:"[1,2]"`
 	// Migration-only closed allowlist. Created once; ordinary edits cannot downgrade it.
 	StrictHostBindings bool `json:"strictHostBindings,omitempty"`
+	// Propagated to child nodes; a missing local grant must fail closed.
+	RequireMGMA bool `json:"requireMGMA,omitempty"`
 	// AllowedIPsByInbound optionally overrides AllowedIPs on a per-inbound
 	// basis, keyed by inbound id. Lets one identity attached to both
 	// WireGuard and AmneziaWG carry two genuinely different addresses in a
@@ -1003,6 +1005,7 @@ type ClientRecord struct {
 	Reverse            string         `json:"reverse" gorm:"column:reverse"`
 	ClientHostRuleIds  []int          `json:"clientHostRuleIds,omitempty" gorm:"serializer:json;column:client_host_rule_ids" example:"[1,2]"`
 	StrictHostBindings bool           `json:"strictHostBindings" gorm:"column:strict_host_bindings;default:false;<-:create"`
+	RequireMGMA        bool           `json:"requireMGMA" gorm:"column:require_mgma;default:false"`
 	PrivateKey         string         `json:"privateKey" gorm:"column:wg_private_key"`
 	PublicKey          string         `json:"publicKey" gorm:"column:wg_public_key"`
 	AllowedIPs         string         `json:"allowedIPs" gorm:"column:wg_allowed_ips"`
@@ -1319,6 +1322,7 @@ func (c *Client) ToRecord() *ClientRecord {
 		Security:           c.Security,
 		ClientHostRuleIds:  CloneClientHostRuleIds(c.ClientHostRuleIds),
 		StrictHostBindings: c.StrictHostBindings,
+		RequireMGMA:        c.RequireMGMA,
 		LimitIP:            c.LimitIP,
 		TotalGB:            c.TotalGB,
 		ExpiryTime:         c.ExpiryTime,
@@ -1380,6 +1384,7 @@ func (r *ClientRecord) ToClient() *Client {
 		Security:           r.Security,
 		ClientHostRuleIds:  CloneClientHostRuleIds(r.ClientHostRuleIds),
 		StrictHostBindings: r.StrictHostBindings,
+		RequireMGMA:        r.RequireMGMA,
 		LimitIP:            r.LimitIP,
 		TotalGB:            r.TotalGB,
 		ExpiryTime:         r.ExpiryTime,
@@ -1524,6 +1529,7 @@ type SubBalancer struct {
 }
 
 func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientMergeConflict {
+	existing.RequireMGMA = existing.RequireMGMA || incoming.RequireMGMA
 	var conflicts []ClientMergeConflict
 	keep := func(field string, oldV, newV, kept any) {
 		conflicts = append(conflicts, ClientMergeConflict{Field: field, Old: oldV, New: newV, Kept: kept})

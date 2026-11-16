@@ -40,7 +40,7 @@ var contractExtraRoutes = map[string]bool{
 }
 
 func inContractScope(method, path string) bool {
-	return strings.HasPrefix(path, "/panel/api/") || contractExtraRoutes[method+" "+path]
+	return strings.HasPrefix(path, "/panel/api/") || strings.HasPrefix(path, "/api/portal/") || contractExtraRoutes[method+" "+path]
 }
 
 // newTestEngine builds the real panel router on a throwaway database.

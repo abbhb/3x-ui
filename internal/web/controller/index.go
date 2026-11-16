@@ -158,6 +158,7 @@ func (a *IndexController) login(c *gin.Context) {
 		logger.Warning("Unable to save session:", err)
 		return
 	}
+	c.Set("portal_auth_success", true)
 
 	jsonMsg(c, I18nWeb(c, "pages.login.toasts.successLogin"), nil)
 }

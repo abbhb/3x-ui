@@ -1,0 +1,64 @@
+.commerce-full {
+  width: 100%;
+}
+.commerce-stack {
+  display: grid;
+  gap: 24px;
+}
+.commerce-page {
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+}
+.commerce-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.commerce-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 24px;
+}
+.commerce-secret {
+  display: grid;
+  gap: 16px;
+  overflow-wrap: anywhere;
+}
+.commerce-page .ant-statistic-content,
+.commerce-page td {
+  font-variant-numeric: tabular-nums;
+}
+.commerce-page .ant-form {
+  max-width: 720px;
+}
+.commerce-portal {
+  min-height: 100dvh;
+  background: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+}
+.commerce-login {
+  max-width: 440px;
+  padding: 48px 16px;
+  margin: auto;
+}
+.commerce-page .ant-btn {
+  min-height: 40px;
+}
+.commerce-page .ant-tabs-tab-btn:focus-visible,
+.commerce-page a:focus-visible {
+  outline: 3px solid var(--ant-color-primary);
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .commerce-page {
+    padding: 16px;
+  }
+  .commerce-page .ant-btn {
+    min-height: 44px;
+  }
+}

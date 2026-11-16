@@ -257,6 +257,8 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	controller.SetDistFS(distFS)
 
 	g := engine.Group(basePath)
+	g.Use(controller.PortalSecurityGuard())
+	controller.NewPortalController(g)
 	g.GET("/manifest.webmanifest", controller.ServePWAManifest)
 	g.GET("/pwa-register.js", controller.ServePWARegister)
 	g.GET("/service-worker.js", controller.ServePWAServiceWorker)
@@ -367,6 +369,11 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceOutboundSub, job.NewOutboundSubscriptionJob())
 
 	_, _ = s.cron.AddJob(cadenceReapOrphans, job.NewReapSyncOrphansJob())
+	_, _ = s.cron.AddFunc("@every 10s", func() {
+		if err := (&service.CommerceService{}).Tick(); err != nil {
+			logger.Warning("portal reconciliation is pending")
+		}
+	})
 
 	// Warm permanent routing URLs immediately and refresh them outside the
 	// latency-sensitive subscription request path.
@@ -602,7 +609,12 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		}
 	}
 	listenAddr := net.JoinHostPort(listen, strconv.Itoa(port))
-	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", listenAddr)
+	var listener net.Listener
+	if socketPath := os.Getenv("XUI_WEB_UNIX_SOCKET"); socketPath != "" {
+		listener, err = network.ListenPrivateUnix(socketPath)
+	} else {
+		listener, err = (&net.ListenConfig{}).Listen(context.Background(), "tcp", listenAddr)
+	}
 	if err != nil {
 		return err
 	}

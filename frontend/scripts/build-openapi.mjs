@@ -19,6 +19,7 @@ const outPath = join(__dirname, '..', 'public', 'openapi.json');
 const PANEL_VERSION = process.env.X_UI_VERSION || '3.x';
 
 const SECURITY_SCHEMES = {
+  portalBearer: {type:'http',scheme:'bearer',bearerFormat:'JWT',description:'Customer portal session, never a panel administrator token.'},
   bearerAuth: {
     type: 'http',
     scheme: 'bearer',

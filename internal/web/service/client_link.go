@@ -68,6 +68,7 @@ func applyClientRecordMerge(row *model.ClientRecord, incoming *model.ClientRecor
 	if incoming.ForwardedPorts != "" {
 		row.ForwardedPorts = incoming.ForwardedPorts
 	}
+	row.RequireMGMA = row.RequireMGMA || incoming.RequireMGMA
 	row.SubID = incoming.SubID
 	row.LimitIP = incoming.LimitIP
 	row.TotalGB = incoming.TotalGB

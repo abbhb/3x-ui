@@ -36,7 +36,7 @@ import (
 // DumpSQLite / RestoreSQLite are schema-introspective (they read sqlite_master)
 // so they do not need manual updates.
 func migrationModels() []any {
-	return []any{
+	return append([]any{
 		&model.User{},
 		&model.Setting{},
 		&model.HistoryOfSeeders{},
@@ -64,7 +64,7 @@ func migrationModels() []any {
 		&model.OutboundSubscription{},
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
-	}
+	}, model.PortalModels()...)
 }
 
 // MigrateData copies every row from the configured SQLite file at srcPath into

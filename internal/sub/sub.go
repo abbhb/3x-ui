@@ -424,7 +424,12 @@ func (s *Server) Start() (err error) {
 	}
 
 	listenAddr := net.JoinHostPort(listen, strconv.Itoa(port))
-	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", listenAddr)
+	var listener net.Listener
+	if socketPath := os.Getenv("XUI_SUB_UNIX_SOCKET"); socketPath != "" {
+		listener, err = network.ListenPrivateUnix(socketPath)
+	} else {
+		listener, err = (&net.ListenConfig{}).Listen(context.Background(), "tcp", listenAddr)
+	}
 	if err != nil {
 		return err
 	}

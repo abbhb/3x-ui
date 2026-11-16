@@ -12,6 +12,7 @@ on:
       - "install.sh"
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
+      - "tools/marzban_portal_export.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
@@ -30,6 +31,7 @@ on:
       - "install.sh"
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
+      - "tools/marzban_portal_export.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
@@ -124,6 +126,12 @@ jobs:
             echo "expected at least 5 passing durable-first tests, got $passed" >&2
             exit 1
           fi
+
+      - name: PostgreSQL portal transaction isolation and commit rollback
+        run: |
+          set -o pipefail
+          go test ./internal/web/service -run '^TestPortalPostgres(Transactions|OfflineImport)$' -count=1 -v | tee /tmp/postgres-portal.log
+          test "$(grep -c -- '^--- PASS' /tmp/postgres-portal.log || true)" -eq 2
 
       - name: PostgreSQL batched stats identities
         run: |

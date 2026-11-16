@@ -1814,6 +1814,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "publicKey": {
         "type": "string"
       },
+      "requireMGMA": {
+        "description": "Propagated to child nodes; a missing local grant must fail closed.",
+        "type": "boolean"
+      },
       "reset": {
         "description": "Reset period in days",
         "type": "integer"
@@ -2057,6 +2061,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "publicKey": {
         "type": "string"
       },
+      "requireMGMA": {
+        "type": "boolean"
+      },
       "reset": {
         "type": "integer"
       },
@@ -2124,6 +2131,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "preSharedKey",
       "privateKey",
       "publicKey",
+      "requireMGMA",
       "reset",
       "resetDay",
       "resetMax",
@@ -3735,6 +3743,32 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "MGMAIssued": {
+    "properties": {
+      "expires_at": {
+        "format": "date-time",
+        "nullable": true,
+        "type": "string"
+      },
+      "issued_at": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "ttl_seconds": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "issued_at",
+      "ttl_seconds",
+      "url"
+    ],
+    "type": "object"
+  },
   "MLDSA65Response": {
     "properties": {
       "seed": {
@@ -4572,6 +4606,838 @@ export const SCHEMAS: Record<string, unknown> = {
       "mark_prefix",
       "namespace",
       "prefix"
+    ],
+    "type": "object"
+  },
+  "PortalAccountView": {
+    "properties": {
+      "client_id": {
+        "nullable": true,
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "is_active": {
+        "type": "boolean"
+      },
+      "runtime_pending": {
+        "type": "boolean"
+      },
+      "subscription": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PortalSubscription"
+          }
+        ],
+        "nullable": true
+      },
+      "usage": {
+        "$ref": "#/components/schemas/PortalUsage"
+      },
+      "user_id": {
+        "format": "int64",
+        "nullable": true,
+        "type": "integer"
+      },
+      "username": {
+        "type": "string"
+      },
+      "wallet_balance_minor": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "created_at",
+      "id",
+      "is_active",
+      "runtime_pending",
+      "usage",
+      "username",
+      "wallet_balance_minor"
+    ],
+    "type": "object"
+  },
+  "PortalIPBlock": {
+    "properties": {
+      "actor_admin": {
+        "type": "string"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "expires_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "network": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "revoked_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "actor_admin",
+      "created_at",
+      "expires_at",
+      "id",
+      "network",
+      "reason",
+      "revoked_at",
+      "source"
+    ],
+    "type": "object"
+  },
+  "PortalInvitation": {
+    "properties": {
+      "actor_admin": {
+        "type": "string"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "disabled_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "expires_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "max_uses": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "note": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "starts_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "use_count": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "actor_admin",
+      "created_at",
+      "disabled_at",
+      "expires_at",
+      "id",
+      "max_uses",
+      "note",
+      "prefix",
+      "starts_at",
+      "use_count"
+    ],
+    "type": "object"
+  },
+  "PortalInvitationCreated": {
+    "properties": {
+      "actor_admin": {
+        "type": "string"
+      },
+      "code": {
+        "type": "string"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "disabled_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "expires_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "max_uses": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "note": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "starts_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "use_count": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "actor_admin",
+      "code",
+      "created_at",
+      "disabled_at",
+      "expires_at",
+      "id",
+      "max_uses",
+      "note",
+      "prefix",
+      "starts_at",
+      "use_count"
+    ],
+    "type": "object"
+  },
+  "PortalInvitationUse": {
+    "properties": {
+      "account_id": {
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "invitation_id": {
+        "type": "integer"
+      },
+      "source_ip": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "account_id",
+      "created_at",
+      "id",
+      "invitation_id",
+      "source_ip"
+    ],
+    "type": "object"
+  },
+  "PortalMutation": {
+    "properties": {
+      "actor": {
+        "type": "string"
+      },
+      "amount_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "days": {
+        "type": "integer"
+      },
+      "kind": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "plan_id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "actor",
+      "amount_minor",
+      "days",
+      "kind",
+      "note",
+      "plan_id"
+    ],
+    "type": "object"
+  },
+  "PortalMutationResult": {
+    "properties": {
+      "client_id": {
+        "nullable": true,
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "is_active": {
+        "type": "boolean"
+      },
+      "purchase_id": {
+        "type": "integer"
+      },
+      "replayed": {
+        "type": "boolean"
+      },
+      "runtime_change_id": {
+        "type": "integer"
+      },
+      "runtime_pending": {
+        "type": "boolean"
+      },
+      "subscription": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PortalSubscription"
+          }
+        ],
+        "nullable": true
+      },
+      "usage": {
+        "$ref": "#/components/schemas/PortalUsage"
+      },
+      "user_id": {
+        "format": "int64",
+        "nullable": true,
+        "type": "integer"
+      },
+      "username": {
+        "type": "string"
+      },
+      "wallet_balance_minor": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "created_at",
+      "id",
+      "is_active",
+      "purchase_id",
+      "replayed",
+      "runtime_change_id",
+      "runtime_pending",
+      "usage",
+      "username",
+      "wallet_balance_minor"
+    ],
+    "type": "object"
+  },
+  "PortalNextPlan": {
+    "properties": {
+      "add_remaining_traffic": {
+        "type": "boolean"
+      },
+      "client_id": {
+        "type": "integer"
+      },
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "expire": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "fire_on_either": {
+        "type": "boolean"
+      },
+      "last_error": {
+        "type": "string"
+      },
+      "paused": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "add_remaining_traffic",
+      "client_id",
+      "data_limit",
+      "expire",
+      "fire_on_either",
+      "last_error",
+      "paused"
+    ],
+    "type": "object"
+  },
+  "PortalPlan": {
+    "properties": {
+      "compatibility_pending": {
+        "type": "boolean"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "description": {
+        "type": "string"
+      },
+      "duration_days": {
+        "type": "integer"
+      },
+      "host_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "inbound_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "is_visible": {
+        "type": "boolean"
+      },
+      "name": {
+        "type": "string"
+      },
+      "price_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "updated_at": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "compatibility_pending",
+      "created_at",
+      "currency",
+      "data_limit",
+      "description",
+      "duration_days",
+      "host_ids",
+      "id",
+      "inbound_ids",
+      "is_visible",
+      "name",
+      "price_minor",
+      "updated_at"
+    ],
+    "type": "object"
+  },
+  "PortalPlanSnapshot": {
+    "description": "Financial terms are historical; current route grants can follow plan edits.",
+    "properties": {
+      "currency": {
+        "type": "string"
+      },
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "duration_days": {
+        "type": "integer"
+      },
+      "host_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "inbound_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "plan_id": {
+        "type": "integer"
+      },
+      "plan_name": {
+        "type": "string"
+      },
+      "price_minor": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "currency",
+      "data_limit",
+      "duration_days",
+      "host_ids",
+      "inbound_ids",
+      "plan_id",
+      "plan_name",
+      "price_minor"
+    ],
+    "type": "object"
+  },
+  "PortalPurchase": {
+    "properties": {
+      "account_id": {
+        "type": "integer"
+      },
+      "actor_admin": {
+        "type": "string"
+      },
+      "amount_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "balance_after_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "balance_before_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "duration_days": {
+        "type": "integer"
+      },
+      "effective_expires_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "host_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "inbound_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "kind": {
+        "type": "string"
+      },
+      "plan_id": {
+        "type": "integer"
+      },
+      "plan_name": {
+        "type": "string"
+      },
+      "price_minor": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "account_id",
+      "actor_admin",
+      "amount_minor",
+      "balance_after_minor",
+      "balance_before_minor",
+      "created_at",
+      "currency",
+      "data_limit",
+      "duration_days",
+      "effective_expires_at",
+      "host_ids",
+      "id",
+      "inbound_ids",
+      "kind",
+      "plan_id",
+      "plan_name",
+      "price_minor"
+    ],
+    "type": "object"
+  },
+  "PortalRuntimeChange": {
+    "description": "Runtime work is committed with the money/entitlement change, then retried.",
+    "properties": {
+      "account_id": {
+        "type": "integer"
+      },
+      "client_id": {
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "finished_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "last_attempt_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "last_error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "account_id",
+      "client_id",
+      "created_at",
+      "finished_at",
+      "id",
+      "last_attempt_at",
+      "last_error"
+    ],
+    "type": "object"
+  },
+  "PortalSettings": {
+    "properties": {
+      "auto_block_enabled": {
+        "type": "boolean"
+      },
+      "auto_block_seconds": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "custom_cidrs": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "login_failure_limit": {
+        "type": "integer"
+      },
+      "login_window_seconds": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "mode": {
+        "type": "string"
+      },
+      "public_url": {
+        "type": "string"
+      },
+      "registration_failure_limit": {
+        "type": "integer"
+      },
+      "registration_window_seconds": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "single_use": {
+        "type": "boolean"
+      },
+      "source_mode": {
+        "type": "string"
+      },
+      "ttl_seconds": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "auto_block_enabled",
+      "auto_block_seconds",
+      "custom_cidrs",
+      "enabled",
+      "login_failure_limit",
+      "login_window_seconds",
+      "mode",
+      "public_url",
+      "registration_failure_limit",
+      "registration_window_seconds",
+      "single_use",
+      "source_mode",
+      "ttl_seconds"
+    ],
+    "type": "object"
+  },
+  "PortalSubscription": {
+    "properties": {
+      "account_id": {
+        "type": "integer"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "disabled_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "duration_days": {
+        "type": "integer"
+      },
+      "expires_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "host_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "inbound_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "plan_id": {
+        "type": "integer"
+      },
+      "plan_name": {
+        "type": "string"
+      },
+      "price_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "price_paid_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "purchased_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "starts_at": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "account_id",
+      "currency",
+      "data_limit",
+      "disabled_at",
+      "duration_days",
+      "expires_at",
+      "host_ids",
+      "inbound_ids",
+      "plan_id",
+      "plan_name",
+      "price_minor",
+      "price_paid_minor",
+      "purchased_at",
+      "starts_at"
+    ],
+    "type": "object"
+  },
+  "PortalUsage": {
+    "properties": {
+      "data_limit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "expire": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "lifetime_used_traffic": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "status": {
+        "type": "string"
+      },
+      "used_traffic": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "data_limit",
+      "expire",
+      "lifetime_used_traffic",
+      "status",
+      "used_traffic"
+    ],
+    "type": "object"
+  },
+  "PortalWalletTransaction": {
+    "properties": {
+      "account_id": {
+        "type": "integer"
+      },
+      "actor_admin": {
+        "type": "string"
+      },
+      "amount_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "balance_after_minor": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "kind": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "purchase_id": {
+        "nullable": true,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "account_id",
+      "actor_admin",
+      "amount_minor",
+      "balance_after_minor",
+      "created_at",
+      "id",
+      "kind",
+      "note"
     ],
     "type": "object"
   },

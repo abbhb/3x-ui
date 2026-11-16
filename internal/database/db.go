@@ -62,7 +62,7 @@ func Dialect() string {
 const sqliteBackupDirPrefix = ".x-ui-backup-"
 
 func allModels() []any {
-	return []any{
+	return append([]any{
 		&model.User{},
 		&model.Inbound{},
 		&model.OutboundTraffics{},
@@ -90,7 +90,7 @@ func allModels() []any {
 		&model.OutboundSubscription{},
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
-	}
+	}, model.PortalModels()...)
 }
 
 func migrateClientTrafficLastSubFetchColumn() error {

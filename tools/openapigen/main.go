@@ -43,6 +43,7 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"PortalPlan", "PortalPlanSnapshot", "PortalSubscription", "PortalPurchase", "PortalWalletTransaction", "PortalInvitation", "PortalInvitationUse", "PortalIPBlock", "PortalSettings", "PortalNextPlan", "PortalRuntimeChange",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -124,6 +125,7 @@ func run(root, outDir string) error {
 				"AmneziaWGLogs",
 				"PeerActivity",
 				"HwidSlotStatus",
+				"PortalUsage", "PortalAccountView", "PortalMutation", "PortalMutationResult", "MGMAIssued", "PortalInvitationCreated",
 			),
 		},
 		{

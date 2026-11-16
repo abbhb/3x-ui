@@ -46,6 +46,7 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 	if after, ok := strings.CutPrefix(c.GetHeader("Authorization"), "Bearer "); ok {
 		if row, matched := a.apiTokenService.MatchToken(after); matched {
 			matchedScope = row.Scope
+			c.Set("api_token_name", row.Name)
 		}
 	}
 	// Verified mTLS keeps its historical node-sync identity. Only an explicit
@@ -206,6 +207,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	api.GET("/openapi.json", ServeOpenAPISpec)
 	NewServiceHostController(api)
+	NewCommerceController(api)
 
 	// Inbounds API
 	inbounds := api.Group("/inbounds")

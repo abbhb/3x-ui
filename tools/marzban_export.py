@@ -211,7 +211,7 @@ def route_bindings(route_map, hosts, mapping):
 
 
 def convert(db, core, mapping, inventory, *, user_ids=(), excluded=(),
-            allow_unmapped=False, traffic_policy=None, now=None, route_map=None, target_hosts=None):
+            allow_unmapped=False, traffic_policy=None, now=None, route_map=None, target_hosts=None, allow_next_plans=False):
     """Return native payloads plus private identity/provenance records."""
     tables = table_names(db)
     require({"users", "proxies", "exclude_inbounds_association", "next_plans"} <= tables,
@@ -235,7 +235,7 @@ def convert(db, core, mapping, inventory, *, user_ids=(), excluded=(),
         label = f"user ID {uid}"
         require(uid not in restricted or route_map is not None,
                 f"{label}: host-specific plan grants require host-rule migration")
-        require(uid not in pending, f"{label}: pending next plan is unsupported")
+        require(allow_next_plans or uid not in pending, f"{label}: pending next plan is unsupported")
         status = user["status"].lower()
         require(status in ("active", "disabled", "limited", "expired"),
                 f"{label}: unsupported lifecycle status (including on_hold)")
