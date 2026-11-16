@@ -636,6 +636,20 @@ export const EXAMPLES: Record<string, unknown> = {
     "onlineCount": 1,
     "total": 2000
   },
+  "EntryChoice": {
+    "id": 0,
+    "name": "",
+    "proxy_type": "",
+    "source_id": 0,
+    "source_name": ""
+  },
+  "ExternalSelection": {
+    "mode": "",
+    "node_ids": [
+      0
+    ],
+    "source_id": 0
+  },
   "FallbackParentInfo": {
     "masterId": 0,
     "path": ""
@@ -744,8 +758,17 @@ export const EXAMPLES: Record<string, unknown> = {
       ""
     ],
     "updatedAt": 0,
+    "useSniAsHost": false,
     "verifyPeerCertByName": "",
     "vlessRoute": "443"
+  },
+  "HostChoice": {
+    "address": "",
+    "disabled": false,
+    "host_id": 0,
+    "inbound_id": 0,
+    "name": "",
+    "signature": ""
   },
   "HostEndpoint": {
     "address": "",
@@ -805,8 +828,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "tags": [
       ""
     ],
+    "useSniAsHost": false,
     "verifyPeerCertByName": "",
     "vlessRoute": ""
+  },
+  "HostInput": {
+    "cascade_mode": "",
+    "clear_entry": false,
+    "client_stream": "",
+    "entry_node_id": null,
+    "entry_yaml": "",
+    "mihomo_only": null,
+    "revision": 0
   },
   "HostInstanceReport": {
     "error": "",
@@ -1309,15 +1342,29 @@ export const EXAMPLES: Record<string, unknown> = {
     "paused": false
   },
   "PortalPlan": {
+    "auto_host_inbound_ids": [
+      0
+    ],
     "compatibility_pending": false,
     "created_at": 0,
     "currency": "",
     "data_limit": 0,
     "description": "",
     "duration_days": 0,
+    "external_selections": [
+      {
+        "mode": "",
+        "node_ids": [
+          0
+        ],
+        "source_id": 0
+      }
+    ],
+    "group_members": {},
     "host_ids": [
       0
     ],
+    "host_signatures": {},
     "id": 0,
     "inbound_ids": [
       0
@@ -1652,6 +1699,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "key": "",
     "value": ""
   },
+  "SourceInput": {
+    "enabled": false,
+    "group_name": "",
+    "name": "",
+    "refresh_interval_minutes": 0,
+    "url": ""
+  },
   "Sponsor": {
     "enable": true,
     "from": "2026-10-01T00:00:00Z",
@@ -1715,6 +1769,75 @@ export const EXAMPLES: Record<string, unknown> = {
     "sortOrder": 1,
     "strategy": "random",
     "updatedAt": 1710000000000
+  },
+  "SubscriptionCredentialInput": {
+    "url": ""
+  },
+  "SubscriptionHost": {
+    "cascade_mode": "",
+    "client_stream": "",
+    "entry_configured": false,
+    "entry_node_id": null,
+    "host_id": 0,
+    "mihomo_only": false,
+    "revision": 0
+  },
+  "SubscriptionHostView": {
+    "address": "",
+    "host_id": 0,
+    "inbound_id": 0,
+    "network": "",
+    "path": "",
+    "remark": "",
+    "settings": {
+      "cascade_mode": "",
+      "client_stream": "",
+      "entry_configured": false,
+      "entry_node_id": null,
+      "host_id": 0,
+      "mihomo_only": false,
+      "revision": 0
+    }
+  },
+  "SubscriptionNode": {
+    "id": 0,
+    "is_active": false,
+    "name": "",
+    "position": 0,
+    "proxy_type": "",
+    "source_id": 0
+  },
+  "SubscriptionPolicy": {
+    "document": "",
+    "enabled": false,
+    "group_order": [
+      ""
+    ],
+    "primary_group": "",
+    "revision": 0,
+    "secure_dns": false
+  },
+  "SubscriptionSnapshotInput": {
+    "yaml": ""
+  },
+  "SubscriptionSource": {
+    "created_at": 0,
+    "credential_configured": false,
+    "enabled": false,
+    "group_name": "",
+    "id": 0,
+    "last_attempt_at": 0,
+    "last_error_code": "",
+    "last_success_at": 0,
+    "name": "",
+    "next_refresh_at": 0,
+    "node_count": 0,
+    "owner_account_id": null,
+    "owner_username": "",
+    "refresh_interval_minutes": 0,
+    "skipped_node_count": 0,
+    "status": "",
+    "updated_at": 0
   },
   "TgBotCapabilities": {
     "groupPrivacy": false,

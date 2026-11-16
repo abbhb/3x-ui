@@ -31,6 +31,7 @@ export const HostFormSchema = z.object({
   snis: z.array(z.string()).default([]),
   sniSharedRandom: z.boolean().default(false),
   hostHeader: z.string().default(''),
+  useSniAsHost: z.boolean().default(false),
   path: z.string().default(''),
   alpn: z.array(AlpnSchema).default([]),
   fingerprint: z.preprocess(
@@ -90,6 +91,7 @@ export const HostRecordSchema = z
     snis: z.array(z.string()).nullish(),
     sniSharedRandom: z.boolean().optional(),
     hostHeader: z.string().optional(),
+    useSniAsHost: z.boolean().optional(),
     path: z.string().optional(),
     alpn: z.array(z.string()).nullish(),
     fingerprint: z.string().optional(),

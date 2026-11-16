@@ -31,7 +31,7 @@ func NewCommerceController(api *gin.RouterGroup) {
 	group := api.Group("/commerce")
 	group.Use(func(c *gin.Context) {
 		c.Header("Cache-Control", "private, no-store")
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8<<20)
 	})
 	group.GET("/settings", func(c *gin.Context) {
 		p, err := svc.Settings()
@@ -173,4 +173,5 @@ func NewCommerceController(api *gin.RouterGroup) {
 		portalAdminRows[model.PortalRuntimeChange](c, database.GetDB().Order("id DESC").Limit(100))
 	})
 	group.POST("/runtime/retry", func(c *gin.Context) { portalReply(c, nil, svc.Tick(), true) })
+	NewSubscriptionAdminController(group)
 }

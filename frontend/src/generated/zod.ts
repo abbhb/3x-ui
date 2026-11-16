@@ -626,6 +626,22 @@ export const ClientsSummarySchema = z.object({
 });
 export type ClientsSummary = z.infer<typeof ClientsSummarySchema>;
 
+export const EntryChoiceSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  proxy_type: z.string(),
+  source_id: z.number().int(),
+  source_name: z.string(),
+});
+export type EntryChoice = z.infer<typeof EntryChoiceSchema>;
+
+export const ExternalSelectionSchema = z.object({
+  mode: z.string(),
+  node_ids: z.array(z.number().int()),
+  source_id: z.number().int(),
+});
+export type ExternalSelection = z.infer<typeof ExternalSelectionSchema>;
+
 export const FallbackParentInfoSchema = z.object({
   masterId: z.number().int(),
   path: z.string().optional(),
@@ -723,10 +739,21 @@ export const HostSchema = z.object({
   sortOrder: z.number().int(),
   tags: z.array(z.string()),
   updatedAt: z.number().int(),
+  useSniAsHost: z.boolean(),
   verifyPeerCertByName: z.string(),
   vlessRoute: z.string(),
 });
 export type Host = z.infer<typeof HostSchema>;
+
+export const HostChoiceSchema = z.object({
+  address: z.string(),
+  disabled: z.boolean(),
+  host_id: z.number().int(),
+  inbound_id: z.number().int(),
+  name: z.string(),
+  signature: z.string(),
+});
+export type HostChoice = z.infer<typeof HostChoiceSchema>;
 
 export const HostEndpointSchema = z.object({
   address: z.string(),
@@ -772,10 +799,22 @@ export const HostGroupSchema = z.object({
   sockoptParams: z.string(),
   sortOrder: z.number().int(),
   tags: z.array(z.string()),
+  useSniAsHost: z.boolean(),
   verifyPeerCertByName: z.string(),
   vlessRoute: z.string(),
 });
 export type HostGroup = z.infer<typeof HostGroupSchema>;
+
+export const HostInputSchema = z.object({
+  cascade_mode: z.string(),
+  clear_entry: z.boolean(),
+  client_stream: z.string(),
+  entry_node_id: z.number().int().nullable().optional(),
+  entry_yaml: z.string().optional(),
+  mihomo_only: z.boolean().nullable().optional(),
+  revision: z.number().int(),
+});
+export type HostInput = z.infer<typeof HostInputSchema>;
 
 export const HostInstanceReportSchema = z.object({
   error: z.string().optional(),
@@ -1235,13 +1274,17 @@ export const PortalNextPlanSchema = z.object({
 export type PortalNextPlan = z.infer<typeof PortalNextPlanSchema>;
 
 export const PortalPlanSchema = z.object({
+  auto_host_inbound_ids: z.array(z.number().int()),
   compatibility_pending: z.boolean(),
   created_at: z.number().int(),
   currency: z.string(),
   data_limit: z.number().int(),
   description: z.string(),
   duration_days: z.number().int(),
+  external_selections: z.array(z.lazy(() => ExternalSelectionSchema)),
+  group_members: z.record(z.string(), z.array(z.string())),
   host_ids: z.array(z.number().int()),
+  host_signatures: z.record(z.string(), z.string()),
   id: z.number().int(),
   inbound_ids: z.array(z.number().int()),
   is_visible: z.boolean(),
@@ -1508,6 +1551,15 @@ export const SettingSchema = z.object({
 });
 export type Setting = z.infer<typeof SettingSchema>;
 
+export const SourceInputSchema = z.object({
+  enabled: z.boolean(),
+  group_name: z.string(),
+  name: z.string(),
+  refresh_interval_minutes: z.number().int(),
+  url: z.string().optional(),
+});
+export type SourceInput = z.infer<typeof SourceInputSchema>;
+
 export const SponsorSchema = z.object({
   enable: z.boolean().nullable().optional(),
   from: z.string().nullable().optional(),
@@ -1552,6 +1604,79 @@ export const SubBalancerSchema = z.object({
   updatedAt: z.number().int(),
 });
 export type SubBalancer = z.infer<typeof SubBalancerSchema>;
+
+export const SubscriptionCredentialInputSchema = z.object({
+  url: z.string(),
+});
+export type SubscriptionCredentialInput = z.infer<typeof SubscriptionCredentialInputSchema>;
+
+export const SubscriptionHostSchema = z.object({
+  cascade_mode: z.string(),
+  client_stream: z.string(),
+  entry_configured: z.boolean(),
+  entry_node_id: z.number().int().nullable().optional(),
+  host_id: z.number().int(),
+  mihomo_only: z.boolean(),
+  revision: z.number().int(),
+});
+export type SubscriptionHost = z.infer<typeof SubscriptionHostSchema>;
+
+export const SubscriptionHostViewSchema = z.object({
+  address: z.string(),
+  host_id: z.number().int(),
+  inbound_id: z.number().int(),
+  network: z.string(),
+  path: z.string(),
+  remark: z.string(),
+  settings: z.lazy(() => SubscriptionHostSchema),
+});
+export type SubscriptionHostView = z.infer<typeof SubscriptionHostViewSchema>;
+
+export const SubscriptionNodeSchema = z.object({
+  id: z.number().int(),
+  is_active: z.boolean(),
+  name: z.string(),
+  position: z.number().int(),
+  proxy_type: z.string(),
+  source_id: z.number().int(),
+});
+export type SubscriptionNode = z.infer<typeof SubscriptionNodeSchema>;
+
+export const SubscriptionPolicySchema = z.object({
+  document: z.string(),
+  enabled: z.boolean(),
+  group_order: z.array(z.string()),
+  primary_group: z.string(),
+  revision: z.number().int(),
+  secure_dns: z.boolean(),
+});
+export type SubscriptionPolicy = z.infer<typeof SubscriptionPolicySchema>;
+
+export const SubscriptionSnapshotInputSchema = z.object({
+  yaml: z.string(),
+});
+export type SubscriptionSnapshotInput = z.infer<typeof SubscriptionSnapshotInputSchema>;
+
+export const SubscriptionSourceSchema = z.object({
+  created_at: z.number().int(),
+  credential_configured: z.boolean(),
+  enabled: z.boolean(),
+  group_name: z.string(),
+  id: z.number().int(),
+  last_attempt_at: z.number().int(),
+  last_error_code: z.string(),
+  last_success_at: z.number().int(),
+  name: z.string(),
+  next_refresh_at: z.number().int(),
+  node_count: z.number().int(),
+  owner_account_id: z.number().int().nullable().optional(),
+  owner_username: z.string(),
+  refresh_interval_minutes: z.number().int(),
+  skipped_node_count: z.number().int(),
+  status: z.string(),
+  updated_at: z.number().int(),
+});
+export type SubscriptionSource = z.infer<typeof SubscriptionSourceSchema>;
 
 export const TgBotCapabilitiesSchema = z.object({
   groupPrivacy: z.boolean(),

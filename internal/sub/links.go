@@ -37,6 +37,9 @@ func (p *LinkProvider) SubLinksForSubId(host, subId string) ([]string, error) {
 
 func (p *LinkProvider) LinksForClient(host string, inbound *model.Inbound, email string) []string {
 	svc := p.build(host)
+	if err := svc.loadSubscriptionHosts([]*model.Inbound{inbound}); err != nil {
+		return nil
+	}
 	svc.projectThroughFallbackMaster(inbound)
 	baseEps := svc.hostEndpoints(inbound, "raw")
 	if client, ok := svc.clientForLink(inbound, email); ok {
@@ -55,6 +58,9 @@ func (p *LinkProvider) LinksForClient(host string, inbound *model.Inbound, email
 
 func (p *LinkProvider) LinksForInbounds(host string, inbounds []*model.Inbound) []string {
 	svc := p.build(host)
+	if err := svc.loadSubscriptionHosts(inbounds); err != nil {
+		return nil
+	}
 	var out []string
 	for _, inbound := range inbounds {
 		out = append(out, svc.inboundLinks(inbound)...)

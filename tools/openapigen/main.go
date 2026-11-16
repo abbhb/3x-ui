@@ -21,6 +21,7 @@ func main() {
 
 func run(root, outDir string) error {
 	requests := []packageRequest{
+		{Path: resolveRel(root, "internal/subscriptioncompat"), StructAllow: setOf("SourceInput", "HostInput", "HostChoice", "EntryChoice")},
 		{
 			Path: resolveRel(root, "internal/database/model"),
 			StructAllow: setOf(
@@ -43,6 +44,7 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"ExternalSelection", "SubscriptionSource", "SubscriptionNode", "SubscriptionHost", "SubscriptionPolicy",
 				"PortalPlan", "PortalPlanSnapshot", "PortalSubscription", "PortalPurchase", "PortalWalletTransaction", "PortalInvitation", "PortalInvitationUse", "PortalIPBlock", "PortalSettings", "PortalNextPlan", "PortalRuntimeChange",
 			),
 			AliasAllow: setOf("Protocol"),
@@ -138,7 +140,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),
-			StructAllow: setOf("TgBotCapabilities"),
+			StructAllow: setOf("TgBotCapabilities", "SubscriptionHostView", "SubscriptionSnapshotInput", "SubscriptionCredentialInput"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),

@@ -2533,6 +2533,55 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "EntryChoice": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "proxy_type": {
+        "type": "string"
+      },
+      "source_id": {
+        "type": "integer"
+      },
+      "source_name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "proxy_type",
+      "source_id",
+      "source_name"
+    ],
+    "type": "object"
+  },
+  "ExternalSelection": {
+    "properties": {
+      "mode": {
+        "type": "string"
+      },
+      "node_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "source_id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "mode",
+      "node_ids",
+      "source_id"
+    ],
+    "type": "object"
+  },
   "FallbackParentInfo": {
     "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
     "properties": {
@@ -2878,6 +2927,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "useSniAsHost": {
+        "type": "boolean"
+      },
       "verifyPeerCertByName": {
         "type": "string"
       },
@@ -2922,8 +2974,40 @@ export const SCHEMAS: Record<string, unknown> = {
       "sortOrder",
       "tags",
       "updatedAt",
+      "useSniAsHost",
       "verifyPeerCertByName",
       "vlessRoute"
+    ],
+    "type": "object"
+  },
+  "HostChoice": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "host_id": {
+        "type": "integer"
+      },
+      "inbound_id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "signature": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "disabled",
+      "host_id",
+      "inbound_id",
+      "name",
+      "signature"
     ],
     "type": "object"
   },
@@ -3102,6 +3186,9 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "useSniAsHost": {
+        "type": "boolean"
+      },
       "verifyPeerCertByName": {
         "type": "string"
       },
@@ -3143,8 +3230,44 @@ export const SCHEMAS: Record<string, unknown> = {
       "sockoptParams",
       "sortOrder",
       "tags",
+      "useSniAsHost",
       "verifyPeerCertByName",
       "vlessRoute"
+    ],
+    "type": "object"
+  },
+  "HostInput": {
+    "properties": {
+      "cascade_mode": {
+        "type": "string"
+      },
+      "clear_entry": {
+        "type": "boolean"
+      },
+      "client_stream": {
+        "type": "string"
+      },
+      "entry_node_id": {
+        "nullable": true,
+        "type": "integer"
+      },
+      "entry_yaml": {
+        "type": "string"
+      },
+      "mihomo_only": {
+        "nullable": true,
+        "type": "boolean"
+      },
+      "revision": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "cascade_mode",
+      "clear_entry",
+      "client_stream",
+      "revision"
     ],
     "type": "object"
   },
@@ -4980,6 +5103,12 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "PortalPlan": {
     "properties": {
+      "auto_host_inbound_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "compatibility_pending": {
         "type": "boolean"
       },
@@ -5000,11 +5129,32 @@ export const SCHEMAS: Record<string, unknown> = {
       "duration_days": {
         "type": "integer"
       },
+      "external_selections": {
+        "items": {
+          "$ref": "#/components/schemas/ExternalSelection"
+        },
+        "type": "array"
+      },
+      "group_members": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
       "host_ids": {
         "items": {
           "type": "integer"
         },
         "type": "array"
+      },
+      "host_signatures": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
       },
       "id": {
         "type": "integer"
@@ -5031,13 +5181,17 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "auto_host_inbound_ids",
       "compatibility_pending",
       "created_at",
       "currency",
       "data_limit",
       "description",
       "duration_days",
+      "external_selections",
+      "group_members",
       "host_ids",
+      "host_signatures",
       "id",
       "inbound_ids",
       "is_visible",
@@ -6022,6 +6176,32 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "SourceInput": {
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "group_name": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "refresh_interval_minutes": {
+        "type": "integer"
+      },
+      "url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "enabled",
+      "group_name",
+      "name",
+      "refresh_interval_minutes"
+    ],
+    "type": "object"
+  },
   "Sponsor": {
     "description": "Sponsor is one paid placement published in the repo's sponsors.json.",
     "properties": {
@@ -6221,6 +6401,245 @@ export const SCHEMAS: Record<string, unknown> = {
       "sortOrder",
       "strategy",
       "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubscriptionCredentialInput": {
+    "properties": {
+      "url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "url"
+    ],
+    "type": "object"
+  },
+  "SubscriptionHost": {
+    "properties": {
+      "cascade_mode": {
+        "type": "string"
+      },
+      "client_stream": {
+        "type": "string"
+      },
+      "entry_configured": {
+        "type": "boolean"
+      },
+      "entry_node_id": {
+        "nullable": true,
+        "type": "integer"
+      },
+      "host_id": {
+        "type": "integer"
+      },
+      "mihomo_only": {
+        "type": "boolean"
+      },
+      "revision": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "cascade_mode",
+      "client_stream",
+      "entry_configured",
+      "host_id",
+      "mihomo_only",
+      "revision"
+    ],
+    "type": "object"
+  },
+  "SubscriptionHostView": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "host_id": {
+        "type": "integer"
+      },
+      "inbound_id": {
+        "type": "integer"
+      },
+      "network": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string"
+      },
+      "remark": {
+        "type": "string"
+      },
+      "settings": {
+        "$ref": "#/components/schemas/SubscriptionHost"
+      }
+    },
+    "required": [
+      "address",
+      "host_id",
+      "inbound_id",
+      "network",
+      "path",
+      "remark",
+      "settings"
+    ],
+    "type": "object"
+  },
+  "SubscriptionNode": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "is_active": {
+        "type": "boolean"
+      },
+      "name": {
+        "type": "string"
+      },
+      "position": {
+        "type": "integer"
+      },
+      "proxy_type": {
+        "type": "string"
+      },
+      "source_id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "is_active",
+      "name",
+      "position",
+      "proxy_type",
+      "source_id"
+    ],
+    "type": "object"
+  },
+  "SubscriptionPolicy": {
+    "properties": {
+      "document": {
+        "type": "string"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "group_order": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "primary_group": {
+        "type": "string"
+      },
+      "revision": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "secure_dns": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "document",
+      "enabled",
+      "group_order",
+      "primary_group",
+      "revision",
+      "secure_dns"
+    ],
+    "type": "object"
+  },
+  "SubscriptionSnapshotInput": {
+    "properties": {
+      "yaml": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "yaml"
+    ],
+    "type": "object"
+  },
+  "SubscriptionSource": {
+    "properties": {
+      "created_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "credential_configured": {
+        "type": "boolean"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "group_name": {
+        "type": "string"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "last_attempt_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "last_error_code": {
+        "type": "string"
+      },
+      "last_success_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "next_refresh_at": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "node_count": {
+        "type": "integer"
+      },
+      "owner_account_id": {
+        "nullable": true,
+        "type": "integer"
+      },
+      "owner_username": {
+        "type": "string"
+      },
+      "refresh_interval_minutes": {
+        "type": "integer"
+      },
+      "skipped_node_count": {
+        "type": "integer"
+      },
+      "status": {
+        "type": "string"
+      },
+      "updated_at": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "created_at",
+      "credential_configured",
+      "enabled",
+      "group_name",
+      "id",
+      "last_attempt_at",
+      "last_error_code",
+      "last_success_at",
+      "name",
+      "next_refresh_at",
+      "node_count",
+      "owner_username",
+      "refresh_interval_minutes",
+      "skipped_node_count",
+      "status",
+      "updated_at"
     ],
     "type": "object"
   },

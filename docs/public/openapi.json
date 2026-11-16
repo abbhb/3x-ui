@@ -2565,6 +2565,55 @@
         ],
         "type": "object"
       },
+      "EntryChoice": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "proxy_type": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "integer"
+          },
+          "source_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "proxy_type",
+          "source_id",
+          "source_name"
+        ],
+        "type": "object"
+      },
+      "ExternalSelection": {
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "node_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "source_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mode",
+          "node_ids",
+          "source_id"
+        ],
+        "type": "object"
+      },
       "FallbackParentInfo": {
         "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
         "properties": {
@@ -2910,6 +2959,9 @@
             "format": "int64",
             "type": "integer"
           },
+          "useSniAsHost": {
+            "type": "boolean"
+          },
           "verifyPeerCertByName": {
             "type": "string"
           },
@@ -2954,8 +3006,40 @@
           "sortOrder",
           "tags",
           "updatedAt",
+          "useSniAsHost",
           "verifyPeerCertByName",
           "vlessRoute"
+        ],
+        "type": "object"
+      },
+      "HostChoice": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "host_id": {
+            "type": "integer"
+          },
+          "inbound_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "disabled",
+          "host_id",
+          "inbound_id",
+          "name",
+          "signature"
         ],
         "type": "object"
       },
@@ -3134,6 +3218,9 @@
             },
             "type": "array"
           },
+          "useSniAsHost": {
+            "type": "boolean"
+          },
           "verifyPeerCertByName": {
             "type": "string"
           },
@@ -3175,8 +3262,44 @@
           "sockoptParams",
           "sortOrder",
           "tags",
+          "useSniAsHost",
           "verifyPeerCertByName",
           "vlessRoute"
+        ],
+        "type": "object"
+      },
+      "HostInput": {
+        "properties": {
+          "cascade_mode": {
+            "type": "string"
+          },
+          "clear_entry": {
+            "type": "boolean"
+          },
+          "client_stream": {
+            "type": "string"
+          },
+          "entry_node_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "entry_yaml": {
+            "type": "string"
+          },
+          "mihomo_only": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cascade_mode",
+          "clear_entry",
+          "client_stream",
+          "revision"
         ],
         "type": "object"
       },
@@ -5012,6 +5135,12 @@
       },
       "PortalPlan": {
         "properties": {
+          "auto_host_inbound_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
           "compatibility_pending": {
             "type": "boolean"
           },
@@ -5032,11 +5161,32 @@
           "duration_days": {
             "type": "integer"
           },
+          "external_selections": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalSelection"
+            },
+            "type": "array"
+          },
+          "group_members": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
           "host_ids": {
             "items": {
               "type": "integer"
             },
             "type": "array"
+          },
+          "host_signatures": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
           },
           "id": {
             "type": "integer"
@@ -5063,13 +5213,17 @@
           }
         },
         "required": [
+          "auto_host_inbound_ids",
           "compatibility_pending",
           "created_at",
           "currency",
           "data_limit",
           "description",
           "duration_days",
+          "external_selections",
+          "group_members",
           "host_ids",
+          "host_signatures",
           "id",
           "inbound_ids",
           "is_visible",
@@ -6054,6 +6208,32 @@
         ],
         "type": "object"
       },
+      "SourceInput": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "group_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "refresh_interval_minutes": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "group_name",
+          "name",
+          "refresh_interval_minutes"
+        ],
+        "type": "object"
+      },
       "Sponsor": {
         "description": "Sponsor is one paid placement published in the repo's sponsors.json.",
         "properties": {
@@ -6253,6 +6433,245 @@
           "sortOrder",
           "strategy",
           "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SubscriptionCredentialInput": {
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "SubscriptionHost": {
+        "properties": {
+          "cascade_mode": {
+            "type": "string"
+          },
+          "client_stream": {
+            "type": "string"
+          },
+          "entry_configured": {
+            "type": "boolean"
+          },
+          "entry_node_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "host_id": {
+            "type": "integer"
+          },
+          "mihomo_only": {
+            "type": "boolean"
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cascade_mode",
+          "client_stream",
+          "entry_configured",
+          "host_id",
+          "mihomo_only",
+          "revision"
+        ],
+        "type": "object"
+      },
+      "SubscriptionHostView": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "host_id": {
+            "type": "integer"
+          },
+          "inbound_id": {
+            "type": "integer"
+          },
+          "network": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SubscriptionHost"
+          }
+        },
+        "required": [
+          "address",
+          "host_id",
+          "inbound_id",
+          "network",
+          "path",
+          "remark",
+          "settings"
+        ],
+        "type": "object"
+      },
+      "SubscriptionNode": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "proxy_type": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "is_active",
+          "name",
+          "position",
+          "proxy_type",
+          "source_id"
+        ],
+        "type": "object"
+      },
+      "SubscriptionPolicy": {
+        "properties": {
+          "document": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "group_order": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "primary_group": {
+            "type": "string"
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "secure_dns": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "document",
+          "enabled",
+          "group_order",
+          "primary_group",
+          "revision",
+          "secure_dns"
+        ],
+        "type": "object"
+      },
+      "SubscriptionSnapshotInput": {
+        "properties": {
+          "yaml": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "yaml"
+        ],
+        "type": "object"
+      },
+      "SubscriptionSource": {
+        "properties": {
+          "created_at": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "credential_configured": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "group_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "last_attempt_at": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "last_error_code": {
+            "type": "string"
+          },
+          "last_success_at": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "next_refresh_at": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "node_count": {
+            "type": "integer"
+          },
+          "owner_account_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "owner_username": {
+            "type": "string"
+          },
+          "refresh_interval_minutes": {
+            "type": "integer"
+          },
+          "skipped_node_count": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created_at",
+          "credential_configured",
+          "enabled",
+          "group_name",
+          "id",
+          "last_attempt_at",
+          "last_error_code",
+          "last_success_at",
+          "name",
+          "next_refresh_at",
+          "node_count",
+          "owner_username",
+          "refresh_interval_minutes",
+          "skipped_node_count",
+          "status",
+          "updated_at"
         ],
         "type": "object"
       },
@@ -6456,6 +6875,18 @@
   ],
   "tags": [
     {
+      "name": "External subscription administration",
+      "description": "URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token."
+    },
+    {
+      "name": "Private external subscriptions",
+      "description": "URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token."
+    },
+    {
+      "name": "Subscription routes and policy",
+      "description": "Full panel administrators only. These operations change subscriptions, never listeners or user credentials. Cascades require Mihomo. Client-only XHTTP routes are omitted from formats that cannot express them."
+    },
+    {
       "name": "Portal and commerce administration",
       "description": "Full panel-admin authority required. Customer accounts are separate from panel administrators. Money is integer CNY cents; purchases and wallet history are append-only. All financial mutations require an Idempotency-Key. Production cutover remains stage 4."
     },
@@ -6513,7 +6944,7 @@
     },
     {
       "name": "Subscription Server",
-      "description": "A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info."
+      "description": "A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info. Managed /sub/:subid/:format aliases share MGMA authorization: clash is legacy Clash, clash-meta/mihomo are full Mihomo, and shadowrocket omits secure DNS and rejects cascades. Cascades require full Mihomo; unsupported formats return 422."
     },
     {
       "name": "WebSocket",
@@ -6521,6 +6952,1623 @@
     }
   ],
   "paths": {
+    "/panel/api/commerce/external-subscriptions": {
+      "get": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "List scoped sources without credentials",
+        "operationId": "get_panel_api_commerce_external_subscriptions",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page of 100 metadata rows.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Display name or owner username.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubscriptionSource"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "created_at": 0,
+                      "credential_configured": false,
+                      "enabled": false,
+                      "group_name": "",
+                      "id": 0,
+                      "last_attempt_at": 0,
+                      "last_error_code": "",
+                      "last_success_at": 0,
+                      "name": "",
+                      "next_refresh_at": 0,
+                      "node_count": 0,
+                      "owner_account_id": null,
+                      "owner_username": "",
+                      "refresh_interval_minutes": 0,
+                      "skipped_node_count": 0,
+                      "status": "",
+                      "updated_at": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Create a source; public for admins, private for customers",
+        "operationId": "post_panel_api_commerce_external_subscriptions",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/external-subscriptions/{id}": {
+      "get": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Read scoped source metadata",
+        "operationId": "get_panel_api_commerce_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Change source name and automatic refresh; group and owner are immutable",
+        "operationId": "put_panel_api_commerce_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Delete an unreferenced source",
+        "operationId": "delete_panel_api_commerce_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/external-subscriptions/{id}/credential": {
+      "post": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Replace the write-only public HTTPS URL",
+        "operationId": "post_panel_api_commerce_external_subscriptions_id_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCredentialInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Remove the URL while retaining last successful nodes",
+        "operationId": "delete_panel_api_commerce_external_subscriptions_id_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/external-subscriptions/{id}/refresh": {
+      "post": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Refresh atomically, preserving last good nodes on failure",
+        "operationId": "post_panel_api_commerce_external_subscriptions_id_refresh",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/external-subscriptions/{id}/snapshot": {
+      "post": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "Publish a bounded YAML snapshot; only proxies are imported",
+        "operationId": "post_panel_api_commerce_external_subscriptions_id_snapshot",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionSnapshotInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionSource"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "created_at": 0,
+                    "credential_configured": false,
+                    "enabled": false,
+                    "group_name": "",
+                    "id": 0,
+                    "last_attempt_at": 0,
+                    "last_error_code": "",
+                    "last_success_at": 0,
+                    "name": "",
+                    "next_refresh_at": 0,
+                    "node_count": 0,
+                    "owner_account_id": null,
+                    "owner_username": "",
+                    "refresh_interval_minutes": 0,
+                    "skipped_node_count": 0,
+                    "status": "",
+                    "updated_at": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/external-subscriptions/{id}/nodes": {
+      "get": {
+        "tags": [
+          "External subscription administration"
+        ],
+        "summary": "List node selection metadata; never returns connection parameters",
+        "operationId": "get_panel_api_commerce_external_subscriptions_id_nodes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page of 100 metadata rows.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubscriptionNode"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 0,
+                      "is_active": false,
+                      "name": "",
+                      "position": 0,
+                      "proxy_type": "",
+                      "source_id": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portal/external-subscriptions": {
+      "get": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "List scoped sources without credentials",
+        "operationId": "get_api_portal_external_subscriptions",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page of 100 metadata rows.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Display name or owner username.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionSource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Create a source; public for admins, private for customers",
+        "operationId": "post_api_portal_external_subscriptions",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/api/portal/external-subscriptions/{id}": {
+      "get": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Read scoped source metadata",
+        "operationId": "get_api_portal_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Change source name and automatic refresh; group and owner are immutable",
+        "operationId": "put_api_portal_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Delete an unreferenced source",
+        "operationId": "delete_api_portal_external_subscriptions_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/api/portal/external-subscriptions/{id}/credential": {
+      "post": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Replace the write-only public HTTPS URL",
+        "operationId": "post_api_portal_external_subscriptions_id_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCredentialInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Remove the URL while retaining last successful nodes",
+        "operationId": "delete_api_portal_external_subscriptions_id_credential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/api/portal/external-subscriptions/{id}/refresh": {
+      "post": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Refresh atomically, preserving last good nodes on failure",
+        "operationId": "post_api_portal_external_subscriptions_id_refresh",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/api/portal/external-subscriptions/{id}/snapshot": {
+      "post": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "Publish a bounded YAML snapshot; only proxies are imported",
+        "operationId": "post_api_portal_external_subscriptions_id_snapshot",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionSnapshotInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "created_at": 0,
+                  "credential_configured": false,
+                  "enabled": false,
+                  "group_name": "",
+                  "id": 0,
+                  "last_attempt_at": 0,
+                  "last_error_code": "",
+                  "last_success_at": 0,
+                  "name": "",
+                  "next_refresh_at": 0,
+                  "node_count": 0,
+                  "owner_account_id": null,
+                  "owner_username": "",
+                  "refresh_interval_minutes": 0,
+                  "skipped_node_count": 0,
+                  "status": "",
+                  "updated_at": 0
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionSource"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/api/portal/external-subscriptions/{id}/nodes": {
+      "get": {
+        "tags": [
+          "Private external subscriptions"
+        ],
+        "summary": "List node selection metadata; never returns connection parameters",
+        "operationId": "get_api_portal_external_subscriptions_id_nodes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Source ID in the authenticated scope.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page of 100 metadata rows.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionNode"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portalBearer": []
+          }
+        ]
+      }
+    },
+    "/panel/api/commerce/subscriptions/cascade-entries": {
+      "get": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Search active public entry-node metadata without credentials",
+        "operationId": "get_panel_api_commerce_subscriptions_cascade_entries",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "selected_id",
+            "in": "query",
+            "required": false,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EntryChoice"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "id": 0,
+                      "name": "",
+                      "proxy_type": "",
+                      "source_id": 0,
+                      "source_name": ""
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/subscriptions/catalog": {
+      "get": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Read concrete Host identities and credential-free route signatures",
+        "operationId": "get_panel_api_commerce_subscriptions_catalog",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HostChoice"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "address": "",
+                      "disabled": false,
+                      "host_id": 0,
+                      "inbound_id": 0,
+                      "name": "",
+                      "signature": ""
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/subscriptions/policy": {
+      "get": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Read panel-owned rules, DNS and groups",
+        "operationId": "get_panel_api_commerce_subscriptions_policy",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionPolicy"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "document": "",
+                    "enabled": false,
+                    "group_order": [
+                      ""
+                    ],
+                    "primary_group": "",
+                    "revision": 0,
+                    "secure_dns": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Save policy using its optimistic revision",
+        "operationId": "put_panel_api_commerce_subscriptions_policy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionPolicy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionPolicy"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "document": "",
+                    "enabled": false,
+                    "group_order": [
+                      ""
+                    ],
+                    "primary_group": "",
+                    "revision": 0,
+                    "secure_dns": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/subscriptions/hosts": {
+      "get": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "List concrete hosts and public XHTTP client routes",
+        "operationId": "get_panel_api_commerce_subscriptions_hosts",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubscriptionHostView"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "address": "",
+                      "host_id": 0,
+                      "inbound_id": 0,
+                      "network": "",
+                      "path": "",
+                      "remark": "",
+                      "settings": {
+                        "cascade_mode": "",
+                        "client_stream": "",
+                        "entry_configured": false,
+                        "entry_node_id": null,
+                        "host_id": 0,
+                        "mihomo_only": false,
+                        "revision": 0
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/commerce/subscriptions/hosts/{id}": {
+      "get": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Read host cascade and public XHTTP settings",
+        "operationId": "get_panel_api_commerce_subscriptions_hosts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Concrete native Host ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionHostView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "address": "",
+                    "host_id": 0,
+                    "inbound_id": 0,
+                    "network": "",
+                    "path": "",
+                    "remark": "",
+                    "settings": {
+                      "cascade_mode": "",
+                      "client_stream": "",
+                      "entry_configured": false,
+                      "entry_node_id": null,
+                      "host_id": 0,
+                      "mihomo_only": false,
+                      "revision": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Subscription routes and policy"
+        ],
+        "summary": "Save cascade and XHTTP route using its revision",
+        "operationId": "put_panel_api_commerce_subscriptions_hosts_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Concrete native Host ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HostInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubscriptionHost"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "cascade_mode": "",
+                    "client_stream": "",
+                    "entry_configured": false,
+                    "entry_node_id": null,
+                    "host_id": 0,
+                    "mihomo_only": false,
+                    "revision": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/commerce/settings": {
       "get": {
         "tags": [
@@ -6709,15 +8757,29 @@
                   "success": true,
                   "obj": [
                     {
+                      "auto_host_inbound_ids": [
+                        0
+                      ],
                       "compatibility_pending": false,
                       "created_at": 0,
                       "currency": "",
                       "data_limit": 0,
                       "description": "",
                       "duration_days": 0,
+                      "external_selections": [
+                        {
+                          "mode": "",
+                          "node_ids": [
+                            0
+                          ],
+                          "source_id": 0
+                        }
+                      ],
+                      "group_members": {},
                       "host_ids": [
                         0
                       ],
+                      "host_signatures": {},
                       "id": 0,
                       "inbound_ids": [
                         0
@@ -6842,15 +8904,29 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "auto_host_inbound_ids": [
+                      0
+                    ],
                     "compatibility_pending": false,
                     "created_at": 0,
                     "currency": "",
                     "data_limit": 0,
                     "description": "",
                     "duration_days": 0,
+                    "external_selections": [
+                      {
+                        "mode": "",
+                        "node_ids": [
+                          0
+                        ],
+                        "source_id": 0
+                      }
+                    ],
+                    "group_members": {},
                     "host_ids": [
                       0
                     ],
+                    "host_signatures": {},
                     "id": 0,
                     "inbound_ids": [
                       0
@@ -6987,15 +9063,29 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "auto_host_inbound_ids": [
+                      0
+                    ],
                     "compatibility_pending": false,
                     "created_at": 0,
                     "currency": "",
                     "data_limit": 0,
                     "description": "",
                     "duration_days": 0,
+                    "external_selections": [
+                      {
+                        "mode": "",
+                        "node_ids": [
+                          0
+                        ],
+                        "source_id": 0
+                      }
+                    ],
+                    "group_members": {},
                     "host_ids": [
                       0
                     ],
+                    "host_signatures": {},
                     "id": 0,
                     "inbound_ids": [
                       0
@@ -17259,6 +19349,7 @@
                       "tags": [
                         ""
                       ],
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": ""
                     }
@@ -17351,6 +19442,7 @@
                         ""
                       ],
                       "updatedAt": 0,
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": "443"
                     }
@@ -17451,6 +19543,7 @@
                     "tags": [
                       ""
                     ],
+                    "useSniAsHost": false,
                     "verifyPeerCertByName": "",
                     "vlessRoute": ""
                   }
@@ -17554,6 +19647,7 @@
                       "tags": [
                         ""
                       ],
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": ""
                     }
@@ -17708,6 +19802,7 @@
                         ""
                       ],
                       "updatedAt": 0,
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": "443"
                     }
@@ -17835,6 +19930,7 @@
                         ""
                       ],
                       "updatedAt": 0,
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": "443"
                     }
@@ -18092,6 +20188,7 @@
                         ""
                       ],
                       "updatedAt": 0,
+                      "useSniAsHost": false,
                       "verifyPeerCertByName": "",
                       "vlessRoute": "443"
                     }

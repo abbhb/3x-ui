@@ -37,12 +37,14 @@ import {
   type Account,
 } from '@/schemas/commerce';
 import MGMAControls from '@/pages/commerce/MGMAControls';
+import ExternalSources, { useSubscriptionLabel } from '@/pages/subscriptions/ExternalSources';
 import { money, date, bytes } from '@/pages/commerce/commerceFormat';
 import '@/pages/commerce/Commerce.css';
 
 const SESSION_KEY = 'xui.portal.session';
 export default function PortalPage() {
   const { t } = useTranslation();
+  const sl = useSubscriptionLabel();
   const l = (key: string) => t(`pages.commerce.${key}`);
   const { antdThemeConfig } = useTheme();
   const qc = useQueryClient();
@@ -292,8 +294,14 @@ export default function PortalPage() {
                   />
                 )}
                 <Tabs
+                  defaultActiveKey="plans"
                   destroyOnHidden
                   items={[
+                    {
+                      key: 'external',
+                      label: sl('mySources'),
+                      children: <ExternalSources token={token} />,
+                    },
                     {
                       key: 'plans',
                       label: l('plans'),

@@ -97,7 +97,7 @@ func TestMGMANativeFormatsRequireLatestBearer(t *testing.T) {
 	}
 	u, _ := url.Parse(second.URL)
 	token := u.Query().Get("token")
-	for _, path := range []string{"/sub/" + client.SubID, "/sub/" + client.SubID + "/", "/json/" + client.SubID, "/clash/" + client.SubID, subMihomoPath + client.SubID, subClashLegacyPath + client.SubID} {
+	for _, path := range []string{"/sub/" + client.SubID, "/sub/" + client.SubID + "/", "/json/" + client.SubID, "/clash/" + client.SubID, subMihomoPath + client.SubID, subClashLegacyPath + client.SubID, "/sub/" + client.SubID + "/mihomo", "/sub/" + client.SubID + "/clash-meta", "/sub/" + client.SubID + "/shadowrocket"} {
 		if w := mgmaGet(router, path, "192.0.2.1:1234", ""); w.Code != 404 {
 			t.Fatalf("bare managed URL exposed %s: %d", path, w.Code)
 		}

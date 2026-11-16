@@ -198,6 +198,466 @@ const hwidStatusErrorResponses = {
 
 export const sections: readonly Section[] = [
   {
+    id: 'externalSubscriptions',
+    title: 'External subscription administration',
+    description:
+      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/external-subscriptions',
+        summary: 'List scoped sources without credentials',
+        responseSchema: 'SubscriptionSource',
+        responseSchemaArray: true,
+        params: [
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Page of 100 metadata rows.',
+          },
+          {
+            name: 'search',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Display name or owner username.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/commerce/external-subscriptions',
+        summary: 'Create a source; public for admins, private for customers',
+        requestSchema: { $ref: '#/components/schemas/SourceInput' },
+        responseSchema: 'SubscriptionSource',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/external-subscriptions/:id',
+        summary: 'Read scoped source metadata',
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'PUT',
+        path: '/panel/api/commerce/external-subscriptions/:id',
+        summary: 'Change source name and automatic refresh; group and owner are immutable',
+        requestSchema: { $ref: '#/components/schemas/SourceInput' },
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'DELETE',
+        path: '/panel/api/commerce/external-subscriptions/:id',
+        summary: 'Delete an unreferenced source',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/commerce/external-subscriptions/:id/credential',
+        summary: 'Replace the write-only public HTTPS URL',
+        requestSchema: { $ref: '#/components/schemas/SubscriptionCredentialInput' },
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'DELETE',
+        path: '/panel/api/commerce/external-subscriptions/:id/credential',
+        summary: 'Remove the URL while retaining last successful nodes',
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/commerce/external-subscriptions/:id/refresh',
+        summary: 'Refresh atomically, preserving last good nodes on failure',
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/commerce/external-subscriptions/:id/snapshot',
+        summary: 'Publish a bounded YAML snapshot; only proxies are imported',
+        requestSchema: { $ref: '#/components/schemas/SubscriptionSnapshotInput' },
+        responseSchema: 'SubscriptionSource',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/external-subscriptions/:id/nodes',
+        summary: 'List node selection metadata; never returns connection parameters',
+        responseSchema: 'SubscriptionNode',
+        responseSchemaArray: true,
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Page of 100 metadata rows.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'privateExternal',
+    title: 'Private external subscriptions',
+    description:
+      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/portal/external-subscriptions',
+        summary: 'List scoped sources without credentials',
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/SubscriptionSource' },
+                },
+              },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Page of 100 metadata rows.',
+          },
+          {
+            name: 'search',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Display name or owner username.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'POST',
+        path: '/api/portal/external-subscriptions',
+        summary: 'Create a source; public for admins, private for customers',
+        requestSchema: { $ref: '#/components/schemas/SourceInput' },
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'GET',
+        path: '/api/portal/external-subscriptions/:id',
+        summary: 'Read scoped source metadata',
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'PUT',
+        path: '/api/portal/external-subscriptions/:id',
+        summary: 'Change source name and automatic refresh; group and owner are immutable',
+        requestSchema: { $ref: '#/components/schemas/SourceInput' },
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'DELETE',
+        path: '/api/portal/external-subscriptions/:id',
+        summary: 'Delete an unreferenced source',
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'POST',
+        path: '/api/portal/external-subscriptions/:id/credential',
+        summary: 'Replace the write-only public HTTPS URL',
+        requestSchema: { $ref: '#/components/schemas/SubscriptionCredentialInput' },
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'DELETE',
+        path: '/api/portal/external-subscriptions/:id/credential',
+        summary: 'Remove the URL while retaining last successful nodes',
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'POST',
+        path: '/api/portal/external-subscriptions/:id/refresh',
+        summary: 'Refresh atomically, preserving last good nodes on failure',
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'POST',
+        path: '/api/portal/external-subscriptions/:id/snapshot',
+        summary: 'Publish a bounded YAML snapshot; only proxies are imported',
+        requestSchema: { $ref: '#/components/schemas/SubscriptionSnapshotInput' },
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/SubscriptionSource' } },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+      {
+        method: 'GET',
+        path: '/api/portal/external-subscriptions/:id/nodes',
+        summary: 'List node selection metadata; never returns connection parameters',
+        responses: {
+          '200': {
+            description: 'Scoped metadata',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/SubscriptionNode' } },
+              },
+            },
+          },
+        },
+        params: [
+          {
+            name: 'id',
+            in: 'path',
+            type: 'integer',
+            desc: 'Source ID in the authenticated scope.',
+          },
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Page of 100 metadata rows.',
+          },
+        ],
+        security: [{ portalBearer: [] }],
+      },
+    ],
+  },
+  {
+    id: 'subscriptionCompatibility',
+    title: 'Subscription routes and policy',
+    description:
+      'Full panel administrators only. These operations change subscriptions, never listeners or user credentials. Cascades require Mihomo. Client-only XHTTP routes are omitted from formats that cannot express them.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/subscriptions/cascade-entries',
+        summary: 'Search active public entry-node metadata without credentials',
+        responseSchema: 'EntryChoice',
+        responseSchemaArray: true,
+        params: [
+          { name: 'search', in: 'query', type: 'string', optional: true },
+          { name: 'selected_id', in: 'query', type: 'integer', optional: true },
+        ],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/subscriptions/catalog',
+        summary: 'Read concrete Host identities and credential-free route signatures',
+        responseSchema: 'HostChoice',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/subscriptions/policy',
+        summary: 'Read panel-owned rules, DNS and groups',
+        responseSchema: 'SubscriptionPolicy',
+      },
+      {
+        method: 'PUT',
+        path: '/panel/api/commerce/subscriptions/policy',
+        summary: 'Save policy using its optimistic revision',
+        responseSchema: 'SubscriptionPolicy',
+        requestSchema: { $ref: '#/components/schemas/SubscriptionPolicy' },
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/subscriptions/hosts',
+        summary: 'List concrete hosts and public XHTTP client routes',
+        responseSchema: 'SubscriptionHostView',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/commerce/subscriptions/hosts/:id',
+        summary: 'Read host cascade and public XHTTP settings',
+        responseSchema: 'SubscriptionHostView',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Concrete native Host ID.' }],
+      },
+      {
+        method: 'PUT',
+        path: '/panel/api/commerce/subscriptions/hosts/:id',
+        summary: 'Save cascade and XHTTP route using its revision',
+        responseSchema: 'SubscriptionHost',
+        requestSchema: { $ref: '#/components/schemas/HostInput' },
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Concrete native Host ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'commerce',
     title: 'Portal and commerce administration',
     description:
@@ -3470,7 +3930,7 @@ export const sections: readonly Section[] = [
     id: 'subscription',
     title: 'Subscription Server',
     description:
-      'A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info.',
+      'A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info. Managed /sub/:subid/:format aliases share MGMA authorization: clash is legacy Clash, clash-meta/mihomo are full Mihomo, and shadowrocket omits secure DNS and rejects cascades. Cascades require full Mihomo; unsupported formats return 422.',
     subHeader: [
       {
         name: 'Subscription-Userinfo',

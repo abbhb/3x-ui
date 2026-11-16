@@ -1,10 +1,15 @@
 import { z } from 'zod';
+import { SelectionSchema } from '@/schemas/subscriptionCompat';
 const int = z.number().int();
 const ids = z
   .array(int)
   .nullish()
   .transform((v) => v ?? []);
 export const PlanSchema = z.object({
+  auto_host_inbound_ids: ids.optional(),
+  host_signatures: z.record(z.string(), z.string()).nullish(),
+  external_selections: z.array(SelectionSchema).nullish(),
+  group_members: z.record(z.string(), z.array(z.string())).nullish(),
   id: int,
   name: z.string(),
   description: z.string(),

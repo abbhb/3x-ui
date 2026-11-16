@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
 )
@@ -19,10 +20,12 @@ func portalError(err error) (int, string) {
 	switch {
 	case errors.Is(err, service.ErrPortalAuth):
 		return http.StatusUnauthorized, "Invalid credentials or account unavailable"
-	case errors.Is(err, service.ErrPortalInvalid):
+	case errors.Is(err, subscriptioncompat.ErrInvalid), errors.Is(err, subscriptioncompat.ErrInvalidSnapshot), errors.Is(err, subscriptioncompat.ErrBudget), errors.Is(err, service.ErrPortalInvalid):
 		return http.StatusBadRequest, "Invalid request"
-	case errors.Is(err, service.ErrPortalUnavailable), errors.Is(err, service.ErrMGMARejected), errors.Is(err, gorm.ErrRecordNotFound):
+	case errors.Is(err, subscriptioncompat.ErrNotFound), errors.Is(err, service.ErrPortalUnavailable), errors.Is(err, service.ErrMGMARejected), errors.Is(err, gorm.ErrRecordNotFound):
 		return http.StatusNotFound, "Resource unavailable"
+	case errors.Is(err, subscriptioncompat.ErrConflict):
+		return http.StatusConflict, "Configuration changed or is still in use; reload before saving"
 	case errors.Is(err, service.ErrPortalConflict):
 		return http.StatusConflict, "Idempotency key conflicts with the original request"
 	case errors.Is(err, service.ErrPortalBalance):
@@ -86,7 +89,7 @@ func NewPortalController(g *gin.RouterGroup) {
 		c.Header("Cache-Control", "private, no-store")
 		c.Header("Referrer-Policy", "no-referrer")
 		c.Header("X-Robots-Tag", "noindex, nofollow")
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 32<<10)
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8<<20)
 	})
 	portal.GET("/config", func(c *gin.Context) {
 		p, err := svc.Settings()
@@ -166,6 +169,7 @@ func NewPortalController(g *gin.RouterGroup) {
 		c.Set("portal_account", account)
 	})
 	account := func(c *gin.Context) *model.PortalAccount { return c.MustGet("portal_account").(*model.PortalAccount) }
+	newExternalSourceRoutes(authed, false)
 	authed.GET("/me", func(c *gin.Context) { value, err := svc.Account(account(c).ID); portalReply(c, value, err, false) })
 	authed.GET("/plans", func(c *gin.Context) { value, err := svc.Plans(true); portalReply(c, value, err, false) })
 	authed.GET("/wallet/transactions", func(c *gin.Context) {

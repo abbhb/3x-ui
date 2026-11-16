@@ -431,6 +431,7 @@ type HostGroup struct {
 	Snis                   []string `json:"snis"`
 	SniSharedRandom        bool     `json:"sniSharedRandom"`
 	HostHeader             string   `json:"hostHeader"`
+	UseSniAsHost           bool     `json:"useSniAsHost"`
 	Path                   string   `json:"path"`
 	Alpn                   []string `json:"alpn"`
 	Fingerprint            string   `json:"fingerprint"`

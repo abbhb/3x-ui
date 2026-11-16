@@ -89,11 +89,13 @@ type SubService struct {
 	rendered renderBudget
 	// settingsCache is shared by this service's requests (ForRequest copies the pointer); only
 	// subscription bodies read through it, never panel link rendering.
-	settingsCache   *inboundSettingsCache
-	hostsByInbound  map[int][]*model.Host
-	hostGroupOrders map[string]hostEntryOrder
-	hostsFirst      bool
-	sharedGroupSni  map[string]string
+	settingsCache    *inboundSettingsCache
+	compatGrantCache map[string]compatHostGrant
+	compatHosts      map[int]model.SubscriptionHost
+	hostsByInbound   map[int][]*model.Host
+	hostGroupOrders  map[string]hostEntryOrder
+	hostsFirst       bool
+	sharedGroupSni   map[string]string
 	// tuicByInbound and amneziaWGServerByInbound are the typed equivalents of
 	// settingsByInbound: one decode per request, not one per link of a subId.
 	tuicByInbound            map[int]*tuicLinkInstance
@@ -151,6 +153,8 @@ func (s *SubService) PrepareForRequest(host string) {
 	s.tuicByInbound = map[int]*tuicLinkInstance{}
 	s.amneziaWGServerByInbound = map[int]*amneziawg.ServerSettings{}
 	s.hostsByInbound = nil
+	s.compatHosts = nil
+	s.compatGrantCache = map[string]compatHostGrant{}
 	s.hostGroupOrders = nil
 	s.sharedGroupSni = nil
 	s.rendered = 0
@@ -563,6 +567,9 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	var hasEnabledClient bool
 	inbounds, err := s.getInboundsBySubId(subId)
 	if err != nil {
+		return nil, nil, 0, traffic, err
+	}
+	if err := s.checkCapabilities(inbounds, subId, "raw"); err != nil {
 		return nil, nil, 0, traffic, err
 	}
 	externalLinks, err := s.getClientExternalLinksBySubId(subId)

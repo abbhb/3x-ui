@@ -164,8 +164,9 @@ func (s *CommerceService) Tick() error {
 	if !p.Enabled {
 		return nil
 	}
+	cleanupErr := s.PrunePlanRoutes()
 	nextErr := s.ApplyNextPlans()
-	return errors.Join(nextErr, s.SyncPortalRuntime())
+	return errors.Join(cleanupErr, nextErr, s.SyncPortalRuntime())
 }
 
 func portalHasLocalChange(changes []model.PortalRuntimeChange) (bool, bool, int) {
