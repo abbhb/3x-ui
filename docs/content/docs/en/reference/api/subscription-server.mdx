@@ -1,11 +1,14 @@
 ---
 title: Subscription Server
-description: A separate HTTP/HTTPS server that serves proxy subscription links
+description: 'A separate HTTP/HTTPS server that serves proxy subscription links
   (standard, JSON, and Clash) to clients. The server listens on its own port
   (default 2096) and is configured in Settings → Subscription. Fresh panels
   generate random path prefixes for each format; all paths remain configurable.
   Every subscription endpoint sets response headers for client apps to read
-  traffic/expiry info.
+  traffic/expiry info. Managed /sub/:subid/:format aliases share MGMA
+  authorization: clash is legacy Clash, clash-meta/mihomo are full Mihomo, and
+  shadowrocket omits secure DNS and rejects cascades. Cascades require full
+  Mihomo; unsupported formats return 422.'
 full: true
 _openapi:
   preload:

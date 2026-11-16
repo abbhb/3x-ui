@@ -22,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -35,6 +36,14 @@ const (
 // client, never-existed id) and becomes 404. A real error becomes 500. No
 // body — VPN clients only look at the status.
 func writeSubError(c *gin.Context, err error) {
+	if errors.Is(err, subscriptioncompat.ErrMihomoRequired) {
+		c.String(http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	if errors.Is(err, subscriptioncompat.ErrCascade) || errors.Is(err, subscriptioncompat.ErrEncryptedUnavailable) || errors.Is(err, subscriptioncompat.ErrBudget) {
+		c.String(http.StatusServiceUnavailable, "subscription_configuration_unavailable")
+		return
+	}
 	if err == nil {
 		c.Status(http.StatusNotFound)
 		return
@@ -911,7 +920,13 @@ func (a *SUBController) serveClashBody(c *gin.Context, rawDownload bool, legacy 
 	if legacy {
 		clashSub, header, err = a.subClashService.GetClashLegacy(subId, host)
 	} else {
-		clashSub, header, err = a.subClashService.GetClash(subId, host)
+		clashService := a.subClashService
+		if c.Param("format") == "shadowrocket" {
+			copy := *a.subClashService
+			copy.shadowrocket = true
+			clashService = &copy
+		}
+		clashSub, header, err = clashService.GetClash(subId, host)
 	}
 	if err != nil {
 		if errors.Is(err, errNoLegacyClashProxies) {

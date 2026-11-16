@@ -20,9 +20,11 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgkern"
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/cronspec"
@@ -372,6 +374,12 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddFunc("@every 10s", func() {
 		if err := (&service.CommerceService{}).Tick(); err != nil {
 			logger.Warning("portal reconciliation is pending")
+		}
+	})
+
+	_, _ = s.cron.AddFunc("@every 1m", func() {
+		if err := (&subscriptioncompat.Service{DB: database.GetDB()}).Tick(s.ctx); err != nil {
+			logger.Warning("external subscription refresh is pending")
 		}
 	})
 

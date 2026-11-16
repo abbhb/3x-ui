@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { HostChoiceSchema } from '@/generated/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
 import { z } from 'zod';
 import { selectTagRender } from '@/components/form/SelectTag';
-import { httpRequest } from '@/api/http-init';
+import PlanSubscriptionFields from '@/pages/subscriptions/PlanSubscriptionFields';
 import { commerceRequest as request, emptyResponse } from '@/api/commerce';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { PlanSchema, type Plan, type Settings, type SettingsViewSchema } from '@/schemas/commerce';
@@ -20,25 +21,29 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
   const hosts = useQuery({
     queryKey: ['commerce', 'hostOptions'],
     queryFn: async () => {
-      const res = await httpRequest('GET', '/panel/api/hosts/raw');
-      return z
-        .object({
-          success: z.literal(true),
-          obj: z.array(
-            z.object({
-              id: z.number(),
-              inboundId: z.number(),
-              remark: z.string(),
-              address: z.string(),
-              isDisabled: z.boolean(),
-            }),
-          ),
-        })
-        .parse(res.data).obj;
+      const rows = await request('subscriptions/catalog', z.array(HostChoiceSchema));
+      return rows.map((h) => ({
+        id: h.host_id,
+        inboundId: h.inbound_id,
+        remark: h.name,
+        address: h.address,
+        isDisabled: h.disabled,
+        signature: h.signature,
+      }));
     },
   });
   const [form] = Form.useForm();
   const inboundIDs: number[] = Form.useWatch('inbound_ids', form) || [];
+  const autoInboundIDs: number[] = Form.useWatch('auto_host_inbound_ids', form) || [];
+  if (!hosts.data)
+    return (
+      <Card>
+        <Alert
+          type={hosts.error ? 'error' : 'info'}
+          title={hosts.error ? l('failed') : l('hostRules')}
+        />
+      </Card>
+    );
   return (
     <Card
       title={plan ? l('editPlan') : l('createPlan')}
@@ -50,25 +55,63 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
         form={form}
         layout="vertical"
         initialValues={
-          plan || {
-            currency: 'CNY',
-            price_minor: 0,
-            duration_days: 30,
-            data_limit: 0,
-            inbound_ids: [],
-            host_ids: [],
-            is_visible: false,
-          }
+          plan
+            ? {
+                ...plan,
+                host_ids: plan.host_ids.filter(
+                  (id) =>
+                    !plan.host_signatures?.[String(id)] ||
+                    hosts.data?.some(
+                      (h) => h.id === id && h.signature === plan.host_signatures?.[String(id)],
+                    ),
+                ),
+                auto_host_inbound_ids: plan.auto_host_inbound_ids || [],
+                external_selections: plan.external_selections || [],
+                group_members: plan.group_members || {},
+              }
+            : {
+                currency: 'CNY',
+                price_minor: 0,
+                duration_days: 30,
+                data_limit: 0,
+                inbound_ids: [],
+                host_ids: [],
+                external_selections: [],
+                auto_host_inbound_ids: [],
+                group_members: {},
+                is_visible: false,
+              }
         }
         disabled={busy || plan?.compatibility_pending}
         onFinish={async (v) => {
           setBusy(true);
           setError(false);
           try {
+            const chosen: number[] = v.host_ids || [];
+            const fresh = await request('subscriptions/catalog', z.array(HostChoiceSchema));
+            if (
+              chosen.some(
+                (id) =>
+                  hosts.data?.find((h) => h.id === id)?.signature !==
+                  fresh.find((h) => h.host_id === id)?.signature,
+              )
+            )
+              throw new Error('Route changed');
+            const signatures = Object.fromEntries(
+              chosen.map((id) => [
+                String(id),
+                fresh.find((h) => h.host_id === id)?.signature || '',
+              ]),
+            );
             await request(
               plan ? `plans/${plan.id}` : 'plans',
               PlanSchema,
-              { ...v, description: v.description || '', currency: 'CNY' },
+              {
+                ...v,
+                host_signatures: signatures,
+                description: v.description || '',
+                currency: 'CNY',
+              },
               plan ? 'PUT' : 'POST',
             );
             close();
@@ -104,11 +147,7 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
             className="commerce-full"
           />
         </Form.Item>
-        <Form.Item
-          name="inbound_ids"
-          label={l('inbounds')}
-          rules={[{ required: true, type: 'array', min: 1 }]}
-        >
+        <Form.Item name="inbound_ids" label={l('inbounds')} rules={[]}>
           <Select
             mode="multiple"
             tagRender={selectTagRender}
@@ -131,7 +170,14 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
         <Form.Item
           name="host_ids"
           label={l('hostRules')}
-          rules={[{ required: true, type: 'array', min: 1 }]}
+          rules={[
+            {
+              validator: (_, value) =>
+                inboundIDs.some((id) => !autoInboundIDs.includes(id)) && !value?.length
+                  ? Promise.reject(new Error(l('strictGrantHelp')))
+                  : Promise.resolve(),
+            },
+          ]}
           extra={l('strictGrantHelp')}
         >
           <Select
@@ -139,13 +185,21 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
             tagRender={selectTagRender}
             loading={hosts.isPending}
             options={(hosts.data || [])
-              .filter((h) => !h.isDisabled && inboundIDs.includes(h.inboundId))
+              .filter((h) => inboundIDs.includes(h.inboundId))
               .map((h) => ({
                 value: h.id,
                 label: `#${h.id} · ${h.remark || h.address} · ${l('inbound')} ${h.inboundId}`,
               }))}
           />
         </Form.Item>
+        <Form.Item name="auto_host_inbound_ids" label={l('autoHosts')} extra={l('autoHostsHelp')}>
+          <Select
+            mode="multiple"
+            tagRender={selectTagRender}
+            options={inboundIDs.map((id) => ({ value: id, label: `${l('inbound')} #${id}` }))}
+          />
+        </Form.Item>
+        <PlanSubscriptionFields inboundIDs={inboundIDs} />
         <Form.Item name="is_visible" label={l('visible')} valuePropName="checked">
           <Switch />
         </Form.Item>

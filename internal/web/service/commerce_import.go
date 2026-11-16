@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
@@ -76,25 +77,26 @@ type portalImportedAttempt struct {
 	UpdatedAt    int64  `json:"updated_at"`
 }
 type portalImportBundle struct {
-	Schema          string                      `json:"schema"`
-	Clients         []ClientCreatePayload       `json:"clients"`
-	ReservedIDs     []int64                     `json:"reserved_ids"`
-	Accounts        []portalImportedAccount     `json:"accounts"`
-	Plans           []portalImportedPlan        `json:"plans"`
-	Subscriptions   []model.PortalSubscription  `json:"subscriptions"`
-	Purchases       []portalImportedPurchase    `json:"purchases"`
-	Wallet          []portalImportedWallet      `json:"wallet"`
-	Invitations     []portalImportedInvitation  `json:"invitations"`
-	InvitationUses  []model.PortalInvitationUse `json:"invitation_uses"`
-	Blocks          []model.PortalIPBlock       `json:"ip_blocks"`
-	Attempts        []portalImportedAttempt     `json:"security_attempts"`
-	Settings        model.PortalSettings        `json:"settings"`
-	Access          []portalImportedAccess      `json:"access"`
-	Legacy          []portalImportedLegacy      `json:"legacy_users"`
-	NextPlans       []model.PortalNextPlan      `json:"next_plans"`
-	History         []model.PortalUsageReset    `json:"usage_history"`
-	LegacyKeySHA256 string                      `json:"legacy_key_sha256"`
-	PepperSHA256    string                      `json:"pepper_sha256"`
+	SubscriptionsExtension *subscriptioncompat.ImportBundle `json:"subscriptions_extension,omitempty"`
+	Schema                 string                           `json:"schema"`
+	Clients                []ClientCreatePayload            `json:"clients"`
+	ReservedIDs            []int64                          `json:"reserved_ids"`
+	Accounts               []portalImportedAccount          `json:"accounts"`
+	Plans                  []portalImportedPlan             `json:"plans"`
+	Subscriptions          []model.PortalSubscription       `json:"subscriptions"`
+	Purchases              []portalImportedPurchase         `json:"purchases"`
+	Wallet                 []portalImportedWallet           `json:"wallet"`
+	Invitations            []portalImportedInvitation       `json:"invitations"`
+	InvitationUses         []model.PortalInvitationUse      `json:"invitation_uses"`
+	Blocks                 []model.PortalIPBlock            `json:"ip_blocks"`
+	Attempts               []portalImportedAttempt          `json:"security_attempts"`
+	Settings               model.PortalSettings             `json:"settings"`
+	Access                 []portalImportedAccess           `json:"access"`
+	Legacy                 []portalImportedLegacy           `json:"legacy_users"`
+	NextPlans              []model.PortalNextPlan           `json:"next_plans"`
+	History                []model.PortalUsageReset         `json:"usage_history"`
+	LegacyKeySHA256        string                           `json:"legacy_key_sha256"`
+	PepperSHA256           string                           `json:"pepper_sha256"`
 }
 type PortalImportReport struct {
 	BundleSHA256       string `json:"bundle_sha256"`
@@ -241,7 +243,7 @@ func (s *CommerceService) ImportPortalBundle(directory string, offline, revokeLe
 				return err
 			}
 			if tx.Name() == "postgres" {
-				for _, m := range models {
+				for _, m := range append(models, &model.Host{}) {
 					statement := &gorm.Statement{DB: tx}
 					if statement.Parse(m) != nil {
 						return errPortalImport
@@ -296,6 +298,9 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 			return errPortalImport
 		}
 	}
+	if err := subscriptioncompat.ImportPrepareHosts(tx, b.SubscriptionsExtension, func(row any, condition ...any) error { return portalImportReadback(tx, row, report, condition...) }); err != nil {
+		return err
+	}
 	clientIDs := map[int]bool{}
 	subIDs := map[string]bool{}
 	credentials := map[string]bool{}
@@ -332,7 +337,7 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 			}
 		}
 		for _, host := range hosts {
-			if host.IsDisabled || !slices.Contains(payload.InboundIds, host.InboundId) {
+			if (host.IsDisabled && b.SubscriptionsExtension == nil) || !slices.Contains(payload.InboundIds, host.InboundId) {
 				return errPortalImport
 			}
 		}
@@ -421,10 +426,18 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 		}
 		accounts[a.ID] = &a
 	}
+	if err := subscriptioncompat.ImportRows(tx, b.SubscriptionsExtension, func(row any, condition ...any) error { return portalImportReadback(tx, row, report, condition...) }); err != nil {
+		return err
+	}
 	plans := map[int]*model.PortalPlan{}
 	for _, wire := range b.Plans {
 		p := wire.PortalPlan
 		p.LegacyMetadata = wire.Metadata
+		if b.SubscriptionsExtension != nil {
+			if err := subscriptioncompat.CaptureHostSignatures(tx, &p); err != nil {
+				return err
+			}
+		}
 		if p.ID <= 0 || plans[p.ID] != nil || p.Currency != "CNY" || p.PriceMinor < 0 || p.PriceMinor > portalMaxAmount || p.DurationDays < 1 || p.DurationDays > 3650 || p.DataLimit < 0 || p.DataLimit > 1_000_000_000_000_000_000 || len(p.Name) == 0 || !json.Valid([]byte(p.LegacyMetadata)) {
 			return errPortalImport
 		}
@@ -440,6 +453,11 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 			return err
 		}
 		plans[p.ID] = &p
+	}
+	if b.SubscriptionsExtension != nil {
+		if err := subscriptioncompat.ValidateImportedPlans(tx); err != nil {
+			return err
+		}
 	}
 	for _, sub := range b.Subscriptions {
 		if accounts[sub.AccountID] == nil || accounts[sub.AccountID].ClientID == nil || plans[sub.PlanID] == nil || sub.Currency != "CNY" || sub.PricePaidMinor < 0 || sub.ExpiresAt < 0 {

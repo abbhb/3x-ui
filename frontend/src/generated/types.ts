@@ -591,6 +591,20 @@ export interface ClientsSummary {
   total: number;
 }
 
+export interface EntryChoice {
+  id: number;
+  name: string;
+  proxy_type: string;
+  source_id: number;
+  source_name: string;
+}
+
+export interface ExternalSelection {
+  mode: string;
+  node_ids: number[];
+  source_id: number;
+}
+
 export interface FallbackParentInfo {
   masterId: number;
   path?: string;
@@ -679,8 +693,18 @@ export interface Host {
   sortOrder: number;
   tags: string[];
   updatedAt: number;
+  useSniAsHost: boolean;
   verifyPeerCertByName: string;
   vlessRoute: string;
+}
+
+export interface HostChoice {
+  address: string;
+  disabled: boolean;
+  host_id: number;
+  inbound_id: number;
+  name: string;
+  signature: string;
 }
 
 export interface HostEndpoint {
@@ -726,8 +750,19 @@ export interface HostGroup {
   sockoptParams: string;
   sortOrder: number;
   tags: string[];
+  useSniAsHost: boolean;
   verifyPeerCertByName: string;
   vlessRoute: string;
+}
+
+export interface HostInput {
+  cascade_mode: string;
+  clear_entry: boolean;
+  client_stream: string;
+  entry_node_id?: number | null;
+  entry_yaml?: string;
+  mihomo_only?: boolean | null;
+  revision: number;
 }
 
 export interface HostInstanceReport {
@@ -1155,13 +1190,17 @@ export interface PortalNextPlan {
 }
 
 export interface PortalPlan {
+  auto_host_inbound_ids: number[];
   compatibility_pending: boolean;
   created_at: number;
   currency: string;
   data_limit: number;
   description: string;
   duration_days: number;
+  external_selections: ExternalSelection[];
+  group_members: Record<string, string[]>;
   host_ids: number[];
+  host_signatures: Record<string, string>;
   id: number;
   inbound_ids: number[];
   is_visible: boolean;
@@ -1408,6 +1447,14 @@ export interface Setting {
   value: string;
 }
 
+export interface SourceInput {
+  enabled: boolean;
+  group_name: string;
+  name: string;
+  refresh_interval_minutes: number;
+  url?: string;
+}
+
 export interface Sponsor {
   enable?: boolean | null;
   from?: string | null;
@@ -1447,6 +1494,72 @@ export interface SubBalancer {
   sortOrder: number;
   strategy: string;
   updatedAt: number;
+}
+
+export interface SubscriptionCredentialInput {
+  url: string;
+}
+
+export interface SubscriptionHost {
+  cascade_mode: string;
+  client_stream: string;
+  entry_configured: boolean;
+  entry_node_id?: number | null;
+  host_id: number;
+  mihomo_only: boolean;
+  revision: number;
+}
+
+export interface SubscriptionHostView {
+  address: string;
+  host_id: number;
+  inbound_id: number;
+  network: string;
+  path: string;
+  remark: string;
+  settings: SubscriptionHost;
+}
+
+export interface SubscriptionNode {
+  id: number;
+  is_active: boolean;
+  name: string;
+  position: number;
+  proxy_type: string;
+  source_id: number;
+}
+
+export interface SubscriptionPolicy {
+  document: string;
+  enabled: boolean;
+  group_order: string[];
+  primary_group: string;
+  revision: number;
+  secure_dns: boolean;
+}
+
+export interface SubscriptionSnapshotInput {
+  yaml: string;
+}
+
+export interface SubscriptionSource {
+  created_at: number;
+  credential_configured: boolean;
+  enabled: boolean;
+  group_name: string;
+  id: number;
+  last_attempt_at: number;
+  last_error_code: string;
+  last_success_at: number;
+  name: string;
+  next_refresh_at: number;
+  node_count: number;
+  owner_account_id?: number | null;
+  owner_username: string;
+  refresh_interval_minutes: number;
+  skipped_node_count: number;
+  status: string;
+  updated_at: number;
 }
 
 export interface TgBotCapabilities {

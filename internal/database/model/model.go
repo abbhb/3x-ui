@@ -1210,6 +1210,7 @@ type Host struct {
 	Snis                   []string `json:"snis,omitempty" form:"snis" gorm:"serializer:json;column:snis"`
 	SniSharedRandom        bool     `json:"sniSharedRandom" form:"sniSharedRandom" gorm:"column:sni_shared_random"`
 	HostHeader             string   `json:"hostHeader" form:"hostHeader" gorm:"column:host_header"`
+	UseSniAsHost           bool     `json:"useSniAsHost" form:"useSniAsHost" gorm:"not null;default:false"`
 	Path                   string   `json:"path" form:"path"`
 	Alpn                   []string `json:"alpn" form:"alpn" gorm:"serializer:json"`
 	Fingerprint            string   `json:"fingerprint" form:"fingerprint"`

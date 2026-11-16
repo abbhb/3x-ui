@@ -36,10 +36,15 @@ import {
 import { useLabel, PlanEditor, SettingsEditor } from './CommerceForms';
 import { SecretNotice, PageButtons } from './CommerceShared';
 import AccountDetail from './AccountDetail';
+import ExternalSources from '@/pages/subscriptions/ExternalSources';
+import SubscriptionRoutes from '@/pages/subscriptions/SubscriptionRoutes';
+import SubscriptionPolicy from '@/pages/subscriptions/SubscriptionPolicy';
+import { useSubscriptionLabel } from '@/pages/subscriptions/ExternalSources';
 import { money, date, bytes } from './commerceFormat';
 import './Commerce.css';
 export default function CommercePage() {
   const l = useLabel();
+  const sl = useSubscriptionLabel();
   const { antdThemeConfig, isDark, isUltra } = useTheme();
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') || 'accounts';
@@ -139,6 +144,33 @@ export default function CommercePage() {
                   onChange={changeTab}
                   destroyOnHidden
                   items={[
+                    {
+                      key: 'external',
+                      label: sl('sources'),
+                      children: (
+                        <ExternalSources
+                          selected={Number(params.get('source') || 0)}
+                          select={(id) =>
+                            setParams(
+                              id ? { tab: 'external', source: String(id) } : { tab: 'external' },
+                            )
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      key: 'routes',
+                      label: sl('routes'),
+                      children: (
+                        <SubscriptionRoutes
+                          selected={Number(params.get('route') || 0)}
+                          select={(id) =>
+                            setParams(id ? { tab: 'routes', route: String(id) } : { tab: 'routes' })
+                          }
+                        />
+                      ),
+                    },
+                    { key: 'policy', label: sl('policy'), children: <SubscriptionPolicy /> },
                     {
                       key: 'accounts',
                       label: l('accounts'),

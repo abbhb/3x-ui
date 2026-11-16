@@ -74,7 +74,7 @@ func (a *SUBController) mgmaAccess(c *gin.Context) {
 	source, sourceErr := service.PortalRealClientIP(c.Request)
 	wantsHTML := strings.Contains(strings.ToLower(c.GetHeader("Accept")), "text/html") || c.Query("html") == "1" || strings.EqualFold(c.Query("view"), "html")
 	format := c.Param("format")
-	knownFormat := format == "" || format == "clash" || format == "clash-meta" || format == "mihomo" || format == "v2ray-json" || format == "xray-json" || format == "json" || format == "v2ray" || format == "v2rayn" || format == "v2rayng" || format == "base64"
+	knownFormat := format == "" || format == "clash" || format == "clash-meta" || format == "shadowrocket" || format == "mihomo" || format == "v2ray-json" || format == "xray-json" || format == "json" || format == "v2ray" || format == "v2rayn" || format == "v2rayng" || format == "base64"
 	consume := knownFormat && c.Request.Method == http.MethodGet && sourceErr == nil && queryErr == nil && !wantsHTML
 	guard, err := svc.AuthorizeSubscription(c.Param("subid"), token, source, hasToken, consume)
 	if err != nil || (hasToken && (queryErr != nil || len(values) != 1)) {
@@ -137,7 +137,9 @@ func (a *SUBController) portalUsageInfo(c *gin.Context) {
 
 func (a *SUBController) mgmaExplicitFormat(c *gin.Context) {
 	switch c.Param("format") {
-	case "clash", "clash-meta", "mihomo":
+	case "clash":
+		a.subClashLegacy(c)
+	case "clash-meta", "mihomo", "shadowrocket":
 		a.subClashs(c)
 	case "v2ray-json", "xray-json", "json":
 		a.subJsons(c)

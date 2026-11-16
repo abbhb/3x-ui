@@ -1,0 +1,541 @@
+{
+  "access": [
+    {
+      "client_id": 7,
+      "consumed_at": 0,
+      "digest": "930815bca6d54e102a2c90f918b7254690a7a8243e03a8a46e4fb6b0bd266dbe",
+      "expires_at": 0,
+      "generation": 1,
+      "issued_at": 1793491200000,
+      "manually_disabled": false
+    },
+    {
+      "client_id": 9,
+      "consumed_at": 0,
+      "digest": "",
+      "expires_at": 0,
+      "generation": 1,
+      "issued_at": 0,
+      "manually_disabled": true
+    }
+  ],
+  "accounts": [
+    {
+      "client_id": 7,
+      "created_at": 1793491200000,
+      "id": 5,
+      "is_active": true,
+      "password_hash": "$2b$10$abcdefghijklmnopqrstuu0sWZmk17w8plDibgv.s.Cyf0pXRxXW.",
+      "updated_at": 1793491200000,
+      "username": "sample_a",
+      "wallet_balance_minor": 1701
+    },
+    {
+      "client_id": null,
+      "created_at": 1793491200000,
+      "id": 6,
+      "is_active": false,
+      "password_hash": "$2b$10$abcdefghijklmnopqrstuu0sWZmk17w8plDibgv.s.Cyf0pXRxXW.",
+      "updated_at": 1793491200000,
+      "username": "unactivated",
+      "wallet_balance_minor": 0
+    }
+  ],
+  "clients": [
+    {
+      "client": {
+        "auth": "synthetic-hy2-a",
+        "clientHostRuleIds": [
+          10001,
+          10002,
+          10003,
+          10004
+        ],
+        "email": "7.sample_a",
+        "enable": true,
+        "expiryTime": 4102444800000,
+        "flow": "xtls-rprx-vision",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "requireMGMA": true,
+        "reset": 0,
+        "resetDay": 0,
+        "resetWeekday": 0,
+        "strictHostBindings": true,
+        "subId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "totalGB": 1000000000,
+        "trafficReset": "never"
+      },
+      "inboundIds": [
+        101,
+        102,
+        103
+      ],
+      "traffic": {
+        "down": 123456,
+        "resetCount": 0,
+        "up": 0
+      }
+    },
+    {
+      "client": {
+        "auth": "synthetic-hy2-b",
+        "clientHostRuleIds": [
+          10001,
+          10002,
+          10003,
+          10004
+        ],
+        "email": "9.sample_b",
+        "enable": false,
+        "expiryTime": 0,
+        "flow": "xtls-rprx-vision",
+        "id": "22222222-2222-4222-8222-222222222222",
+        "requireMGMA": true,
+        "reset": 0,
+        "resetDay": 0,
+        "resetWeekday": 0,
+        "strictHostBindings": true,
+        "subId": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "totalGB": 0,
+        "trafficReset": "never"
+      },
+      "inboundIds": [
+        101,
+        102,
+        103
+      ],
+      "traffic": {
+        "down": 0,
+        "resetCount": 0,
+        "up": 0
+      }
+    }
+  ],
+  "invitation_uses": [
+    {
+      "account_id": 5,
+      "created_at": 1793491200000,
+      "id": 1,
+      "invitation_id": 2,
+      "source_ip": "192.0.2.1"
+    }
+  ],
+  "invitations": [
+    {
+      "actor_admin": "synthetic-admin",
+      "created_at": 1793491200000,
+      "digest": "4fc98cef01dc6df5903258c084662f5e8f7fb22763986c0d46aa130035736351",
+      "disabled_at": 0,
+      "expires_at": 0,
+      "id": 2,
+      "max_uses": 2,
+      "note": "synthetic",
+      "prefix": "IIIIIIII",
+      "starts_at": 0,
+      "use_count": 1
+    }
+  ],
+  "ip_blocks": [
+    {
+      "actor_admin": "synthetic-admin",
+      "created_at": 1793491200000,
+      "expires_at": 0,
+      "id": 1,
+      "network": "203.0.113.8/32",
+      "reason": "synthetic",
+      "revoked_at": 0,
+      "source": "manual"
+    }
+  ],
+  "legacy_key_sha256": "2d8f6cdc4033841680d841aabf361e0aebd1ef757f720b8d4ecb08007924b3d0",
+  "legacy_users": [
+    {
+      "client_id": 7,
+      "created_at": 1793491200000,
+      "revoked_at": 0,
+      "username": "sample_a"
+    },
+    {
+      "client_id": 9,
+      "created_at": 1793491200000,
+      "revoked_at": 0,
+      "username": "sample_b"
+    }
+  ],
+  "next_plans": [
+    {
+      "add_remaining_traffic": true,
+      "client_id": 9,
+      "data_limit": 100,
+      "expire": 0,
+      "fire_on_either": true,
+      "paused": true
+    }
+  ],
+  "pepper_sha256": "1b5a57110faccbc00b48e8320bb2506d1616475b969147b329d13daa4e26de88",
+  "plans": [
+    {
+      "auto_host_inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "compatibility_pending": false,
+      "created_at": 1793491200000,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "description": "Synthetic only",
+      "duration_days": 30,
+      "external_selections": [
+        {
+          "mode": "selected",
+          "node_ids": [
+            31
+          ],
+          "source_id": 12
+        }
+      ],
+      "group_members": {
+        "AI": [
+          "inbound:102",
+          "external"
+        ]
+      },
+      "host_ids": [],
+      "id": 4,
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "is_visible": true,
+      "legacy_metadata": "{\"group_members\": {\"AI\": [\"inbound:TEST_XHTTP\", \"external\"]}, \"local_node_selections\": {}, \"external_selections\": [{\"id\": 2, \"plan_id\": 4, \"source_id\": 12, \"mode\": \"selected\"}]}",
+      "name": "Synthetic plan",
+      "price_minor": 1299,
+      "updated_at": 1793491200000
+    }
+  ],
+  "purchases": [
+    {
+      "account_id": 5,
+      "actor_admin": "",
+      "amount_minor": 1299,
+      "balance_after_minor": 1701,
+      "balance_before_minor": 3000,
+      "created_at": 1793491200000,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "duration_days": 30,
+      "effective_expires_at": 4102444800000,
+      "host_ids": [
+        10001,
+        10002,
+        10003,
+        10004
+      ],
+      "id": 10,
+      "idempotency_key": "source-purchase",
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "kind": "self_purchase",
+      "plan_id": 4,
+      "plan_name": "Synthetic plan",
+      "price_minor": 1299
+    }
+  ],
+  "reserved_ids": [
+    7,
+    9
+  ],
+  "schema": "marzban-portal-to-3x-ui/v1",
+  "security_attempts": [
+    {
+      "failure_count": 2,
+      "id": 1,
+      "kind": "portal_login",
+      "source_ip": "192.0.2.3",
+      "updated_at": 1793491200000,
+      "window_start": 1793491200000
+    }
+  ],
+  "settings": {
+    "auto_block_enabled": true,
+    "auto_block_seconds": 86400,
+    "custom_cidrs": [],
+    "enabled": false,
+    "login_failure_limit": 8,
+    "login_window_seconds": 900,
+    "mode": "dual",
+    "public_url": "",
+    "registration_failure_limit": 5,
+    "registration_window_seconds": 600,
+    "single_use": false,
+    "source_mode": "any",
+    "ttl_seconds": 0
+  },
+  "subscriptions": [
+    {
+      "account_id": 5,
+      "currency": "CNY",
+      "data_limit": 1000000000,
+      "disabled_at": 0,
+      "duration_days": 30,
+      "expires_at": 4102444800000,
+      "host_ids": [],
+      "inbound_ids": [
+        101,
+        102,
+        103
+      ],
+      "plan_id": 4,
+      "plan_name": "Synthetic plan",
+      "price_minor": 1299,
+      "price_paid_minor": 1299,
+      "purchased_at": 1793491200000,
+      "starts_at": 1793491200000
+    }
+  ],
+  "subscriptions_extension": {
+    "external_key_sha256": "e8a9c1432ba0a2102d72c7d1784b8b140dc301bfcbeb94e91b2d2a2f6d25ed81",
+    "hosts": [
+      {
+        "address": "host-1.example.test",
+        "allowInsecure": false,
+        "alpn": [],
+        "fingerprint": "",
+        "groupId": "marzban_route_0ce8e05e18a233fdb89c48c5faf6fc59501c0f93eae9291271fdf0eba62e1391",
+        "hostHeader": "",
+        "id": 10001,
+        "inboundId": 101,
+        "isDisabled": false,
+        "path": "",
+        "port": 443,
+        "randomCount": 1,
+        "remark": "TEST_VISION",
+        "security": "same",
+        "sni": "",
+        "snis": [],
+        "sortOrder": 0,
+        "useSniAsHost": false
+      },
+      {
+        "address": "host-2.example.test",
+        "allowInsecure": false,
+        "alpn": [],
+        "fingerprint": "",
+        "groupId": "marzban_route_5717e6ece298d027bcaaa4f0e407408604be9d6ae8e31c14c904bcde6488d616",
+        "hostHeader": "",
+        "id": 10002,
+        "inboundId": 102,
+        "isDisabled": false,
+        "path": "",
+        "port": 8443,
+        "randomCount": 1,
+        "remark": "TEST_XHTTP · IPv6 download",
+        "security": "same",
+        "sni": "",
+        "snis": [],
+        "sortOrder": 0,
+        "useSniAsHost": false
+      },
+      {
+        "address": "host-2.example.test",
+        "allowInsecure": false,
+        "alpn": [],
+        "fingerprint": "",
+        "groupId": "marzban_route_1dfa2077acd796ead0bcb9a1fe7d0d9e42bb0d339fc4421d7a5eff16a75fb158",
+        "hostHeader": "",
+        "id": 10003,
+        "inboundId": 102,
+        "isDisabled": true,
+        "path": "",
+        "port": 8443,
+        "randomCount": 1,
+        "remark": "TEST_XHTTP · Disabled profile",
+        "security": "same",
+        "sni": "",
+        "snis": [],
+        "sortOrder": 1,
+        "useSniAsHost": false
+      },
+      {
+        "address": "host-3.example.test",
+        "allowInsecure": false,
+        "alpn": [],
+        "fingerprint": "",
+        "groupId": "marzban_route_881d61854b0940992e49da16e017f16e163b25d98f47330a068ad653e00ef891",
+        "hostHeader": "",
+        "id": 10004,
+        "inboundId": 103,
+        "isDisabled": false,
+        "path": "",
+        "port": 8444,
+        "randomCount": 1,
+        "remark": "TEST_HY2",
+        "security": "same",
+        "sni": "",
+        "snis": [],
+        "sortOrder": 0,
+        "useSniAsHost": false
+      }
+    ],
+    "nodes": [
+      {
+        "external_key": "411eb94d74f988e8230154501cbcff170b90af29cbf87d33f09241850310d1f5",
+        "id": 31,
+        "is_active": true,
+        "name": "Shared & source",
+        "payload_ciphertext": "gAAAAABq-yhEGh2YJhJbDNiNzcHVrStRSLNPvajoN0aL-PzZTumQ8sixxrf1Hwiy_JtRKeO0Dq7qFKMqU7KZA3sAdubycB2uddrXc_OuxnqVML86iH-v41sqdV3KpZEx_8MMOaaS7DCKWS2qRaeDk0j6MsJw-6dVvEGVDab3Owzteiz9_EhH8Xa6VaZSCBQ-64ycr4J11X0d7wJlvq6TsH9WkNa2-rkA6TJ9LyJDLfR69Nbn8-ZL7l5axplJaaS52wGj7kfet3Y9",
+        "position": 0,
+        "proxy_type": "socks5",
+        "source_id": 12
+      },
+      {
+        "external_key": "e09ca8c8706721c89377a4f726542b2fbed882fffbfdf15dfdd638b4e56282c9",
+        "id": 32,
+        "is_active": true,
+        "name": "Unselected",
+        "payload_ciphertext": "gAAAAABq-yhEyXmvTiOxvRrJIDcHGeC0CNISfRGKQZoRwM2QhpVauFVru-q7p0jA94GTBxWRF-MeTFpoohQsHDfQ9qKjl_Mnx2T6Wugc2XA9ZIATWaV2Q8bBS2TvgZqfHYEZ3Dni60QbGkdHJSgZmzSNw3yDtMM2Ouc0iAnHGsCqtQBeTMxvyrAosbm8zhGZ87rzBJj2pzVomHpRqFIcwGwfbqsjVxsnwZIgs3QlEQPEQkFrjxFYgX8=",
+        "position": 1,
+        "proxy_type": "socks5",
+        "source_id": 12
+      },
+      {
+        "external_key": "f377b3e24c58f13d237c10a3e200476a43f7c84aa89a4c071b2845c9a4496d60",
+        "id": 33,
+        "is_active": true,
+        "name": "Private owner",
+        "payload_ciphertext": "gAAAAABq-yhEKaqTGyXMmx31pqW1kOyvaZIcP8QI4pnybItCPWRIcpDuvaLkNvRlHTk5jZ3B75R44YVeyOsjTcsJ5XYKoQAQsrYAUldNbRku19OqnzlHZGmYkWU6eXhirjZ1mKGdVm3ZzOGa4HKDHrhCEDtMWHEOaC9OJOnK_GzHX5_c9C5wqNYXJdJVqE1IeCgTJi-RdRD-BC1f_5HmimKC5_xKgky7TBLFTzcLyJfdhymH4eMZHt8=",
+        "position": 0,
+        "proxy_type": "socks5",
+        "source_id": 13
+      }
+    ],
+    "policy": {
+      "document": "{\"proxy-groups\": [{\"name\": \"🚀 节点选择\", \"type\": \"select\", \"proxies\": [\"__MGMA_LOCAL_NODES__\", \"MGMA · External\"]}, {\"name\": \"AI\", \"type\": \"select\", \"proxies\": [\"🚀 节点选择\"]}], \"rules\": [\"MATCH,🚀 节点选择\"]}",
+      "enabled": true,
+      "group_order": [],
+      "primary_group": "🚀 节点选择",
+      "revision": 1,
+      "secure_dns": true
+    },
+    "routes": [
+      {
+        "cascade_mode": "replace",
+        "client_stream": "",
+        "entry_ciphertext": "",
+        "entry_node_id": 31,
+        "host_id": 10001,
+        "mihomo_only": false,
+        "revision": 1
+      },
+      {
+        "cascade_mode": "off",
+        "client_stream": "{\"network\": \"xhttp\", \"security\": \"tls\", \"tlsSettings\": {\"serverName\": \"up.example.test\", \"alpn\": [\"h2\"]}, \"xhttpSettings\": {\"path\": \"/images/synthetic/\", \"mode\": \"packet-up\", \"extra\": {\"xmux\": {\"maxConcurrency\": \"16-32\"}, \"downloadSettings\": {\"address\": \"2001:db8::8\", \"port\": 443, \"network\": \"xhttp\", \"security\": \"tls\", \"tlsSettings\": {\"serverName\": \"cdn.example.test\", \"alpn\": [\"h2\"]}, \"xhttpSettings\": {\"path\": \"/images/synthetic/\"}}}}, \"address\": \"up.example.test\", \"port\": 443}",
+        "entry_ciphertext": "",
+        "entry_node_id": null,
+        "host_id": 10002,
+        "mihomo_only": true,
+        "revision": 1
+      },
+      {
+        "cascade_mode": "off",
+        "client_stream": "",
+        "entry_ciphertext": "",
+        "entry_node_id": null,
+        "host_id": 10003,
+        "mihomo_only": true,
+        "revision": 1
+      },
+      {
+        "cascade_mode": "off",
+        "client_stream": "",
+        "entry_ciphertext": "",
+        "entry_node_id": null,
+        "host_id": 10004,
+        "mihomo_only": false,
+        "revision": 1
+      }
+    ],
+    "schema": "marzban-subscriptions-to-3x-ui/v1",
+    "sources": [
+      {
+        "created_at": 1793491200000,
+        "enabled": true,
+        "group_name": "Airport",
+        "id": 12,
+        "last_attempt_at": 0,
+        "last_error_code": "",
+        "last_success_at": 0,
+        "name": "Shared",
+        "next_refresh_at": 0,
+        "node_count": 2,
+        "owner_account_id": null,
+        "refresh_interval_minutes": 360,
+        "scope_key": 0,
+        "skipped_node_count": 0,
+        "status": "ready",
+        "updated_at": 1793491200000,
+        "url_ciphertext": "gAAAAABq-yhE0b8YwEnzeqSSRmEcJ7JDA-QlLyzqrr9zHeiFf8LAGSaEQDWCam__8IDI1G3VNFsNjOeYYAVT94KrkR7GWCv_EV8T5XJCmnB2cBo__oNamo3RW1Bdi8276DXm0RY8j3cIWYszFcKoEv2EATPYs0_Lkw==",
+        "url_revision": 0
+      },
+      {
+        "created_at": 1793491200000,
+        "enabled": true,
+        "group_name": "Airport",
+        "id": 13,
+        "last_attempt_at": 0,
+        "last_error_code": "",
+        "last_success_at": 0,
+        "name": "Private",
+        "next_refresh_at": 0,
+        "node_count": 1,
+        "owner_account_id": 5,
+        "refresh_interval_minutes": 360,
+        "scope_key": 5,
+        "skipped_node_count": 0,
+        "status": "ready",
+        "updated_at": 1793491200000,
+        "url_ciphertext": "",
+        "url_revision": 0
+      }
+    ]
+  },
+  "usage_history": [
+    {
+      "client_id": 7,
+      "id": 1,
+      "reset_at": 1793491200000,
+      "used_traffic": 97
+    }
+  ],
+  "wallet": [
+    {
+      "account_id": 5,
+      "actor_admin": "synthetic-admin",
+      "amount_minor": 3000,
+      "balance_after_minor": 3000,
+      "created_at": 1793491200000,
+      "id": 1,
+      "idempotency_key": "source-credit",
+      "kind": "admin_credit",
+      "note": "synthetic credit",
+      "purchase_id": null
+    },
+    {
+      "account_id": 5,
+      "actor_admin": "",
+      "amount_minor": -1299,
+      "balance_after_minor": 1701,
+      "created_at": 1793491200000,
+      "id": 2,
+      "idempotency_key": "source-purchase",
+      "kind": "purchase_debit",
+      "note": "Purchase: Synthetic plan",
+      "purchase_id": 10
+    }
+  ]
+}

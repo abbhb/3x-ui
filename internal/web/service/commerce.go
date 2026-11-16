@@ -20,6 +20,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
@@ -184,14 +185,41 @@ func (s *CommerceService) Plans(visibleOnly bool) ([]model.PortalPlan, error) {
 		query = query.Where("is_visible = ?", true)
 	}
 	err := query.Find(&rows).Error
+	if visibleOnly {
+		for i := range rows {
+			rows[i].HostSignatures = nil
+			rows[i].ExternalSelections = nil
+			rows[i].GroupMembers = nil
+			rows[i].HostIDs = nil
+			rows[i].InboundIDs = nil
+			rows[i].AutoHostInboundIDs = nil
+		}
+	}
 	return rows, err
 }
 
 func portalValidatePlan(tx *gorm.DB, p *model.PortalPlan) ([]model.Inbound, error) {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Description = strings.TrimSpace(p.Description)
-	if p.Name == "" || len(p.Name) > 128 || len(p.Description) > 1000 || p.Currency != "CNY" || p.PriceMinor < 0 || p.PriceMinor > portalMaxAmount || p.DurationDays < 1 || p.DurationDays > 3650 || p.DataLimit < 0 || p.DataLimit > 1_000_000_000_000_000_000 || len(p.InboundIDs) == 0 || len(p.InboundIDs) > 128 || len(p.HostIDs) == 0 || len(p.HostIDs) > 32768 || p.CompatibilityPending {
+	if p.Name == "" || len(p.Name) > 128 || len(p.Description) > 1000 || p.Currency != "CNY" || p.PriceMinor < 0 || p.PriceMinor > portalMaxAmount || p.DurationDays < 1 || p.DurationDays > 3650 || p.DataLimit < 0 || p.DataLimit > 1_000_000_000_000_000_000 || (len(p.InboundIDs) == 0 && len(p.ExternalSelections) == 0) || len(p.InboundIDs) > 128 || (len(p.InboundIDs) > 0 && len(p.HostIDs) == 0 && len(p.AutoHostInboundIDs) == 0) || len(p.HostIDs) > 32768 || p.CompatibilityPending {
 		return nil, ErrPortalInvalid
+	}
+	for _, id := range p.AutoHostInboundIDs {
+		if !slices.Contains(p.InboundIDs, id) {
+			return nil, ErrPortalInvalid
+		}
+	}
+	if len(uniqueInts(p.AutoHostInboundIDs)) != len(p.AutoHostInboundIDs) {
+		return nil, ErrPortalInvalid
+	}
+	if err := subscriptioncompat.ValidateHostSignatures(tx, *p); err != nil {
+		return nil, err
+	}
+	if err := subscriptioncompat.ValidateSelections(tx, p.ExternalSelections); err != nil {
+		return nil, err
+	}
+	if err := subscriptioncompat.ValidateMembers(tx, *p); err != nil {
+		return nil, err
 	}
 	if len(uniqueInts(p.InboundIDs)) != len(p.InboundIDs) || len(uniqueInts(p.HostIDs)) != len(p.HostIDs) {
 		return nil, ErrPortalInvalid
@@ -217,7 +245,7 @@ func portalValidatePlan(tx *gorm.DB, p *model.PortalPlan) ([]model.Inbound, erro
 			return nil, ErrPortalUnavailable
 		}
 		for _, h := range hosts {
-			if h.IsDisabled || !slices.Contains(p.InboundIDs, h.InboundId) {
+			if !slices.Contains(p.InboundIDs, h.InboundId) {
 				return nil, ErrPortalInvalid
 			}
 		}
@@ -229,68 +257,74 @@ func (s *CommerceService) SavePlan(id int, p model.PortalPlan) (*model.PortalPla
 	p.ID = id
 	err := submitTrafficWrite(func() error {
 		return database.GetDB().Transaction(func(tx *gorm.DB) error {
-			rightsChanged := id == 0
-			if _, err := portalValidatePlan(tx, &p); err != nil {
+			if err := subscriptioncompat.Lock(tx); err != nil {
 				return err
 			}
+			var old model.PortalPlan
 			if id > 0 {
-				var old model.PortalPlan
 				if err := tx.First(&old, id).Error; err != nil {
 					return ErrPortalUnavailable
 				}
 				p.CreatedAt = old.CreatedAt
-				rightsChanged = !slices.Equal(p.InboundIDs, old.InboundIDs) || !slices.Equal(p.HostIDs, old.HostIDs)
 				p.CompatibilityPending = old.CompatibilityPending
 				p.LegacyMetadata = old.LegacyMetadata
+				if p.HostSignatures == nil {
+					p.HostSignatures = old.HostSignatures
+				}
 			}
-			if err := tx.Save(&p).Error; err != nil {
+			if err := subscriptioncompat.CaptureHostSignatures(tx, &p); err != nil {
 				return err
-			}
-			if !rightsChanged || id == 0 {
-				return nil
 			}
 			inbounds, err := portalValidatePlan(tx, &p)
 			if err != nil {
 				return err
 			}
-			// Node access follows the current plan. Price, allowance and duration
-			// remain commercial snapshots, matching the source implementation.
-			last := 0
-			for {
-				var subscriptions []model.PortalSubscription
-				if err := tx.Where("plan_id = ? AND account_id > ?", id, last).Order("account_id").Limit(100).Find(&subscriptions).Error; err != nil {
-					return err
-				}
-				if len(subscriptions) == 0 {
-					break
-				}
-				for _, sub := range subscriptions {
-					last = sub.AccountID
-					if err := tx.Model(&sub).Updates(map[string]any{"inbound_ids": model.EncodeClientHostRuleIds(p.InboundIDs), "host_ids": model.EncodeClientHostRuleIds(p.HostIDs)}).Error; err != nil {
-						return err
-					}
-					var account model.PortalAccount
-					if err := tx.First(&account, sub.AccountID).Error; err != nil {
-						return err
-					}
-					if account.ClientID == nil {
-						continue
-					}
-					var rec model.ClientRecord
-					if err := tx.First(&rec, *account.ClientID).Error; err != nil {
-						return err
-					}
-					operational := p
-					operational.DataLimit = rec.TotalGB
-					if _, err := s.applyPortalEntitlement(tx, &account, operational, inbounds, rec.ExpiryTime, false, rec.Enable); err != nil {
-						return err
-					}
-				}
+			changed := !slices.Equal(p.InboundIDs, old.InboundIDs) || !slices.Equal(p.HostIDs, old.HostIDs) || !slices.Equal(p.AutoHostInboundIDs, old.AutoHostInboundIDs)
+			if err := tx.Save(&p).Error; err != nil {
+				return err
 			}
-			return nil
+			if id == 0 || !changed {
+				return nil
+			}
+			return s.reconcilePortalPlanTx(tx, p, inbounds)
 		})
 	})
 	return &p, err
+}
+
+func (s *CommerceService) reconcilePortalPlanTx(tx *gorm.DB, p model.PortalPlan, inbounds []model.Inbound) error {
+	last := 0
+	for {
+		var subscriptions []model.PortalSubscription
+		if err := tx.Where("plan_id = ? AND account_id > ?", p.ID, last).Order("account_id").Limit(100).Find(&subscriptions).Error; err != nil {
+			return err
+		}
+		if len(subscriptions) == 0 {
+			return nil
+		}
+		for _, sub := range subscriptions {
+			last = sub.AccountID
+			if err := tx.Model(&sub).Updates(map[string]any{"inbound_ids": model.EncodeClientHostRuleIds(p.InboundIDs), "host_ids": model.EncodeClientHostRuleIds(p.HostIDs)}).Error; err != nil {
+				return err
+			}
+			var a model.PortalAccount
+			if err := tx.First(&a, sub.AccountID).Error; err != nil {
+				return err
+			}
+			if a.ClientID == nil {
+				continue
+			}
+			var rec model.ClientRecord
+			if err := tx.First(&rec, *a.ClientID).Error; err != nil {
+				return err
+			}
+			operational := p
+			operational.DataLimit = rec.TotalGB
+			if _, err := s.applyPortalEntitlement(tx, &a, operational, inbounds, rec.ExpiryTime, false, rec.Enable); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func portalSnapshot(p model.PortalPlan) model.PortalPlanSnapshot {

@@ -13,6 +13,8 @@ on:
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
       - "tools/marzban_portal_export.py"
+      - "tools/marzban_subscription_export.py"
+      - "tools/subscription_runtime_lab.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
@@ -32,6 +34,8 @@ on:
       - "deploy/test/installer-panel-port.sh"
       - "tools/marzban_export.py"
       - "tools/marzban_portal_export.py"
+      - "tools/marzban_subscription_export.py"
+      - "tools/subscription_runtime_lab.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
@@ -55,6 +59,15 @@ jobs:
         run: python3 tools/connection_observer/build.py --output "$RUNNER_TEMP/xray-observer"
       - name: Four real socket families and guarded native file startup
         run: XRAY_OBSERVER_BINARY="$RUNNER_TEMP/xray-observer" python3 -W error::ResourceWarning -m unittest discover -s tools/tests -p test_observer_runtime.py -v
+      - name: Native imported subscriptions with real Mihomo and Xray
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 -o "$RUNNER_TEMP/mihomo.gz" https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-linux-amd64-v1-v1.19.34.gz
+          echo "0c07340a01408d033dda4088ea2a4c1e4d82aeed7b2f84f7c046e93b6ff3290c  $RUNNER_TEMP/mihomo.gz" | sha256sum -c -
+          gzip -d "$RUNNER_TEMP/mihomo.gz"
+          chmod +x "$RUNNER_TEMP/mihomo"
+          mkdir -p internal/web/dist && touch internal/web/dist/.gitkeep
+          python3 -W error::ResourceWarning tools/subscription_runtime_lab.py --mihomo "$RUNNER_TEMP/mihomo" --xray "$RUNNER_TEMP/xray-observer"
       - name: Install isolated network lab dependencies
         run: sudo apt-get update && sudo apt-get install -y nftables iproute2 curl
       - name: Preserve fixed ingress and verify per-user TCP and UDP IPv6 SNAT
@@ -132,6 +145,12 @@ jobs:
           set -o pipefail
           go test ./internal/web/service -run '^TestPortalPostgres(Transactions|OfflineImport)$' -count=1 -v | tee /tmp/postgres-portal.log
           test "$(grep -c -- '^--- PASS' /tmp/postgres-portal.log || true)" -eq 2
+
+      - name: PostgreSQL subscription snapshot budget serialization
+        run: |
+          set -o pipefail
+          go test ./internal/subscriptioncompat -run '^TestSubscriptionsPostgresBudgetRace$' -count=1 -v | tee /tmp/postgres-subscriptions.log
+          test "$(grep -c -- '^--- PASS' /tmp/postgres-subscriptions.log || true)" -eq 1
 
       - name: PostgreSQL batched stats identities
         run: |

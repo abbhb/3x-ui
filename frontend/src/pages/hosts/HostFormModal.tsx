@@ -75,6 +75,7 @@ function defaultsFor(host: HostRecord | null): FormShape {
     snis: initialSnis,
     sniSharedRandom: initialSnis.length > 1 && (host?.sniSharedRandom ?? false),
     hostHeader: host?.hostHeader ?? '',
+    useSniAsHost: host?.useSniAsHost ?? false,
     path: host?.path ?? '',
     alpn: (host?.alpn as BulkAddHostValues['alpn']) ?? [],
     fingerprint: host?.fingerprint as BulkAddHostValues['fingerprint'],
@@ -517,6 +518,18 @@ export default function HostFormModal({
                         ),
                         children: (
                           <>
+                            <FormField
+                              name="useSniAsHost"
+                              label={t('pages.hosts.fields.useSniAsHost')}
+                            >
+                              <Controller
+                                name="useSniAsHost"
+                                control={methods.control}
+                                render={({ field }) => (
+                                  <Switch checked={field.value} onChange={field.onChange} />
+                                )}
+                              />
+                            </FormField>
                             <FormField name="hostHeader" label={t('pages.hosts.fields.hostHeader')}>
                               <Input />
                             </FormField>

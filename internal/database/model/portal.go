@@ -28,20 +28,24 @@ type PortalIdentity struct {
 }
 
 type PortalPlan struct {
-	CompatibilityPending bool   `json:"compatibility_pending"`
-	LegacyMetadata       string `json:"-"`
-	ID                   int    `json:"id" gorm:"primaryKey"`
-	Name                 string `json:"name" gorm:"uniqueIndex;not null"`
-	Description          string `json:"description"`
-	PriceMinor           int64  `json:"price_minor" gorm:"not null;check:portal_price_nonnegative,price_minor >= 0"`
-	Currency             string `json:"currency"`
-	DurationDays         int    `json:"duration_days"`
-	DataLimit            int64  `json:"data_limit"`
-	InboundIDs           []int  `json:"inbound_ids" gorm:"serializer:json"`
-	HostIDs              []int  `json:"host_ids" gorm:"serializer:json"`
-	IsVisible            bool   `json:"is_visible"`
-	CreatedAt            int64  `json:"created_at" gorm:"autoCreateTime:milli"`
-	UpdatedAt            int64  `json:"updated_at" gorm:"autoUpdateTime:milli"`
+	AutoHostInboundIDs   []int               `json:"auto_host_inbound_ids" gorm:"serializer:json"`
+	HostSignatures       map[string]string   `json:"host_signatures" gorm:"serializer:json"`
+	ExternalSelections   []ExternalSelection `json:"external_selections" gorm:"serializer:json"`
+	GroupMembers         map[string][]string `json:"group_members" gorm:"serializer:json"`
+	CompatibilityPending bool                `json:"compatibility_pending"`
+	LegacyMetadata       string              `json:"-"`
+	ID                   int                 `json:"id" gorm:"primaryKey"`
+	Name                 string              `json:"name" gorm:"uniqueIndex;not null"`
+	Description          string              `json:"description"`
+	PriceMinor           int64               `json:"price_minor" gorm:"not null;check:portal_price_nonnegative,price_minor >= 0"`
+	Currency             string              `json:"currency"`
+	DurationDays         int                 `json:"duration_days"`
+	DataLimit            int64               `json:"data_limit"`
+	InboundIDs           []int               `json:"inbound_ids" gorm:"serializer:json"`
+	HostIDs              []int               `json:"host_ids" gorm:"serializer:json"`
+	IsVisible            bool                `json:"is_visible"`
+	CreatedAt            int64               `json:"created_at" gorm:"autoCreateTime:milli"`
+	UpdatedAt            int64               `json:"updated_at" gorm:"autoUpdateTime:milli"`
 }
 
 // Financial terms are historical; current route grants can follow plan edits.
@@ -227,5 +231,5 @@ func (*PortalUsageReset) BeforeDelete(*gorm.DB) error        { return errPortalH
 
 // Shared registration keeps backups, cross-DB conversion and live schemas aligned.
 func PortalModels() []any {
-	return []any{&PortalAccount{}, &PortalIdentity{}, &PortalPlan{}, &PortalSubscription{}, &PortalPurchase{}, &PortalWalletTransaction{}, &PortalAction{}, &PortalInvitation{}, &PortalInvitationUse{}, &PortalIPBlock{}, &PortalSecurityAttempt{}, &PortalSettings{}, &PortalAccess{}, &PortalLegacyUser{}, &PortalNextPlan{}, &PortalRuntimeChange{}, &PortalUsageReset{}}
+	return []any{&PortalAccount{}, &PortalIdentity{}, &PortalPlan{}, &PortalSubscription{}, &PortalPurchase{}, &PortalWalletTransaction{}, &PortalAction{}, &PortalInvitation{}, &PortalInvitationUse{}, &PortalIPBlock{}, &PortalSecurityAttempt{}, &PortalSettings{}, &PortalAccess{}, &PortalLegacyUser{}, &PortalNextPlan{}, &PortalRuntimeChange{}, &PortalUsageReset{}, &SubscriptionSource{}, &SubscriptionNode{}, &SubscriptionHost{}, &SubscriptionPolicy{}, &SubscriptionBudgetLock{}}
 }

@@ -200,6 +200,12 @@ def export(args):
     hosts, host_hash = read_json(args.target_hosts, "target hosts")
     with snapshot(args.database) as (db, db_hash):
         bundle, identities, future = build(db, core, mapping, inventory, routes, hosts)
+        template_hash = None
+        if getattr(args, "stage4", False):
+            from marzban_subscription_export import extend
+            require(args.clash_template, "stage 4 requires the frozen Clash/Mihomo template")
+            names = read_json(args.tls_name_map, "TLS names")[0] if args.tls_name_map else None
+            template_hash = extend(db, bundle, core, mapping, routes, hosts, args.clash_template, names)
     members = {"portal.json": encode(bundle), "identities.json": encode(identities), "stage4-private.json": encode(future)}
     reserved = set(bundle["reserved_ids"])
     allocations = []
@@ -217,6 +223,8 @@ def export(args):
     manifest = dict(schema=SCHEMA, ready_for_cutover=False, source_sha256=db_hash, client_count=len(bundle["clients"]), account_count=len(bundle["accounts"]),
                     sources=dict(core=core_hash, inbound_map=map_hash, target_inbounds=inventory_hash, route_map=route_hash, target_hosts=host_hash),
                     allocations=allocations, files={name: digest(blob) for name, blob in members.items()})
+    if template_hash:
+        manifest["sources"]["clash_template"] = template_hash
     root = Path(args.output)
     root.mkdir(mode=0o700)
     try:
@@ -237,6 +245,9 @@ def main(argv=None):
         parser.add_argument("--" + field, required=True)
     parser.add_argument("--traffic-policy", required=True, choices=["preserve-total-as-download"])
     parser.add_argument("--ipv6-allocation", action="append", default=[])
+    parser.add_argument("--stage4", action="store_true", help="include external ciphertext, cascades, concrete XHTTP routes and policy")
+    parser.add_argument("--clash-template")
+    parser.add_argument("--tls-name-map")
     args = parser.parse_args(argv)
     try:
         result = export(args)

@@ -11,6 +11,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 )
 
 // hostBinding is how a client's host binding applies to one inbound.
@@ -26,6 +27,23 @@ const (
 // closes only the inbound it served; ids that resolve to no inbound at all fail closed everywhere.
 func (s *SubService) clientHostBinding(inbound *model.Inbound, client model.Client) (hostBinding, []*model.Host) {
 	ids := model.EffectiveClientHostRuleIds(client)
+	if override, ok := s.compatGrantCache[client.Email]; ok {
+		if override.err != nil {
+			return hostBindingClosed, nil
+		}
+		if override.managed {
+			ids = override.ids
+		}
+	} else if s.compatGrantCache != nil {
+		idsForPlan, managed, err := subscriptioncompat.EffectiveHostGrants(database.GetDB(), client.Email)
+		s.compatGrantCache[client.Email] = compatHostGrant{ids: idsForPlan, managed: managed, err: err}
+		if err != nil {
+			return hostBindingClosed, nil
+		}
+		if managed {
+			ids = idsForPlan
+		}
+	}
 	db := database.GetDB()
 	if len(ids) == 0 || db == nil {
 		if client.StrictHostBindings {
@@ -84,6 +102,13 @@ func (s *SubService) clientHostEndpoints(inbound *model.Inbound, client model.Cl
 	state, hosts := s.clientHostBinding(inbound, client)
 	switch state {
 	case hostBindingNone:
+		if len(baseEps) == 0 {
+			for _, h := range s.hostsByInbound[inbound.Id] {
+				if !h.IsDisabled && s.excludeProfile(h, format) {
+					return nil, true
+				}
+			}
+		}
 		return baseEps, false
 	case hostBindingClosed:
 		return nil, true
@@ -91,7 +116,7 @@ func (s *SubService) clientHostEndpoints(inbound *model.Inbound, client model.Cl
 	defaultDest := s.resolveInboundAddress(inbound)
 	var eps []map[string]any
 	for _, h := range hosts {
-		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) {
+		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) || s.excludeProfile(h, format) {
 			continue
 		}
 		eps = append(eps, s.hostEndpointMaps(h, defaultDest, inbound.Port)...)
@@ -141,7 +166,7 @@ func (s *SubService) hostEndpoints(inbound *model.Inbound, format string) []map[
 	defaultDest := s.resolveInboundAddress(inbound)
 	eps := make([]map[string]any, 0, len(hosts))
 	for _, h := range hosts {
-		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) {
+		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) || s.excludeProfile(h, format) {
 			continue
 		}
 		eps = append(eps, s.hostEndpointMaps(h, defaultDest, inbound.Port)...)
@@ -168,7 +193,9 @@ func (s *SubService) hostEndpointMaps(h *model.Host, defaultDest string, default
 					}
 				}
 				hCopy.Sni = endpointSni(h, shared)
-				eps = append(eps, hostToExternalProxyMap(&hCopy, defaultDest, defaultPort))
+				ep := hostToExternalProxyMap(&hCopy, defaultDest, defaultPort)
+				ep["mgmaClientStream"] = s.compatHosts[h.Id].ClientStream
+				eps = append(eps, ep)
 			}
 			return eps
 		}
@@ -176,7 +203,9 @@ func (s *SubService) hostEndpointMaps(h *model.Host, defaultDest string, default
 
 	hCopy := *h
 	hCopy.Sni = endpointSni(h, shared)
-	return []map[string]any{hostToExternalProxyMap(&hCopy, defaultDest, defaultPort)}
+	ep := hostToExternalProxyMap(&hCopy, defaultDest, defaultPort)
+	ep["mgmaClientStream"] = s.compatHosts[h.Id].ClientStream
+	return []map[string]any{ep}
 }
 
 // endpointSni is the SNI one endpoint of h advertises: the request's shared pick, a fresh random
@@ -240,7 +269,8 @@ func hostToExternalProxyMap(h *model.Host, defaultDest string, defaultPort int) 
 		// Marks this as a host (not a legacy externalProxy) entry so host-only
 		// behaviors (e.g. reality SNI/fp override) apply without touching the
 		// legacy externalProxy path. Not emitted into output.
-		"isHost": true,
+		"isHost":     true,
+		"mgmaHostID": h.Id,
 	}
 	sni := h.Sni
 	if h.OverrideSniFromAddress {
@@ -272,6 +302,9 @@ func hostToExternalProxyMap(h *model.Host, defaultDest string, defaultPort int) 
 	}
 	if h.HostHeader != "" {
 		ep["hostHeader"] = h.HostHeader
+	}
+	if h.UseSniAsHost && sni != "" {
+		ep["hostHeader"] = sni
 	}
 	if h.Path != "" {
 		ep["path"] = h.Path

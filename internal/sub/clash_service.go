@@ -14,11 +14,14 @@ import (
 	yaml "github.com/goccy/go-yaml"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
 )
 
 type SubClashService struct {
+	shadowrocket   bool
 	enableRouting  bool
 	clashRules     string
 	clashRemoteDNS bool
@@ -46,11 +49,21 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	if err != nil {
 		return "", "", err
 	}
+	if legacy || s.shadowrocket {
+		if err := subReq.checkCapabilities(inbounds, subId, "clash-legacy"); err != nil {
+			return "", "", err
+		}
+	}
+	compat := &subscriptioncompat.Service{DB: database.GetDB(), SuppressSecureDNS: s.shadowrocket}
+	projection, err := compat.Projection(subId)
+	if err != nil {
+		return "", "", err
+	}
 	externalLinks, err := subReq.getClientExternalLinksBySubId(subId)
 	if err != nil {
 		return "", "", err
 	}
-	if len(inbounds) == 0 && len(externalLinks) == 0 {
+	if len(inbounds) == 0 && len(externalLinks) == 0 && !projection.HasExternal {
 		return "", "", nil
 	}
 
@@ -61,6 +74,10 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	var hasEnabledClient bool
 
 	seenEmails := make(map[string]struct{})
+	if projection.HasExternal && projection.Client != nil {
+		seenEmails[projection.Client.Email] = struct{}{}
+		hasEnabledClient = true
+	}
 	for _, inbound := range inbounds {
 		clients := subReq.matchingClients(inbound, subId)
 		if len(clients) == 0 {
@@ -137,12 +154,12 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		}
 	}
 
-	if len(proxies) == 0 && !hasInactiveExternal && !hasBoundClosed {
+	if len(proxies) == 0 && !hasInactiveExternal && !hasBoundClosed && !projection.HasExternal {
 		return "", "", nil
 	}
 	if legacy {
 		proxies = legacyClashProxies(proxies)
-		if len(proxies) == 0 {
+		if len(proxies) == 0 && !projection.HasExternal {
 			return "", "", errNoLegacyClashProxies
 		}
 	}
@@ -170,7 +187,7 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		}
 	}
 
-	if len(proxies) == 0 {
+	if len(proxies) == 0 && !projection.HasExternal {
 		return "", header, nil
 	}
 
@@ -212,6 +229,9 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		}
 	}
 
+	if err := compat.Render(config, projection, legacy); err != nil {
+		return "", "", err
+	}
 	finalYAML, err := marshalClashYAML(config)
 	if err != nil {
 		return "", "", err
@@ -425,9 +445,29 @@ func (s *SubClashService) getProxies(subReq *SubService, inbound *model.Inbound,
 			applyExternalProxyTLSToStream(extPrxy, workingStream, security)
 		}
 		applyHostStreamOverrides(extPrxy, workingStream)
+		var clientStream map[string]any
+		if raw, _ := extPrxy["mgmaClientStream"].(string); raw != "" {
+			if json.Unmarshal([]byte(raw), &clientStream) != nil {
+				continue
+			}
+			workingStream = clientStream
+			if a, ok := clientStream["address"].(string); ok {
+				workingInbound.Listen = strings.Trim(a, "[]")
+			}
+			if p, ok := clientStream["port"].(float64); ok {
+				workingInbound.Port = int(p)
+			}
+		}
 
 		proxy := s.buildProxy(subReq, &workingInbound, client, workingStream, extPrxy)
 		if len(proxy) > 0 {
+			proxy["_mgma-host-id"] = extPrxy["mgmaHostID"]
+			proxy["_mgma-inbound-id"] = inbound.Id
+			if clientStream != nil {
+				for key, value := range subscriptioncompat.MihomoConnection(clientStream) {
+					proxy[key] = value
+				}
+			}
 			// Host-only mihomo knob: ip-version is a top-level proxy field, set
 			// last so it cannot be clobbered. Absent for legacy externalProxy.
 			if v, _ := extPrxy["mihomoIpVersion"].(string); v != "" {
@@ -931,6 +971,15 @@ func (s *SubClashService) buildAmneziaWGProxy(subReq *SubService, inbound *model
 	return proxy
 }
 
+// xhttpHTTPHost keeps IPv6 authorities valid in both HTTP Host and Referer URLs.
+// The dial address and TLS server name remain unbracketed.
+func xhttpHTTPHost(host string) string {
+	if address, err := netip.ParseAddr(strings.Trim(host, "[]")); err == nil && address.Is6() {
+		return "[" + address.String() + "]"
+	}
+	return host
+}
+
 // buildXhttpClashOpts converts xhttpSettings from 3x-ui's camelCase JSON
 // storage into the kebab-case map that Mihomo expects under xhttp-opts.
 //
@@ -945,6 +994,7 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 	if xhttp == nil {
 		return nil
 	}
+	xhttp = subscriptioncompat.EffectiveXHTTP(xhttp)
 	opts := map[string]any{}
 
 	// Direct fields: path, mode
@@ -963,7 +1013,7 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 		host = searchHost(headers)
 	}
 	if host != "" {
-		opts["host"] = host
+		opts["host"] = xhttpHTTPHost(host)
 	}
 
 	type xhttpStringField struct{ src, dst, skipValue string }
@@ -984,8 +1034,14 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 	}
 
 	for _, f := range stringFields {
-		if v, ok := xhttp[f.src].(string); ok && v != "" && (f.skipValue == "" || v != f.skipValue) {
-			opts[f.dst] = v
+		if v, ok := xhttp[f.src]; ok && v != nil {
+			str := fmt.Sprint(v)
+			if n, ok := v.(float64); ok {
+				str = strconv.FormatFloat(n, 'f', -1, 64)
+			}
+			if str != "" && (f.skipValue == "" || str != f.skipValue) {
+				opts[f.dst] = str
+			}
 		}
 	}
 
@@ -1071,6 +1127,27 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 		}
 	}
 
+	if down, ok := xhttp["downloadSettings"].(map[string]any); ok && len(down) > 0 {
+		connection := subscriptioncompat.MihomoConnection(down)
+		transport, _ := down["xhttpSettings"].(map[string]any)
+		if transport == nil {
+			transport, _ = down["splithttpSettings"].(map[string]any)
+		}
+		transport = subscriptioncompat.EffectiveXHTTP(transport)
+		downOpts := buildXhttpClashOpts(transport)
+		for _, key := range []string{"path", "host", "headers", "reuse-settings"} {
+			if v, exists := downOpts[key]; exists {
+				connection[key] = v
+			}
+		}
+		if connection["host"] == nil || connection["host"] == "" {
+			connection["host"] = connection["servername"]
+		}
+		if host, ok := connection["host"].(string); ok {
+			connection["host"] = xhttpHTTPHost(host)
+		}
+		opts["download-settings"] = connection
+	}
 	if len(opts) == 0 {
 		return nil
 	}
@@ -1162,10 +1239,27 @@ func (s *SubClashService) applyTransport(proxy map[string]any, network string, s
 			proxy["http-upgrade-opts"] = opts
 		}
 		return true
-	case "xhttp":
+	case "xhttp", "splithttp":
 		proxy["network"] = "xhttp"
 		xhttp, _ := stream["xhttpSettings"].(map[string]any)
+		if xhttp == nil {
+			xhttp, _ = stream["splithttpSettings"].(map[string]any)
+		}
 		opts := buildXhttpClashOpts(xhttp)
+		// Mihomo uses this authority in the padding Referer URL. A bare IPv6
+		// address makes url.Parse fail and silently drops required padding.
+		if opts["host"] == nil {
+			host, _ := proxy["servername"].(string)
+			if host == "" {
+				host, _ = proxy["server"].(string)
+			}
+			if authority := xhttpHTTPHost(host); authority != host {
+				if opts == nil {
+					opts = map[string]any{}
+				}
+				opts["host"] = authority
+			}
+		}
 		if opts != nil {
 			proxy["xhttp-opts"] = opts
 		}
