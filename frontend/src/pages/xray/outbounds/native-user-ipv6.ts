@@ -81,7 +81,10 @@ export function planNativeUserIPv6(
   )
     throw new Error('pages.xray.user6.directOnly');
   const tags = clients.map((c) => `user6-${c.id}-${inbound}`);
-  if (next.outbounds.some((o) => tags.includes(o.tag)))
+  if (
+    next.outbounds.some((o) => tags.includes(o.tag)) ||
+    rules.some((r) => typeof r.ruleTag === 'string' && tags.includes(r.ruleTag))
+  )
     throw new Error('pages.xray.user6.alreadyExists');
   return (leases: NativeIPv6Address[]): XraySettingsValue => {
     const additions = clients.map((client, i) => {

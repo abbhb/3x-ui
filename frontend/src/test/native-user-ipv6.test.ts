@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { planNativeUserIPv6 } from '@/pages/xray/outbounds/native-user-ipv6';
+import { propagateOutboundTagRename } from '@/pages/xray/basics/helpers';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 
 const clients = [
@@ -90,6 +91,12 @@ describe('native per-user IPv6 editor', () => {
     scripted.routing!.script = 'existing-routing.lua';
     expect(() => planNativeUserIPv6(scripted, 'entry', clients)).toThrow('manualRouting');
     const generated = planNativeUserIPv6(fixture(), 'entry', clients)(leases);
+    expect(() => planNativeUserIPv6(generated, 'entry', clients)).toThrow('alreadyExists');
+    for (const outbound of generated.outbounds!.slice(2)) {
+      const previous = outbound.tag!;
+      outbound.tag = `renamed-${previous}`;
+      propagateOutboundTagRename(generated, previous, outbound.tag);
+    }
     expect(() => planNativeUserIPv6(generated, 'entry', clients)).toThrow('alreadyExists');
     expect(() => planNativeUserIPv6(fixture(), 'other-entry', clients)).toThrow('selectClients');
     expect(() =>
