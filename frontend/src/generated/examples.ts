@@ -1692,11 +1692,6 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "updatedAt": 0
   },
-  "ServiceLine": {
-    "egressMode": "",
-    "inboundId": 0,
-    "note": ""
-  },
   "Setting": {
     "id": 0,
     "key": "",

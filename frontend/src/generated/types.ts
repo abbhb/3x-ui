@@ -1436,12 +1436,6 @@ export interface ServiceHostView {
   updatedAt: number;
 }
 
-export interface ServiceLine {
-  egressMode: string;
-  inboundId: number;
-  note: string;
-}
-
 export interface Setting {
   id: number;
   key: string;

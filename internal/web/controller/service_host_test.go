@@ -34,6 +34,16 @@ func TestServiceHostRestrictedScopeBoundary(t *testing.T) {
 	}
 }
 
+func TestServiceHostDoesNotExposeAnnotationAsForwardingControl(t *testing.T) {
+	engine := gin.New()
+	NewServiceHostController(engine.Group("/panel/api"))
+	response := httptest.NewRecorder()
+	engine.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/panel/api/serviceHosts/line/3", nil))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("retired annotation control is still writable: %d", response.Code)
+	}
+}
+
 func TestCommerceRestrictedScopeBoundary(t *testing.T) {
 	for _, scope := range []string{model.ApiScopeMonitor, model.ApiScopeNodeSync, model.ApiScopeNodeAdmin} {
 		for _, test := range []struct{ method, path string }{{"GET", "/commerce/accounts"}, {"GET", "/commerce/settings"}, {"POST", "/commerce/accounts/5/credit"}, {"POST", "/commerce/clients/7/mgma"}, {"PUT", "/commerce/settings"}} {

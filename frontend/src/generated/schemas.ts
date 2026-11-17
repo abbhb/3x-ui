@@ -6142,26 +6142,6 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "ServiceLine": {
-    "description": "Classify an entire service-side inbound, never an indistinguishable address alias.",
-    "properties": {
-      "egressMode": {
-        "type": "string"
-      },
-      "inboundId": {
-        "type": "integer"
-      },
-      "note": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "egressMode",
-      "inboundId",
-      "note"
-    ],
-    "type": "object"
-  },
   "Setting": {
     "description": "Setting stores key-value configuration settings for the 3x-ui panel.",
     "properties": {

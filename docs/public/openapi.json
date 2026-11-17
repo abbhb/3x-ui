@@ -6174,26 +6174,6 @@
         ],
         "type": "object"
       },
-      "ServiceLine": {
-        "description": "Classify an entire service-side inbound, never an indistinguishable address alias.",
-        "properties": {
-          "egressMode": {
-            "type": "string"
-          },
-          "inboundId": {
-            "type": "integer"
-          },
-          "note": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "egressMode",
-          "inboundId",
-          "note"
-        ],
-        "type": "object"
-      },
       "Setting": {
         "description": "Setting stores key-value configuration settings for the 3x-ui panel.",
         "properties": {
@@ -11653,58 +11633,6 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "obj": {}
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/panel/api/serviceHosts/line/{id}": {
-      "post": {
-        "tags": [
-          "Service hosts and IPv6 egress"
-        ],
-        "summary": "Classify an entire host-owned inbound",
-        "operationId": "post_panel_api_serviceHosts_line_id",
-        "description": "Declaration only: does not apply routing. Aliases sharing one inbound cannot receive different server-side policies.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ServiceLine"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful response",

@@ -258,22 +258,6 @@ func (s *ServiceHostService) Get(id int) (*ServiceHostDetail, error) {
 	return detail, nil
 }
 
-func (s *ServiceHostService) SaveLine(hostID int, line model.ServiceLine) error {
-	if !slices.Contains([]string{"unclassified", "shared", "user_ipv6", "tunnel"}, line.EgressMode) || len(line.Note) > 2000 {
-		return errors.New("invalid line classification")
-	}
-	detail, err := s.Get(hostID)
-	if err != nil {
-		return err
-	}
-	for _, existing := range detail.Lines {
-		if existing.ID == line.InboundId {
-			return database.GetDB().Save(&line).Error
-		}
-	}
-	return errors.New("line does not belong to this host")
-}
-
 type (
 	hostReporter interface {
 		HostReport(context.Context) (*hostops.Report, error)

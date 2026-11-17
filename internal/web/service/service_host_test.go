@@ -48,11 +48,13 @@ func TestServiceHostMembershipRoutesAndCredentialBoundary(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := svc.SaveLine(host.Id, model.ServiceLine{InboundId: local.Id, EgressMode: "user_ipv6"}); err != nil {
+	// Existing migration annotations remain readable, but are not editable
+	// forwarding policies. A record for another host must stay out of this view.
+	if err := db.Create(&[]model.ServiceLine{
+		{InboundId: local.Id, EgressMode: "user_ipv6"},
+		{InboundId: foreign.Id, EgressMode: "tunnel"},
+	}).Error; err != nil {
 		t.Fatal(err)
-	}
-	if err := svc.SaveLine(host.Id, model.ServiceLine{InboundId: foreign.Id, EgressMode: "shared"}); err == nil {
-		t.Fatal("classified a foreign host's inbound")
 	}
 	detail, err := svc.Get(host.Id)
 	if err != nil {
