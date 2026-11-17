@@ -170,6 +170,11 @@ export function useOutboundColumns({
             </Tooltip>
             <div className="protocol-line">
               <Tag color="green">{record.protocol}</Tag>
+              {record.sendThrough && (
+                <Tag style={{ whiteSpace: 'normal', wordBreak: 'break-all' }}>
+                  {t('pages.xray.outboundForm.sendThrough')}: {record.sendThrough}
+                </Tag>
+              )}
               {[Protocols.VMess, Protocols.VLESS, Protocols.Trojan, Protocols.Shadowsocks].some(
                 (id) => isOutboundProtocol(record, id),
               ) && (

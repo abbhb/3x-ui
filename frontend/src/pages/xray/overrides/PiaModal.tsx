@@ -4,7 +4,7 @@ import { Button, Divider, Form, Input, message, Modal, Select } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { HttpUtil } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import { FormField } from '@/components/form/rhf';
 import { countryFlag, countryName } from '../outbounds/outbounds-tab-helpers';
 import './PiaModal.css';
@@ -132,6 +132,7 @@ export default function PiaModal({
   onAddOutbound,
   onResetOutbound,
 }: PiaModalProps) {
+  const HttpUtil = useXrayHttp();
   const { t, i18n } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
@@ -182,7 +183,7 @@ export default function PiaModal({
   const fetchCountries = useCallback(async () => {
     const msg = await HttpUtil.post<PiaCountry[]>('/panel/api/xray/pia/countries');
     if (msg?.success && Array.isArray(msg.obj)) setCountries(msg.obj);
-  }, []);
+  }, [HttpUtil]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -196,7 +197,7 @@ export default function PiaModal({
     } finally {
       setLoading(false);
     }
-  }, [fetchCountries]);
+  }, [fetchCountries, HttpUtil]);
 
   useEffect(() => {
     if (!open) return;

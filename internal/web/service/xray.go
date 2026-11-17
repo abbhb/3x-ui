@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -173,6 +174,9 @@ func RemoveIndex(s []any, index int) []any {
 func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	templateConfig, err := s.settingService.GetXrayConfigTemplate()
 	if err != nil {
+		return nil, err
+	}
+	if err := prepareNativeIPv6Bindings(context.Background(), templateConfig); err != nil {
 		return nil, err
 	}
 

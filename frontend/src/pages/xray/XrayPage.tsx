@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import {
   Alert,
   Button,
@@ -10,16 +10,21 @@ import {
   FloatButton,
   Layout,
   message,
+  Modal,
   Radio,
   Result,
   Row,
   Space,
+  Select,
   Spin,
+  Tag,
 } from 'antd';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useXraySetting } from '@/hooks/useXraySetting';
+import { XrayScope, xrayPageUrl } from '@/hooks/xrayScope';
+import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 import AppSidebar from '@/layouts/AppSidebar';
 import { JsonEditor } from '@/components/form';
@@ -44,7 +49,37 @@ const SECTION_SLUGS = ['basic', 'routing', 'outbound', 'balancer', 'dns', 'advan
 type AdvKey = 'xraySetting' | 'inboundSettings' | 'outboundSettings' | 'routingRuleSettings';
 
 export default function XrayPage() {
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('nodeId') ?? '0';
+  const nodeId = /^\d+$/.test(raw) ? Number(raw) : -1;
+  if (!Number.isSafeInteger(nodeId) || nodeId < 0)
+    return <Result status="error" title="Invalid service nodeId" />;
+  return (
+    <XrayScope value={nodeId}>
+      <XrayEditor
+        key={nodeId}
+        nodeId={nodeId}
+        onServiceChange={(id) => {
+          const next = new URLSearchParams(params);
+          if (id === 0) next.delete('nodeId');
+          else next.set('nodeId', String(id));
+          setParams(next);
+        }}
+      />
+    </XrayScope>
+  );
+}
+
+function XrayEditor({
+  nodeId,
+  onServiceChange,
+}: {
+  nodeId: number;
+  onServiceChange: (id: number) => void;
+}) {
   const { t } = useTranslation();
+  const { nodes } = useNodesQuery();
+  const [scopeModal, scopeModalHolder] = Modal.useModal();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -53,6 +88,7 @@ export default function XrayPage() {
   }, [messageApi]);
   const xs = useXraySetting();
   const {
+    runtime,
     fetched,
     spinning,
     saveDisabled,
@@ -196,7 +232,7 @@ export default function XrayPage() {
       JSON.parse(xraySetting);
     } catch (e) {
       messageApi.error(`Advanced JSON: ${(e as Error).message}`);
-      navigate('/xray#advanced');
+      navigate(xrayPageUrl('/xray#advanced', nodeId));
       return;
     }
     if (templateSettings) {
@@ -313,11 +349,59 @@ export default function XrayPage() {
   return (
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
+      {scopeModalHolder}
       <Layout className={pageClass}>
         <AppSidebar />
 
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
+            <Card hoverable>
+              <Row className="header-row">
+                <Col xs={24} sm={14} className="header-actions">
+                  <Space wrap>
+                    <Select
+                      aria-label={t('pages.xray.service')}
+                      style={{ minWidth: 240 }}
+                      value={nodeId}
+                      disabled={spinning || testingAll}
+                      options={[
+                        { value: 0, label: t('pages.xray.localService') },
+                        ...nodes.map((node) => ({
+                          value: node.id,
+                          label: node.name,
+                          disabled: !node.enable,
+                        })),
+                      ]}
+                      onChange={(id) => {
+                        if (saveDisabled) onServiceChange(id);
+                        else
+                          scopeModal.confirm({
+                            title: t('pages.xray.scopeUnsaved'),
+                            onOk: () => onServiceChange(id),
+                          });
+                      }}
+                    />
+                    {runtime && (
+                      <Tag color={runtime.running ? 'green' : 'default'}>
+                        {t(runtime.running ? 'pages.xray.coreRunning' : 'pages.xray.coreStopped')}
+                      </Tag>
+                    )}
+                    <Button
+                      type="primary"
+                      disabled={saveDisabled || !fetched || !!fetchError}
+                      onClick={onSaveAll}
+                    >
+                      {t('pages.xray.save')}
+                    </Button>
+                  </Space>
+                </Col>
+                <Col xs={24} sm={10} className="header-info">
+                  <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
+                  <Alert type="warning" showIcon title={t('pages.xray.scopeHelp')} />
+                </Col>
+              </Row>
+              {runtime?.heldBack && <Alert type="error" showIcon title={runtime.heldBack} />}
+            </Card>
             <Spin
               aria-live="off"
               spinning={spinning || !fetched}
@@ -340,24 +424,6 @@ export default function XrayPage() {
                 />
               ) : (
                 <Row gutter={[isMobile ? 8 : 16, isMobile ? 0 : 12]}>
-                  <Col span={24}>
-                    <Card hoverable>
-                      <Row className="header-row">
-                        <Col xs={24} sm={14} className="header-actions">
-                          <Space>
-                            <Button type="primary" disabled={saveDisabled} onClick={onSaveAll}>
-                              {t('pages.xray.save')}
-                            </Button>
-                          </Space>
-                        </Col>
-                        <Col xs={24} sm={10} className="header-info">
-                          <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
-                          <Alert type="warning" showIcon title={t('pages.settings.infoDesc')} />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-
                   <Col span={24}>
                     <Card hoverable>{sectionBody}</Card>
                   </Col>

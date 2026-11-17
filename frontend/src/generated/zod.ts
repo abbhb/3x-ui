@@ -971,6 +971,46 @@ export const MsgSchema = z.object({
 });
 export type Msg = z.infer<typeof MsgSchema>;
 
+export const NativeIPv6AddressSchema = z.object({
+  address: z.string(),
+  clientId: z.number().int(),
+  ready: z.boolean(),
+});
+export type NativeIPv6Address = z.infer<typeof NativeIPv6AddressSchema>;
+
+export const NativeIPv6AllocationInputSchema = z.object({
+  clientIds: z.array(z.number().int()),
+});
+export type NativeIPv6AllocationInput = z.infer<typeof NativeIPv6AllocationInputSchema>;
+
+export const NativeIPv6ClientSchema = z.object({
+  email: z.string(),
+  id: z.number().int(),
+  inbounds: z.array(z.string()),
+});
+export type NativeIPv6Client = z.infer<typeof NativeIPv6ClientSchema>;
+
+export const NativeIPv6LeaseSchema = z.object({
+  address: z.string(),
+  clientId: z.number().int(),
+});
+export type NativeIPv6Lease = z.infer<typeof NativeIPv6LeaseSchema>;
+
+export const NativeIPv6PoolSchema = z.object({
+  interface: z.string(),
+  prefix: z.string(),
+});
+export type NativeIPv6Pool = z.infer<typeof NativeIPv6PoolSchema>;
+
+export const NativeIPv6ReportSchema = z.object({
+  clients: z.array(z.lazy(() => NativeIPv6ClientSchema)),
+  error: z.string(),
+  interfaces: z.array(z.string()),
+  leases: z.array(z.lazy(() => NativeIPv6AddressSchema)),
+  pool: z.lazy(() => NativeIPv6PoolSchema).nullable().optional(),
+});
+export type NativeIPv6Report = z.infer<typeof NativeIPv6ReportSchema>;
+
 export const NewUUIDResponseSchema = z.object({
   uuid: z.string(),
 });

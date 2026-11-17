@@ -20,6 +20,9 @@ func TestServiceHostRestrictedScopeBoundary(t *testing.T) {
 		{model.ApiScopeNodeSync, http.MethodPost, "/server/hostEgress", false},
 		{model.ApiScopeNodeAdmin, http.MethodPost, "/server/hostEgress", true},
 		{model.ApiScopeNodeAdmin, http.MethodPost, "/serviceHosts/save/0", false},
+		{model.ApiScopeNodeSync, http.MethodPost, "/xray/update", false},
+		{model.ApiScopeNodeAdmin, http.MethodPost, "/xray/update", true},
+		{model.ApiScopeNodeAdmin, http.MethodGet, "/xray/ipv6Pool", true},
 	} {
 		engine := gin.New()
 		api := &APIController{}

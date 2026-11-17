@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { HttpUtil, Msg } from '@/utils';
+import { Msg } from '@/utils';
 import { parseMsg } from '@/utils/zodValidate';
 import { keys } from '@/api/queryKeys';
+import { XrayScope, useXrayHttp, xrayHttp } from './xrayScope';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import {
   OutboundTrafficListSchema,
@@ -64,6 +65,7 @@ export type SetTemplate = (
 ) => void;
 
 export interface UseXraySettingResult {
+  runtime: { running: boolean; heldBack: string } | undefined;
   fetched: boolean;
   spinning: boolean;
   saveDisabled: boolean;
@@ -102,8 +104,8 @@ export interface UseXraySettingResult {
 
 type XrayConfigPayload = z.infer<typeof XrayConfigPayloadSchema>;
 
-export async function fetchXrayConfig(): Promise<XrayConfigPayload> {
-  const msg = await HttpUtil.post('/panel/api/xray/', undefined, { silent: true });
+export async function fetchXrayConfig(nodeId = 0): Promise<XrayConfigPayload> {
+  const msg = await xrayHttp(nodeId).post('/panel/api/xray/', undefined, { silent: true });
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to load xray config');
   if (typeof msg.obj !== 'string')
     throw new Error('Malformed xray config response: expected string');
@@ -122,8 +124,8 @@ export async function fetchXrayConfig(): Promise<XrayConfigPayload> {
   return result.data;
 }
 
-async function fetchOutboundsTraffic(): Promise<OutboundTrafficRow[]> {
-  const msg = await HttpUtil.get('/panel/api/xray/getOutboundsTraffic', undefined, {
+async function fetchOutboundsTraffic(nodeId = 0): Promise<OutboundTrafficRow[]> {
+  const msg = await xrayHttp(nodeId).get('/panel/api/xray/getOutboundsTraffic', undefined, {
     silent: true,
   });
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to fetch outbounds traffic');
@@ -133,17 +135,21 @@ async function fetchOutboundsTraffic(): Promise<OutboundTrafficRow[]> {
 
 export function useXraySetting(): UseXraySettingResult {
   const queryClient = useQueryClient();
+  const nodeId = useContext(XrayScope);
+  const HttpUtil = useXrayHttp();
 
   const configQuery = useQuery({
-    queryKey: keys.xray.config(),
-    queryFn: fetchXrayConfig,
+    queryKey: keys.xray.config(nodeId),
+    queryFn: () => fetchXrayConfig(nodeId),
     staleTime: Infinity,
+    refetchOnMount: 'always',
   });
 
   const trafficQuery = useQuery({
-    queryKey: keys.xray.outboundsTraffic(),
-    queryFn: fetchOutboundsTraffic,
+    queryKey: keys.xray.outboundsTraffic(nodeId),
+    queryFn: () => fetchOutboundsTraffic(nodeId),
     staleTime: Infinity,
+    refetchOnMount: 'always',
   });
 
   const [xraySetting, setXraySettingState] = useState('');
@@ -206,7 +212,10 @@ export function useXraySetting(): UseXraySettingResult {
     }
   }
 
-  const fetched = configQuery.data !== undefined || configQuery.isError;
+  // A service switch must complete one fresh read before exposing cached data
+  // for editing. Subsequent refreshes keep the existing native editor mounted.
+  const fetched =
+    configQuery.isFetchedAfterMount && (configQuery.data !== undefined || configQuery.isError);
   const fetchError = configQuery.error ? (configQuery.error as Error).message : '';
 
   const setXraySetting = useCallback((next: string) => {
@@ -243,12 +252,12 @@ export function useXraySetting(): UseXraySettingResult {
   }, []);
 
   const fetchAll = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: keys.xray.config() });
-  }, [queryClient]);
+    await queryClient.invalidateQueries({ queryKey: keys.xray.config(nodeId) });
+  }, [queryClient, nodeId]);
 
   const fetchOutboundsTrafficCb = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic() });
-  }, [queryClient]);
+    await queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic(nodeId) });
+  }, [queryClient, nodeId]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -264,20 +273,21 @@ export function useXraySetting(): UseXraySettingResult {
       if (!msg?.success) return;
       setSavedXraySetting(sentXraySetting);
       setSavedOutboundTestUrl(sentTestUrl);
-      queryClient.invalidateQueries({ queryKey: keys.xray.config() });
+      queryClient.invalidateQueries({ queryKey: keys.xray.config(nodeId) });
     },
   });
 
   const resetTrafficMut = useMutation({
     mutationFn: (tag: string) => HttpUtil.post('/panel/api/xray/resetOutboundsTraffic', { tag }),
     onSuccess: (msg) => {
-      if (msg?.success) queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic() });
+      if (msg?.success)
+        queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic(nodeId) });
     },
   });
 
   const resetDefaultMut = useMutation({
     mutationFn: async (): Promise<Msg<XraySettingsValue>> => {
-      const raw = await HttpUtil.get('/panel/api/setting/getDefaultJsonConfig');
+      const raw = await HttpUtil.get('/panel/api/xray/getDefaultJsonConfig');
       return parseMsg(raw, XraySettingsValueSchema, 'setting/getDefaultJsonConfig');
     },
     onSuccess: (msg) => {
@@ -327,7 +337,7 @@ export function useXraySetting(): UseXraySettingResult {
         return failAll(String(e));
       }
     },
-    [],
+    [HttpUtil],
   );
 
   const testOutbound = useCallback(
@@ -500,6 +510,7 @@ export function useXraySetting(): UseXraySettingResult {
 
   return useMemo(
     () => ({
+      runtime: config?.runtime,
       fetched,
       spinning,
       saveDisabled,
@@ -528,6 +539,7 @@ export function useXraySetting(): UseXraySettingResult {
       resetToDefault,
     }),
     [
+      config?.runtime,
       fetched,
       spinning,
       saveDisabled,

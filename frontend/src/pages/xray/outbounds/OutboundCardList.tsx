@@ -148,6 +148,11 @@ export default function OutboundCardList({
                 <span className="tag-name">{record.tag}</span>
               </Tooltip>
               <Tag color="green">{record.protocol}</Tag>
+              {record.sendThrough && (
+                <Tag style={{ whiteSpace: 'normal', wordBreak: 'break-all' }}>
+                  {t('pages.xray.outboundForm.sendThrough')}: {record.sendThrough}
+                </Tag>
+              )}
               {[Protocols.VMess, Protocols.VLESS, Protocols.Trojan, Protocols.Shadowsocks].includes(
                 record.protocol as never,
               ) && (

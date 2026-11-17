@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+import { XrayScope } from '@/hooks/xrayScope';
 import { useQuery } from '@tanstack/react-query';
 
 import { keys } from '@/api/queryKeys';
@@ -9,10 +11,11 @@ import { isOutboundProtocol } from '@/schemas/primitives';
 // the inbound form costs no extra request when the Xray page was already
 // visited; `select` derives just the tag list without disturbing other readers.
 export function useOutboundTags(opts?: { excludeBlackhole?: boolean }) {
+  const nodeId = useContext(XrayScope);
   const excludeBlackhole = opts?.excludeBlackhole ?? false;
   return useQuery({
-    queryKey: keys.xray.config(),
-    queryFn: fetchXrayConfig,
+    queryKey: keys.xray.config(nodeId),
+    queryFn: () => fetchXrayConfig(nodeId),
     staleTime: Infinity,
     select: (data): string[] => {
       const tags = new Set<string>();
@@ -47,10 +50,11 @@ export interface OutboundTagGroups {
 // picker can render them in labeled groups (like the panel-outbound selector)
 // instead of one flat list.
 export function useOutboundTagGroups(opts?: { excludeBlackhole?: boolean }) {
+  const nodeId = useContext(XrayScope);
   const excludeBlackhole = opts?.excludeBlackhole ?? false;
   return useQuery({
-    queryKey: keys.xray.config(),
-    queryFn: fetchXrayConfig,
+    queryKey: keys.xray.config(nodeId),
+    queryFn: () => fetchXrayConfig(nodeId),
     staleTime: Infinity,
     select: (data): OutboundTagGroups => {
       const outbounds = new Set<string>();

@@ -63,10 +63,10 @@ _openapi:
           socket evidence. Recent successful dials are not active-connection
           counts. Socket local address is before NAT.
         heading: aggregate-bounded-per-service-egress-and-recent-dial-reports
-      - content: Requires a pre-installed node-local bootstrap/controller. Prefix,
-          interface, namespace and mark ownership cannot be changed through this
-          API. Newly authenticated users remain blocked until controller
-          readback.
+      - content: Retained for the legacy controller contract only. New services use
+          native /xray outbounds and routing with nodeId. Requires a
+          pre-installed node-local bootstrap/controller. Prefix, interface,
+          namespace and mark ownership cannot be changed through this API.
         heading: apply-installed-egress-policy-and-restart-the-selected-service
       - content: Read-only local endpoint used by the parent panel. No executable paths,
           API credentials or raw core config are returned.

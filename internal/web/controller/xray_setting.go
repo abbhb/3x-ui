@@ -42,6 +42,7 @@ func NewXraySettingController(g *gin.RouterGroup) *XraySettingController {
 // initRouter sets up the routes for Xray settings management.
 func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g = g.Group("/xray")
+	g.Use(a.dispatchScope)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
 	g.GET("/getOutboundsTraffic", a.getOutboundsTraffic)
 	g.GET("/getXrayResult", a.getXrayResult)
@@ -57,6 +58,9 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/balancerStatus", a.balancerStatus)
 	g.POST("/balancerOverride", a.balancerOverride)
 	g.POST("/routeTest", a.routeTest)
+	g.GET("/ipv6Pool", a.getIPv6Pool)
+	g.POST("/ipv6Pool", a.configureIPv6Pool)
+	g.POST("/ipv6Pool/allocate", a.allocateIPv6)
 
 	g.GET("/geodata/files", a.geodataFiles)
 	g.GET("/geodata/categories", a.geodataCategories)
@@ -98,12 +102,12 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 			xraySetting = unwrapped
 		}
 	}
-	inboundTags, err := a.InboundService.GetInboundTags()
+	inboundTags, err := a.InboundService.GetInboundTags(true)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.getSettings"), err)
 		return
 	}
-	clientReverseTags, err := a.InboundService.GetClientReverseTags()
+	clientReverseTags, err := a.InboundService.GetClientReverseTags(true)
 	if err != nil {
 		clientReverseTags = "[]"
 	}
@@ -117,6 +121,7 @@ func (a *XraySettingController) getXraySetting(c *gin.Context) {
 		"clientReverseTags": json.RawMessage(clientReverseTags),
 		"outboundTestUrl":   outboundTestUrl,
 		"geodataSources":    service.StandardGeodataSources(),
+		"runtime":           map[string]any{"running": a.XrayService.IsXrayRunning(), "heldBack": a.XrayService.GetHeldBackConfig()},
 	}
 
 	// Surface subscription outbounds (and their tags) so the frontend can:
@@ -185,6 +190,14 @@ func (a *XraySettingController) warp(c *gin.Context) {
 	var resp string
 	var err error
 	switch action {
+	case "settings":
+		settings, err := a.SettingService.GetAllSetting()
+		if err != nil {
+			jsonObj(c, nil, err)
+			return
+		}
+		jsonObj(c, gin.H{"warpUpdateInterval": settings.WarpUpdateInterval}, nil)
+		return
 	case "data":
 		resp, err = a.WarpService.GetWarpData()
 	case "del":
