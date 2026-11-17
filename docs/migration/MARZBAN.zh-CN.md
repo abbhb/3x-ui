@@ -8,6 +8,7 @@
 第二阶段的实现与部署合同见[主机、线路和出口兼容](STAGE2-HOSTS-EGRESS.zh-CN.md)。
 第三阶段见[门户、交易与 MGMA](STAGE3-PORTAL-MGMA.zh-CN.md)。
 第四阶段见[外部订阅、级联、XHTTP、规则 DNS 与同域名切换](STAGE4-SUBSCRIPTIONS-CUTOVER.zh-CN.md)。
+验收后按[原生功能优先审查](NATIVE-FIRST.zh-CN.md)收敛重复实现；该记录区分已清理内容和仍缺失的面板操作能力。
 当前生产范围、旧 HY2 保留、IPv6 接入与出口区别、实际探测结果及回退方法见
 [2026-11-17 生产交接记录](PRODUCTION-2026-11-17.zh-CN.md)。
 

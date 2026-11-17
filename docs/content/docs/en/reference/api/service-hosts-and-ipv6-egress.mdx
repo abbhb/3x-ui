@@ -23,9 +23,6 @@ _openapi:
       title: Delete host metadata only
       url: '#delete-host-metadata-only'
     - depth: 2
-      title: Classify an entire host-owned inbound
-      url: '#classify-an-entire-host-owned-inbound'
-    - depth: 2
       title: Aggregate bounded per-service egress and recent dial reports
       url: '#aggregate-bounded-per-service-egress-and-recent-dial-reports'
     - depth: 2
@@ -47,8 +44,6 @@ _openapi:
         id: create-id0-or-update-a-host-and-its-service-membership
       - content: Delete host metadata only
         id: delete-host-metadata-only
-      - content: Classify an entire host-owned inbound
-        id: classify-an-entire-host-owned-inbound
       - content: Aggregate bounded per-service egress and recent dial reports
         id: aggregate-bounded-per-service-egress-and-recent-dial-reports
       - content: Apply installed egress policy and restart the selected service
@@ -64,9 +59,6 @@ _openapi:
         heading: create-id0-or-update-a-host-and-its-service-membership
       - content: Does not stop services, remove inbounds or disable deployed egress.
         heading: delete-host-metadata-only
-      - content: 'Declaration only: does not apply routing. Aliases sharing one inbound
-          cannot receive different server-side policies.'
-        heading: classify-an-entire-host-owned-inbound
       - content: Unavailable or old nodes return a per-service error, without fabricated
           socket evidence. Recent successful dials are not active-connection
           counts. Socket local address is before NAT.
@@ -92,7 +84,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/serviceHosts/list","method":"get"},{"path":"/panel/api/serviceHosts/get/{id}","method":"get"},{"path":"/panel/api/serviceHosts/save/{id}","method":"post"},{"path":"/panel/api/serviceHosts/del/{id}","method":"post"},{"path":"/panel/api/serviceHosts/line/{id}","method":"post"},{"path":"/panel/api/serviceHosts/runtime/{id}","method":"get"},{"path":"/panel/api/serviceHosts/policy/{id}/{node}","method":"post"},{"path":"/panel/api/server/hostRuntime","method":"get"},{"path":"/panel/api/server/hostEgress","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/serviceHosts/list","method":"get"},{"path":"/panel/api/serviceHosts/get/{id}","method":"get"},{"path":"/panel/api/serviceHosts/save/{id}","method":"post"},{"path":"/panel/api/serviceHosts/del/{id}","method":"post"},{"path":"/panel/api/serviceHosts/runtime/{id}","method":"get"},{"path":"/panel/api/serviceHosts/policy/{id}/{node}","method":"post"},{"path":"/panel/api/server/hostRuntime","method":"get"},{"path":"/panel/api/server/hostEgress","method":"post"}]} showTitle />
     </>
   );
 }

@@ -1518,13 +1518,6 @@ export const ServiceHostViewSchema = z.object({
 });
 export type ServiceHostView = z.infer<typeof ServiceHostViewSchema>;
 
-export const ServiceLineSchema = z.object({
-  egressMode: z.string(),
-  inboundId: z.number().int(),
-  note: z.string(),
-});
-export type ServiceLine = z.infer<typeof ServiceLineSchema>;
-
 export const SettingSchema = z.object({
   id: z.number().int(),
   key: z.string(),

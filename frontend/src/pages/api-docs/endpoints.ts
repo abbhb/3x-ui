@@ -1284,14 +1284,6 @@ export const sections: readonly Section[] = [
         description: 'Does not stop services, remove inbounds or disable deployed egress.',
       },
       {
-        method: 'POST',
-        path: '/panel/api/serviceHosts/line/:id',
-        summary: 'Classify an entire host-owned inbound',
-        description:
-          'Declaration only: does not apply routing. Aliases sharing one inbound cannot receive different server-side policies.',
-        requestSchema: { $ref: '#/components/schemas/ServiceLine' },
-      },
-      {
         method: 'GET',
         path: '/panel/api/serviceHosts/runtime/:id',
         summary: 'Aggregate bounded per-service egress and recent dial reports',

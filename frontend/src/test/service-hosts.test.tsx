@@ -81,4 +81,43 @@ describe('service hosts', () => {
     expect(screen.getByLabelText('Host name')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('shows migrated exit annotations without a fake routing control', async () => {
+    const host = {
+      id: 3,
+      name: 'Imported machine',
+      note: '',
+      services: [{ id: 1, name: 'US test service', status: 'online' }],
+    };
+    const line = {
+      id: 108,
+      nodeId: 1,
+      tag: 'legacy-ipv6',
+      name: 'Imported IPv6 entry',
+      protocol: 'hysteria',
+      transport: 'hysteria',
+      listen: '',
+      port: 22444,
+      enable: true,
+      egressMode: 'user_ipv6',
+      note: '',
+      endpoints: [],
+    };
+    const post = vi.spyOn(HttpUtil, 'post');
+    vi.spyOn(HttpUtil, 'get').mockImplementation(async (url) => ({
+      success: true,
+      msg: '',
+      obj: url.includes('/get/') ? { ...host, lines: [line] } : [host],
+    }));
+    renderWithProviders(
+      <MemoryRouter initialEntries={['/service-hosts?id=3&tab=lines']}>
+        <ServiceHostsPage />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Migration exit record');
+    expect(screen.getByText(/Read-only migration records/)).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    fireEvent.click(screen.getByText('Imported IPv6 entry'));
+    expect(post).not.toHaveBeenCalled();
+  });
 });

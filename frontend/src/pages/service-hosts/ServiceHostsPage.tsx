@@ -424,14 +424,6 @@ export default function ServiceHostsPage() {
     void messages.success(t('save'));
     if (id) setParams({ id: String(id), tab: 'services' });
   };
-  const saveLine = async (line: HostLine, egressMode: string) => {
-    try {
-      await write(`${API}/line/${hostId}`, { inboundId: line.id, note: line.note, egressMode });
-      await detail.refetch();
-    } catch (e) {
-      void messages.error(e instanceof Error ? e.message : label('saveFailed'));
-    }
-  };
   const reports = runtime.data ?? [];
   const requestError =
     hosts.error || detail.error || (['egress', 'connections'].includes(tab) ? runtime.error : null);
@@ -567,17 +559,7 @@ export default function ServiceHostsPage() {
                         },
                         {
                           title: label('declaredMode'),
-                          render: (_, line) => (
-                            <Select
-                              aria-label={`${label('declaredMode')} ${line.tag}`}
-                              value={line.egressMode}
-                              onChange={(mode) => void saveLine(line, mode)}
-                              options={['unclassified', 'shared', 'user_ipv6', 'tunnel'].map(
-                                (mode) => ({ value: mode, label: label(mode) }),
-                              )}
-                              style={{ minWidth: 155 }}
-                            />
-                          ),
+                          render: (_, line) => <Tag>{label(line.egressMode)}</Tag>,
                         },
                       ]}
                     />

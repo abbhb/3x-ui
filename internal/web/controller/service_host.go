@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
@@ -26,14 +25,6 @@ func NewServiceHostController(api *gin.RouterGroup) {
 		jsonObj(c, value, err)
 	})
 	group.POST("/del/:id", func(c *gin.Context) { jsonObj(c, nil, svc.Delete(hostParam(c, "id"))) })
-	group.POST("/line/:id", func(c *gin.Context) {
-		var input model.ServiceLine
-		if err := c.ShouldBindJSON(&input); err != nil {
-			jsonObj(c, nil, errors.New("invalid line settings"))
-			return
-		}
-		jsonObj(c, nil, svc.SaveLine(hostParam(c, "id"), input))
-	})
 	group.GET("/runtime/:id", func(c *gin.Context) {
 		value, err := svc.Runtime(c.Request.Context(), hostParam(c, "id"))
 		jsonObj(c, value, err)

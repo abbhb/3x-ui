@@ -36,7 +36,6 @@ func run(root, outDir string) error {
 				"Node",
 				"ServiceHost",
 				"ServiceHostMember",
-				"ServiceLine",
 				"ClientReverse",
 				"Client",
 				"ClientRecord",
