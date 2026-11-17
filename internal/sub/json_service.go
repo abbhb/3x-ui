@@ -122,9 +122,6 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 	if err != nil {
 		return "", "", err
 	}
-	if err := subReq.checkCapabilities(inbounds, subId, "json"); err != nil {
-		return "", "", err
-	}
 	externalLinks, err := subReq.getClientExternalLinksBySubId(subId)
 	if err != nil {
 		return "", "", err

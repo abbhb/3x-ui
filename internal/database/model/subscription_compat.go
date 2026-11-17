@@ -45,6 +45,8 @@ type SubscriptionNode struct {
 	IsActive          bool                `json:"is_active"`
 }
 
+// SubscriptionHost is retired commerce route metadata, retained only for migration
+// readback and existing plan signatures. Subscription rendering must not use it.
 type SubscriptionHost struct {
 	MihomoOnly      bool              `json:"mihomo_only"`
 	HostID          int               `json:"host_id" gorm:"primaryKey;autoIncrement:false"`

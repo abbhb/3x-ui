@@ -155,67 +155,15 @@ func (s *Service) Render(config map[string]any, projection Projection, legacy bo
 		n, _ := g["name"].(string)
 		used[n] = true
 	}
-	helpers := map[string]string{}
-	local := []map[string]any{}
-	helperNodes := []map[string]any{}
-	additions := map[string]string{}
+	local := proxies
 	inboundNames := map[string][]string{}
 	for _, p := range proxies {
-		hostID := number(p["_mgma-host-id"])
 		inboundID := number(p["_mgma-inbound-id"])
 		delete(p, "_mgma-host-id")
 		delete(p, "_mgma-inbound-id")
-		var route model.SubscriptionHost
-		err := s.DB.First(&route, hostID).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		emitted := []map[string]any{p}
-		if err == nil && route.CascadeMode != "" && route.CascadeMode != "off" {
-			if legacy {
-				return ErrMihomoRequired
-			}
-			var entry map[string]any
-			if route.EntryNodeID != nil {
-				entry, err = publicEntry(s.DB, *route.EntryNodeID)
-			} else {
-				raw, e := Decrypt("proxy", route.EntryCiphertext)
-				err = e
-				if err == nil {
-					if json.Unmarshal(raw, &entry) != nil {
-						err = ErrCascade
-					} else {
-						entry, err = normalizeNode(entry)
-					}
-				}
-			}
-			if err != nil {
-				return ErrCascade
-			}
-			raw, _ := json.Marshal(entry)
-			key := hashText(string(raw))
-			name := helpers[key]
-			if name == "" {
-				name = allocateName("MGMA-HOP · "+key[:20], "hop:"+key, used)
-				helpers[key] = name
-				entry["name"] = name
-				helperNodes = append(helperNodes, entry)
-			}
-			landing := p
-			if route.CascadeMode == "additional" {
-				landing = cloneMap(p)
-				landing["name"] = allocateName(p["name"].(string)+" · 级联", "landing:"+strconv.Itoa(hostID), used)
-				additions[p["name"].(string)] = landing["name"].(string)
-				emitted = append(emitted, landing)
-			}
-			landing["dialer-proxy"] = name
-		}
-		local = append(local, emitted...)
 		if inboundID > 0 {
 			ref := "inbound:" + strconv.Itoa(inboundID)
-			for _, p := range emitted {
-				inboundNames[ref] = append(inboundNames[ref], p["name"].(string))
-			}
+			inboundNames[ref] = append(inboundNames[ref], p["name"].(string))
 		}
 	}
 	names := []string{}
@@ -270,11 +218,6 @@ func (s *Service) Render(config map[string]any, projection Projection, legacy bo
 	}
 	for _, g := range groups {
 		members := stringList(g["proxies"])
-		for _, name := range slices.Clone(members) {
-			if extra := additions[name]; extra != "" && !slices.Contains(members, extra) {
-				members = append(members, extra)
-			}
-		}
 		if g["include-all"] == true || g["include-all-proxies"] == true {
 			candidates := slices.Clone(names)
 			for _, pair := range [][2]string{{"filter", "include"}, {"exclude-filter", "exclude"}} {
@@ -298,7 +241,7 @@ func (s *Service) Render(config map[string]any, projection Projection, legacy bo
 	}
 
 	used = map[string]bool{ExternalGroup: true}
-	for _, p := range append(local, helperNodes...) {
+	for _, p := range local {
 		used[p["name"].(string)] = true
 	}
 	for _, g := range groups {
@@ -397,7 +340,7 @@ func (s *Service) Render(config map[string]any, projection Projection, legacy bo
 	}
 	groups = append(groups, externalGroups...)
 	config["proxy-groups"] = groups
-	config["proxies"] = append(local, helperNodes...)
+	config["proxies"] = local
 	if policy.Enabled && !legacy && policy.SecureDNS && !s.SuppressSecureDNS {
 		var settings model.PortalSettings
 		if e := s.DB.First(&settings, 1).Error; e != nil && !errors.Is(e, gorm.ErrRecordNotFound) {

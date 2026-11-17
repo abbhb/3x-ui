@@ -591,14 +591,6 @@ export interface ClientsSummary {
   total: number;
 }
 
-export interface EntryChoice {
-  id: number;
-  name: string;
-  proxy_type: string;
-  source_id: number;
-  source_name: string;
-}
-
 export interface ExternalSelection {
   mode: string;
   node_ids: number[];
@@ -753,16 +745,6 @@ export interface HostGroup {
   useSniAsHost: boolean;
   verifyPeerCertByName: string;
   vlessRoute: string;
-}
-
-export interface HostInput {
-  cascade_mode: string;
-  clear_entry: boolean;
-  client_stream: string;
-  entry_node_id?: number | null;
-  entry_yaml?: string;
-  mihomo_only?: boolean | null;
-  revision: number;
 }
 
 export interface HostInstanceReport {
@@ -1499,26 +1481,6 @@ export interface SubBalancer {
 
 export interface SubscriptionCredentialInput {
   url: string;
-}
-
-export interface SubscriptionHost {
-  cascade_mode: string;
-  client_stream: string;
-  entry_configured: boolean;
-  entry_node_id?: number | null;
-  host_id: number;
-  mihomo_only: boolean;
-  revision: number;
-}
-
-export interface SubscriptionHostView {
-  address: string;
-  host_id: number;
-  inbound_id: number;
-  network: string;
-  path: string;
-  remark: string;
-  settings: SubscriptionHost;
 }
 
 export interface SubscriptionNode {

@@ -636,13 +636,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "onlineCount": 1,
     "total": 2000
   },
-  "EntryChoice": {
-    "id": 0,
-    "name": "",
-    "proxy_type": "",
-    "source_id": 0,
-    "source_name": ""
-  },
   "ExternalSelection": {
     "mode": "",
     "node_ids": [
@@ -831,15 +824,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "useSniAsHost": false,
     "verifyPeerCertByName": "",
     "vlessRoute": ""
-  },
-  "HostInput": {
-    "cascade_mode": "",
-    "clear_entry": false,
-    "client_stream": "",
-    "entry_node_id": null,
-    "entry_yaml": "",
-    "mihomo_only": null,
-    "revision": 0
   },
   "HostInstanceReport": {
     "error": "",
@@ -1775,32 +1759,6 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "SubscriptionCredentialInput": {
     "url": ""
-  },
-  "SubscriptionHost": {
-    "cascade_mode": "",
-    "client_stream": "",
-    "entry_configured": false,
-    "entry_node_id": null,
-    "host_id": 0,
-    "mihomo_only": false,
-    "revision": 0
-  },
-  "SubscriptionHostView": {
-    "address": "",
-    "host_id": 0,
-    "inbound_id": 0,
-    "network": "",
-    "path": "",
-    "remark": "",
-    "settings": {
-      "cascade_mode": "",
-      "client_stream": "",
-      "entry_configured": false,
-      "entry_node_id": null,
-      "host_id": 0,
-      "mihomo_only": false,
-      "revision": 0
-    }
   },
   "SubscriptionNode": {
     "id": 0,

@@ -206,23 +206,6 @@ func ParseSnapshot(raw []byte) (Snapshot, error) {
 	return result, nil
 }
 
-func ParseEntry(raw string) (map[string]any, error) {
-	if len(raw) > 32768 {
-		return nil, ErrInvalidSnapshot
-	}
-	for _, text := range []string{raw, "proxies:\n" + indent(raw, 2), "proxies:\n  -\n" + indent(raw, 4)} {
-		snapshot, err := ParseSnapshot([]byte(text))
-		if err == nil && len(snapshot.Nodes) == 1 && snapshot.Skipped == 0 {
-			return snapshot.Nodes[0].Payload, nil
-		}
-	}
-	return nil, ErrInvalidSnapshot
-}
-
-func indent(raw string, n int) string {
-	pad := strings.Repeat(" ", n)
-	return pad + strings.ReplaceAll(strings.TrimSpace(raw), "\n", "\n"+pad)
-}
 func hashText(s string) string { h := sha256.Sum256([]byte(s)); return fmt.Sprintf("%x", h) }
 
 func canonicalJSON(v any) ([]byte, error) {

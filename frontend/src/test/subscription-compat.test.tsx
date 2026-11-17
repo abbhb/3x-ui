@@ -2,7 +2,6 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import ExternalSources from '@/pages/subscriptions/ExternalSources';
 import SubscriptionPolicy from '@/pages/subscriptions/SubscriptionPolicy';
-import SubscriptionRoutes from '@/pages/subscriptions/SubscriptionRoutes';
 import { commerceRequest } from '@/api/commerce';
 import { renderWithProviders } from './test-utils';
 
@@ -109,41 +108,4 @@ it('submits the loaded policy revision and keeps edited rules visible when a con
   const call = vi.mocked(commerceRequest).mock.calls.find((args) => args[3] === 'PUT');
   expect(call?.[2]).toMatchObject({ revision: 7 });
   expect((rules as HTMLTextAreaElement).value).toContain('DOMAIN,example.test,Primary');
-});
-
-it('preserves an untouched XHTTP connection when saving other route settings', async () => {
-  const stream = JSON.stringify({
-    address: 'up.example.test',
-    port: 443,
-    network: 'xhttp',
-    security: 'none',
-    xhttpSettings: { path: '/x/', mode: 'packet-up' },
-  });
-  const route = {
-    host_id: 10002,
-    inbound_id: 102,
-    remark: 'XHTTP',
-    address: 'up.example.test',
-    path: '/x/',
-    network: 'xhttp',
-    settings: {
-      host_id: 10002,
-      revision: 3,
-      cascade_mode: 'off',
-      entry_configured: false,
-      entry_node_id: null,
-      client_stream: stream,
-      mihomo_only: true,
-    },
-  };
-  vi.mocked(commerceRequest).mockImplementation(async (_path, _schema, _body, method) =>
-    method === 'PUT' ? route.settings : route,
-  );
-  renderWithProviders(<SubscriptionRoutes selected={10002} select={() => {}} />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Save route settings' }));
-  await waitFor(() =>
-    expect(vi.mocked(commerceRequest).mock.calls.some((call) => call[3] === 'PUT')).toBe(true),
-  );
-  const body = vi.mocked(commerceRequest).mock.calls.find((call) => call[3] === 'PUT')?.[2];
-  expect(body).toMatchObject({ revision: 3, client_stream: stream });
 });

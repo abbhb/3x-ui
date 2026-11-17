@@ -1,7 +1,6 @@
 package sub
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -75,28 +74,27 @@ func TestStage4ExternalOnlySubscriptionAndPrivateIsolation(t *testing.T) {
 	}
 }
 
-func TestStage4CascadeRawAndJSONCannotBypassEntry(t *testing.T) {
+func TestRetiredCommerceRoutesDoNotOverrideNativeSubscriptions(t *testing.T) {
 	seedSubDB(t)
 	db := database.GetDB()
-	t.Setenv("XUI_EXTERNAL_SUBSCRIPTION_ENCRYPTION_KEY", "synthetic-external-key-at-least-thirty-two-bytes")
-	inbound := *seedSubInbound(t, "stage4-cascade", "landing", 26475, 0, `{"network":"tcp","security":"none"}`)
-	host := model.Host{InboundId: inbound.Id, Address: "landing.test", Remark: "landing"}
-	db.Create(&host)
-	var client model.ClientRecord
-	if err := db.Where("sub_id <> ''").First(&client).Error; err != nil {
+	stream := `{"network":"xhttp","security":"none","xhttpSettings":{"path":"/native/","mode":"packet-up"}}`
+	inbound := seedSubInbound(t, "native-route", "native-route", 26475, 0, stream)
+	host := seedHost(t, &model.Host{InboundId: inbound.Id, Address: "native.test", Remark: "Native XHTTP"})
+	archived := model.SubscriptionHost{HostID: host.Id, CascadeMode: "replace", EntryCiphertext: "unavailable", ClientStream: `{"address":"retired.test","network":"tcp"}`, MihomoOnly: true}
+	if err := db.Create(&archived).Error; err != nil {
 		t.Fatal(err)
 	}
-	compat := &subscriptioncompat.Service{DB: db}
-	if _, err := compat.SaveHost(host.Id, subscriptioncompat.HostInput{CascadeMode: "replace", EntryYAML: `{name: entry, type: socks5, server: entry.test, port: 1080}`}); err != nil {
-		t.Fatal(err)
+	raw, _, _, _, err := NewSubService("").GetSubs("native-route", "panel.test")
+	if err != nil || len(raw) == 0 || !strings.Contains(strings.Join(raw, ""), "native.test") {
+		t.Fatalf("native raw subscription: %v %v", raw, err)
 	}
-	_, _, _, _, err := NewSubService("").GetSubs(client.SubID, "panel.test")
-	if !errors.Is(err, subscriptioncompat.ErrMihomoRequired) {
-		t.Fatalf("raw bypass=%v", err)
+	jsonBody, _, err := NewSubJsonService("", "", "", "", NewSubService("")).GetJson("native-route", "panel.test", false)
+	if err != nil || !strings.Contains(jsonBody, "native.test") {
+		t.Fatalf("native JSON subscription: %s %v", jsonBody, err)
 	}
-	_, _, err = NewSubJsonService("", "", "", "", NewSubService("")).GetJson(client.SubID, "panel.test", false)
-	if !errors.Is(err, subscriptioncompat.ErrMihomoRequired) {
-		t.Fatalf("JSON bypass=%v", err)
+	clash, _, err := NewSubClashService(false, "", false, NewSubService("")).GetClash("native-route", "panel.test")
+	if err != nil || !strings.Contains(clash, "/native/") || !strings.Contains(clash, "native.test") || strings.Contains(clash, "retired.test") || strings.Contains(clash, "dialer-proxy") {
+		t.Fatalf("native Mihomo subscription: %s %v", clash, err)
 	}
 }
 

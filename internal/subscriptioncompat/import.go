@@ -104,9 +104,6 @@ func ImportRows(tx *gorm.DB, b *ImportBundle, insert func(any, ...any) error) er
 	for _, s := range b.Sources {
 		hasCipher = hasCipher || s.Ciphertext != ""
 	}
-	for _, h := range b.Routes {
-		hasCipher = hasCipher || h.Ciphertext != ""
-	}
 	if hasCipher {
 		_, err := externalKey()
 		if err != nil {
@@ -176,45 +173,8 @@ func ImportRows(tx *gorm.DB, b *ImportBundle, insert func(any, ...any) error) er
 		if row.HostID < 1 || row.Revision < 1 {
 			return ErrInvalid
 		}
-		if row.CascadeMode != "off" && row.CascadeMode != "replace" && row.CascadeMode != "additional" {
-			return ErrInvalid
-		}
-		if row.CascadeMode != "off" {
-			if (row.EntryNodeID != nil) == (row.EntryCiphertext != "") {
-				return ErrInvalid
-			}
-			if row.EntryNodeID != nil {
-				if _, err := publicEntry(tx, *row.EntryNodeID); err != nil {
-					return err
-				}
-			} else {
-				plain, err := Decrypt("proxy", row.EntryCiphertext)
-				var node map[string]any
-				if err != nil || json.Unmarshal(plain, &node) != nil {
-					return ErrEncryptedUnavailable
-				}
-				if _, err = normalizeNode(node); err != nil {
-					return err
-				}
-			}
-		}
-		if row.ClientStream != "" {
-			var host model.Host
-			var ib model.Inbound
-			var stream map[string]any
-			var base map[string]any
-			if tx.First(&host, row.HostID).Error != nil || tx.First(&ib, host.InboundId).Error != nil || json.Unmarshal([]byte(row.ClientStream), &stream) != nil || json.Unmarshal([]byte(ib.StreamSettings), &base) != nil || (base["network"] != "xhttp" && base["network"] != "splithttp") {
-				return ErrInvalid
-			}
-			tr, _ := base["xhttpSettings"].(map[string]any)
-			if tr == nil {
-				tr, _ = base["splithttpSettings"].(map[string]any)
-			}
-			path, _ := tr["path"].(string)
-			if ValidateConnection(stream, path, false) != nil {
-				return ErrInvalid
-			}
-		}
+		// Retired route metadata is archived for old plan signatures and readback.
+		// It never configures subscription endpoints or client connections.
 		if err := insert(&row, "host_id = ?", row.HostID); err != nil {
 			return err
 		}

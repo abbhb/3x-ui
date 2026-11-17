@@ -76,11 +76,11 @@ func TestStage4AtomicImportProducesAuthorizedMihomoAndOldCredentials(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "2001:db8::8") || !strings.Contains(out, "private.example.test") || strings.Contains(out, "unselected.example.test") || strings.Contains(out, "Disabled profile") || !strings.Contains(out, client.UUID) || header == "" {
+	if !strings.Contains(out, "host-2.example.test") || !strings.Contains(out, "private.example.test") || strings.Contains(out, "unselected.example.test") || strings.Contains(out, "Disabled profile") || !strings.Contains(out, client.UUID) || header == "" {
 		t.Fatalf("imported authorized profile=%s header=%s", out, header)
 	}
-	if strings.Contains(out, "_mgma-") || !strings.Contains(out, "dialer-proxy:") || !strings.Contains(out, "download-settings:") {
-		t.Fatal("cascade or XHTTP metadata was not materialized")
+	if strings.Contains(out, "_mgma-") || strings.Contains(out, "dialer-proxy:") || strings.Contains(out, "2001:db8::8") {
+		t.Fatal("retired route override was applied")
 	}
 	var doc map[string]any
 	if err = yaml.Unmarshal([]byte(out), &doc); err != nil {

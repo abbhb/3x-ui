@@ -51,35 +51,6 @@ def relay(left, right):
             (right if source is left else left).sendall(content)
 
 
-class Entry(socketserver.BaseRequestHandler):
-    def handle(self):
-        self.request.settimeout(5)
-        try:
-            version, count = exact(self.request, 2)
-            if version != 5:
-                return
-            exact(self.request, count)
-            self.request.sendall(b'\x05\x00')
-            version, command, _, family = exact(self.request, 4)
-            if version != 5 or command != 1:
-                return
-            if family == 1:
-                address = socket.inet_ntoa(exact(self.request, 4))
-            elif family == 3:
-                address = exact(self.request, exact(self.request, 1)[0]).decode()
-            else:
-                return
-            port = int.from_bytes(exact(self.request, 2), 'big')
-            if (address, port) != self.server.destination:
-                return
-            self.server.hops.append((address, port))
-            with socket.create_connection((address, port), timeout=5) as upstream:
-                self.request.sendall(b'\x05\x00\x00\x01\x7f\x00\x00\x01\x00\x00')
-                relay(self.request, upstream)
-        except (OSError, EOFError):
-            return
-
-
 class Downlink(socketserver.BaseRequestHandler):
     def handle(self):
         try:
@@ -132,8 +103,8 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         cls.workspace = None if keep else tempfile.TemporaryDirectory(prefix='xui-subscription-runtime-')
         cls.root = Path(keep) if keep else Path(cls.workspace.name)
         if keep: cls.root.mkdir(mode=0o700)
-        cls.entry_port, cls.landing_port, cls.up_port, cls.down_port = [free_port() for _ in range(4)]
-        env = dict(os.environ, XUI_TEST_SUBSCRIPTION_OUTPUT=str(cls.root), XUI_TEST_CASCADE_ENTRY_PORT=str(cls.entry_port), XUI_TEST_CASCADE_LANDING_PORT=str(cls.landing_port), XUI_TEST_XHTTP_UP_PORT=str(cls.up_port), XUI_TEST_XHTTP_DOWN_PORT=str(cls.down_port))
+        cls.up_port, cls.down_port = [free_port() for _ in range(2)]
+        env = dict(os.environ, XUI_TEST_SUBSCRIPTION_OUTPUT=str(cls.root), XUI_TEST_XHTTP_UP_PORT=str(cls.up_port), XUI_TEST_XHTTP_DOWN_PORT=str(cls.down_port))
         result = subprocess.run(['go', 'test', './internal/sub', '-run', '^TestStage4(AtomicImportProducesAuthorizedMihomoAndOldCredentials|RuntimeFixtures)$', '-count=1', '-v'], env=env, capture_output=True, text=True, timeout=180)
         if result.returncode or result.stdout.count('--- PASS:') != 2:
             if cls.workspace: cls.workspace.cleanup()
@@ -202,29 +173,6 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         doc.update({'mixed-port': port, 'allow-lan': False, 'bind-address': '127.0.0.1', 'mode': 'rule', 'proxy-groups': [], 'rules': [f'MATCH,{name}'], 'dns': {'enable': False},'log-level':'debug'})
         doc.pop('tun', None)
         return doc, port
-
-    def test_cascade_uses_entry_and_never_falls_back_directly(self):
-        target = self.target()
-        entry = socketserver.ThreadingTCPServer(('127.0.0.1', self.entry_port), Entry)
-        entry.daemon_threads = True; entry.destination = ('127.0.0.1', self.landing_port); entry.hops = []
-        self.server(entry)
-        landing = self.mihomo('ss-landing', {'listeners': [{'name': 'landing', 'type': 'shadowsocks', 'listen': '127.0.0.1', 'port': self.landing_port, 'cipher': 'aes-128-gcm', 'password': 'test-landing-only'}], 'rules': ['MATCH,DIRECT']})
-        self.wait_tcp(self.landing_port, landing)
-        doc, port = self.client_document('cascade.json', 'ss')
-        client = self.mihomo('cascade-client', doc); self.wait_tcp(port, client)
-        self.assertEqual(self.fetch(port, target), (200, b'native-subscription-runtime-confirmed'))
-        self.assertTrue(entry.hops, 'native dialer-proxy did not use the entry')
-        entry.shutdown(); entry.server_close()
-        # A new request must not reuse the successful connection or an existing entry tunnel.
-        client.terminate(); client.wait(timeout=5)
-        retry = self.mihomo('cascade-client-entry-down', doc); self.wait_tcp(port, retry)
-        before = target.proofs
-        try:
-            status, _ = self.fetch(port, target)
-        except (OSError, http.client.HTTPException):
-            status = 502
-        self.assertNotEqual(status, 200)
-        self.assertEqual(target.proofs, before, 'failed entry silently fell back to direct landing')
 
     def test_xhttp_ipv4_upload_and_ipv6_download_reach_real_xray(self):
         target = self.target()

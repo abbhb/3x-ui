@@ -192,6 +192,7 @@ describe('generated OpenAPI runtime contracts', () => {
   it('documents every paged-client query and the groups response', () => {
     const paged = operation('/panel/api/clients/list/paged', 'get');
     expect(paged.parameters?.map((param) => param.name)).toEqual([
+      'clientId',
       'page',
       'pageSize',
       'search',

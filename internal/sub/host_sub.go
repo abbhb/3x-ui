@@ -102,13 +102,6 @@ func (s *SubService) clientHostEndpoints(inbound *model.Inbound, client model.Cl
 	state, hosts := s.clientHostBinding(inbound, client)
 	switch state {
 	case hostBindingNone:
-		if len(baseEps) == 0 {
-			for _, h := range s.hostsByInbound[inbound.Id] {
-				if !h.IsDisabled && s.excludeProfile(h, format) {
-					return nil, true
-				}
-			}
-		}
 		return baseEps, false
 	case hostBindingClosed:
 		return nil, true
@@ -116,7 +109,7 @@ func (s *SubService) clientHostEndpoints(inbound *model.Inbound, client model.Cl
 	defaultDest := s.resolveInboundAddress(inbound)
 	var eps []map[string]any
 	for _, h := range hosts {
-		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) || s.excludeProfile(h, format) {
+		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) {
 			continue
 		}
 		eps = append(eps, s.hostEndpointMaps(h, defaultDest, inbound.Port)...)
@@ -166,7 +159,7 @@ func (s *SubService) hostEndpoints(inbound *model.Inbound, format string) []map[
 	defaultDest := s.resolveInboundAddress(inbound)
 	eps := make([]map[string]any, 0, len(hosts))
 	for _, h := range hosts {
-		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) || s.excludeProfile(h, format) {
+		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) {
 			continue
 		}
 		eps = append(eps, s.hostEndpointMaps(h, defaultDest, inbound.Port)...)
@@ -194,7 +187,6 @@ func (s *SubService) hostEndpointMaps(h *model.Host, defaultDest string, default
 				}
 				hCopy.Sni = endpointSni(h, shared)
 				ep := hostToExternalProxyMap(&hCopy, defaultDest, defaultPort)
-				ep["mgmaClientStream"] = s.compatHosts[h.Id].ClientStream
 				eps = append(eps, ep)
 			}
 			return eps
@@ -204,7 +196,6 @@ func (s *SubService) hostEndpointMaps(h *model.Host, defaultDest string, default
 	hCopy := *h
 	hCopy.Sni = endpointSni(h, shared)
 	ep := hostToExternalProxyMap(&hCopy, defaultDest, defaultPort)
-	ep["mgmaClientStream"] = s.compatHosts[h.Id].ClientStream
 	return []map[string]any{ep}
 }
 
@@ -269,8 +260,7 @@ func hostToExternalProxyMap(h *model.Host, defaultDest string, defaultPort int) 
 		// Marks this as a host (not a legacy externalProxy) entry so host-only
 		// behaviors (e.g. reality SNI/fp override) apply without touching the
 		// legacy externalProxy path. Not emitted into output.
-		"isHost":     true,
-		"mgmaHostID": h.Id,
+		"isHost": true,
 	}
 	sni := h.Sni
 	if h.OverrideSniFromAddress {

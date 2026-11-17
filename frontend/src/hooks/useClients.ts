@@ -63,6 +63,7 @@ interface SubSettings {
 export interface ClientQueryParams {
   page: number;
   pageSize: number;
+  clientId?: number;
   search?: string;
   // CSV strings — frontend joins arrays on ',', backend splits the same way.
   filter?: string;
@@ -121,6 +122,7 @@ function buildQS(p: ClientQueryParams): string {
   const sp = new URLSearchParams();
   sp.set('page', String(p.page || 1));
   sp.set('pageSize', String(p.pageSize || DEFAULT_QUERY.pageSize));
+  if (p.clientId) sp.set('clientId', String(p.clientId));
   if (p.search) sp.set('search', p.search);
   if (p.filter) sp.set('filter', p.filter);
   if (p.protocol) sp.set('protocol', p.protocol);
@@ -191,6 +193,7 @@ export function useClients(options: UseClientsOptions = {}) {
         prev &&
         prev.page === next.page &&
         prev.pageSize === next.pageSize &&
+        prev.clientId === next.clientId &&
         (prev.search ?? '') === (next.search ?? '') &&
         (prev.filter ?? '') === (next.filter ?? '') &&
         (prev.protocol ?? '') === (next.protocol ?? '') &&

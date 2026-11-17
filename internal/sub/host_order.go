@@ -69,7 +69,7 @@ func (s *SubService) loadSubscriptionHosts(inbounds []*model.Inbound) error {
 			}
 		}
 	}
-	return s.loadCompatibilityHosts()
+	return nil
 }
 
 type subscriptionHostVariant struct {
@@ -87,7 +87,7 @@ func hostOrderGroupID(h *model.Host) string {
 func (s *SubService) subscriptionHostVariants(inbound *model.Inbound, format string) []subscriptionHostVariant {
 	var variants []subscriptionHostVariant
 	for _, h := range s.hostsByInbound[inbound.Id] {
-		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) || s.excludeProfile(h, format) {
+		if h.IsDisabled || slices.Contains(h.ExcludeFromSubTypes, format) {
 			continue
 		}
 		order := s.hostGroupOrders[hostOrderGroupID(h)]
@@ -95,11 +95,6 @@ func (s *SubService) subscriptionHostVariants(inbound *model.Inbound, format str
 		variants = append(variants, subscriptionHostVariant{h, &order})
 	}
 	if len(variants) == 0 {
-		for _, h := range s.hostsByInbound[inbound.Id] {
-			if !h.IsDisabled && s.excludeProfile(h, format) {
-				return nil
-			}
-		}
 		return []subscriptionHostVariant{{}}
 	}
 	return variants

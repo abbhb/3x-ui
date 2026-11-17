@@ -257,12 +257,9 @@ func (s *Service) DeleteSource(id int, owner *int) error {
 		}); err != nil {
 			return err
 		}
-		var refs int64
-		if err := tx.Model(&model.SubscriptionHost{}).Where("entry_node_id IN (?)", tx.Model(&model.SubscriptionNode{}).Select("id").Where("source_id = ?", id)).Count(&refs).Error; err != nil {
+		// Archived route entries no longer grant or depend on external sources.
+		if err := tx.Model(&model.SubscriptionHost{}).Where("entry_node_id IN (?)", tx.Model(&model.SubscriptionNode{}).Select("id").Where("source_id = ?", id)).Update("entry_node_id", nil).Error; err != nil {
 			return err
-		}
-		if refs > 0 {
-			return ErrConflict
 		}
 		if err := tx.Where("source_id = ?", id).Delete(&model.SubscriptionNode{}).Error; err != nil {
 			return err
@@ -353,6 +350,10 @@ func validateAllBudgets(tx *gorm.DB, owner *int) error {
 }
 
 func (s *Service) publish(tx *gorm.DB, row *model.SubscriptionSource, snapshot Snapshot) error {
+	// Retired entries must not keep obsolete external nodes alive through foreign keys.
+	if err := tx.Model(&model.SubscriptionHost{}).Where("entry_node_id IN (?)", tx.Model(&model.SubscriptionNode{}).Select("id").Where("source_id = ?", row.ID)).Update("entry_node_id", nil).Error; err != nil {
+		return err
+	}
 	referenced := map[int]bool{}
 	if err := eachPlan(tx, func(p model.PortalPlan) error {
 		for _, sel := range p.ExternalSelections {
@@ -365,15 +366,6 @@ func (s *Service) publish(tx *gorm.DB, row *model.SubscriptionSource, snapshot S
 		return nil
 	}); err != nil {
 		return err
-	}
-	var hosts []model.SubscriptionHost
-	if err := tx.Where("entry_node_id IN (?)", tx.Model(&model.SubscriptionNode{}).Select("id").Where("source_id = ?", row.ID)).Find(&hosts).Error; err != nil {
-		return err
-	}
-	for _, h := range hosts {
-		if h.EntryNodeID != nil {
-			referenced[*h.EntryNodeID] = true
-		}
 	}
 	var old []model.SubscriptionNode
 	if err := tx.Where("source_id = ?", row.ID).Find(&old).Error; err != nil {

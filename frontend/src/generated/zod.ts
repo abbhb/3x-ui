@@ -626,15 +626,6 @@ export const ClientsSummarySchema = z.object({
 });
 export type ClientsSummary = z.infer<typeof ClientsSummarySchema>;
 
-export const EntryChoiceSchema = z.object({
-  id: z.number().int(),
-  name: z.string(),
-  proxy_type: z.string(),
-  source_id: z.number().int(),
-  source_name: z.string(),
-});
-export type EntryChoice = z.infer<typeof EntryChoiceSchema>;
-
 export const ExternalSelectionSchema = z.object({
   mode: z.string(),
   node_ids: z.array(z.number().int()),
@@ -804,17 +795,6 @@ export const HostGroupSchema = z.object({
   vlessRoute: z.string(),
 });
 export type HostGroup = z.infer<typeof HostGroupSchema>;
-
-export const HostInputSchema = z.object({
-  cascade_mode: z.string(),
-  clear_entry: z.boolean(),
-  client_stream: z.string(),
-  entry_node_id: z.number().int().nullable().optional(),
-  entry_yaml: z.string().optional(),
-  mihomo_only: z.boolean().nullable().optional(),
-  revision: z.number().int(),
-});
-export type HostInput = z.infer<typeof HostInputSchema>;
 
 export const HostInstanceReportSchema = z.object({
   error: z.string().optional(),
@@ -1610,28 +1590,6 @@ export const SubscriptionCredentialInputSchema = z.object({
   url: z.string(),
 });
 export type SubscriptionCredentialInput = z.infer<typeof SubscriptionCredentialInputSchema>;
-
-export const SubscriptionHostSchema = z.object({
-  cascade_mode: z.string(),
-  client_stream: z.string(),
-  entry_configured: z.boolean(),
-  entry_node_id: z.number().int().nullable().optional(),
-  host_id: z.number().int(),
-  mihomo_only: z.boolean(),
-  revision: z.number().int(),
-});
-export type SubscriptionHost = z.infer<typeof SubscriptionHostSchema>;
-
-export const SubscriptionHostViewSchema = z.object({
-  address: z.string(),
-  host_id: z.number().int(),
-  inbound_id: z.number().int(),
-  network: z.string(),
-  path: z.string(),
-  remark: z.string(),
-  settings: z.lazy(() => SubscriptionHostSchema),
-});
-export type SubscriptionHostView = z.infer<typeof SubscriptionHostViewSchema>;
 
 export const SubscriptionNodeSchema = z.object({
   id: z.number().int(),

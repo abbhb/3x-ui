@@ -146,6 +146,9 @@ func TestListPagedFilters(t *testing.T) {
 		params ClientPageParams
 		want   []string
 	}{
+		{name: "client ID matches exactly without any inbound attachment", params: ClientPageParams{ClientID: 11}, want: []string{"kilo_1@x"}},
+		{name: "client ID does not fall back to all clients when absent", params: ClientPageParams{ClientID: 9999}, want: []string{}},
+		{name: "client ID combines with other filters", params: ClientPageParams{ClientID: 11, Search: "alpha"}, want: []string{}},
 		{
 			name:   "no filter returns every client in id order",
 			params: ClientPageParams{PageSize: 50},

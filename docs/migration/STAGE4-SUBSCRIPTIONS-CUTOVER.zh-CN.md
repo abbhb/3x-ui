@@ -1,4 +1,4 @@
-# 第四阶段：外部订阅、级联、XHTTP、规则 DNS 与同域名切换
+# 第四阶段：外部订阅、原生连接、规则 DNS 与同域名切换
 
 基于第三阶段 PR #3 合并提交 `b4ae56a4`，来源仍为
 `abbhb/Marzban@0ebdd8052743066fbe5d845153a6adc24334ea6a`。
@@ -20,26 +20,35 @@
 - 在本机实际切到新线路、完成重连和外网探测前，不回收最后一条旧线路。
   之后是否下线旧核心仍需单独明确指令。
 
+## 当前连接配置范围（2026-11-17）
+
+额外的“线路、级联与 XHTTP”页与对应管理 API 已移除。连接配置统一使用 3X-UI 原生
+入站、Host、出站和路由；旧扩展不再注入级联入口、替换 XHTTP 连接或限制订阅格式。
+数据库旧扩展记录仅用于历史套餐签名与迁移回读，保留以兼容既有授权，不参与订阅生成。
+已导入的独立连接不会自动转换为原生配置，需要的连接应在原生功能中配置。
+账号列表与账号详情均提供“查看客户端”，使用关联的 `client_id` 进入
+`panel/clients?clientId=<id>` 精确筛选，清除之前的搜索和筛选，并显示可清除的客户端条件。
+未关联客户端的账号显示“未关联客户端”；找不到指定 ID 时返回空列表。
+
 ## 页面与接口
 
 管理页为 `<webBasePath>panel/commerce`，URL 的 `tab` 支持直接进入：
 
-| 页面               | URL 参数                 | 能力                                                             |
-| ------------------ | ------------------------ | ---------------------------------------------------------------- |
-| 外部订阅           | `tab=external&source=12` | 公共 / 用户私有来源，元信息、只写凭据、刷新、导入 YAML、节点清单 |
-| 线路、级联与 XHTTP | `tab=routes&route=10001` | 具体 Host 的入口、级联、独立上下行和 HTTP 复用                   |
-| 规则与 DNS         | `tab=policy`             | 面板模板、规则顺序、策略组顺序、安全 DNS                         |
-| 套餐               | `tab=plans`              | 本地线路 all / selected、外部来源 all / selected、策略组成员     |
+| 页面       | URL 参数                 | 能力                                                             |
+| ---------- | ------------------------ | ---------------------------------------------------------------- |
+| 外部订阅   | `tab=external&source=12` | 公共 / 用户私有来源，元信息、只写凭据、刷新、导入 YAML、节点清单 |
+| 规则与 DNS | `tab=policy`             | 面板模板、规则顺序、策略组顺序、安全 DNS                         |
+| 套餐       | `tab=plans`              | 本地线路 all / selected、外部来源 all / selected、策略组成员     |
 
 列表进入页面内的详情；刷新和返回可保留定位，不用模态窗承载这些设置。
 用户在 `<webBasePath>portal/` 的“我的外部订阅”管理自己的来源。
-公共 / 私有列表每页 100 项，节点与线路列表同样分页；公共级联入口支持搜索和已选项回显。
+公共 / 私有列表每页 100 项，节点列表同样分页。旧的 `tab=routes` 书签会返回账号页。
 
 管理 API 在 `/panel/api/commerce/external-subscriptions` 与 `/subscriptions/*` 下，
 沿用完整管理员会话 / token 和 CSRF；monitor / 节点角色没有管理权限。
 用户 API 在 `/api/portal/external-subscriptions` 下，使用门户 JWT；owner 来自已验证账号，
 不接收请求体指定其他账号。跨账号读取 / 修改返回 404。
-凭据 URL、节点明文和级联密文不出现在元信息 API；只返回是否已配置凭据。
+凭据 URL 和节点明文不出现在元信息 API；只返回是否已配置凭据。
 
 ## 外部订阅与授权
 
@@ -65,32 +74,16 @@
   被选节点消失后保留墓碑，再出现可恢复；不会替换成同名新服务器。
 - 外部来源只增加订阅节点，不分配本地入站权限。支持仅含外部节点的套餐；
   购买仍使用原钱包与幂等交易链路。外部机场流量无法计入本机 Xray 的用量账目。
-  用户自己的启用来源仅混入自己的有效代理订阅，不能成为公共套餐或公共级联入口。
+  用户自己的启用来源仅混入自己的有效代理订阅，不能成为公共套餐。
 
-## 级联与 XHTTP
+## 原生连接与 XHTTP
 
-每条具体 Host 支持 `off / replace / additional`：关闭、用入口连接原线路、保留直连并新增级联。
-入口可选择启用公共来源的活动节点，或粘贴单节点 YAML 加密保存。私有来源不能作为公共入口。
-入口辅助节点只用于拨号，不加入普通地区 / 策略组，不扩大用户可选本地线路。
-入口失效时拒绝生成该订阅，连接失败不会回退直连落地。
-
-级联需要完整 Mihomo 格式：`/sub/:id/clash-meta` 或 `/sub/:id/mihomo`。
-raw、Xray JSON、旧 Clash、Shadowrocket 遇到可见的级联线路返回 422，避免绕过入口。
-`/sub/:id/clash` 保持旧 Clash 能力；`shadowrocket` 支持外部 / XHTTP，但不注入安全 DNS。
-所有别名继续经过同一 MGMA 检查，裸稳定路径不会变为永久公开订阅。
-
-XHTTP 仍落在同一个服务端 path；自定义方案只是客户端公共连接参数，
-不会创建监听、改后台路径、修改 UUID / Auth 或重启核心。
-上传和下载可以分别选择域名 / IPv4 / IPv6、端口、TLS / REALITY、SNI、HTTP Host、ALPN、指纹和公钥。
-下载连接明确清掉上传继承的 TLS / REALITY，再应用自己的参数。
-IPv6 拨号地址与 TLS serverName 保持原地址；HTTP Host 使用带方括号的 IPv6 authority，
-否则 Mihomo 的填充 Referer URL 会解析失败。
-
-`extra` 按源核心语义替代外层传输参数，仅继承 `path / host / mode`。
-HTTP 复用 `xmux` 转换为 Mihomo `reuse-settings`；这是 XHTTP 自身复用，不能用通用 smux 代替。
-表单保留高级 JSON 里的 POST / header 参数；编辑高级 JSON 时以它为准。
-只允许公共客户端参数，拒绝服务器私钥、证书和跨路径 / 嵌套下载设置。
-导入的命名方案与自定义连接标为 Mihomo 专用，不能表达它的单链接格式会省略该方案。
+入站的传输参数与 Host 的原生地址、端口、TLS、SNI 和 HTTP Host 设置决定订阅连接。
+原生 XHTTP 的 `extra`、独立下载连接、IPv6 authority 与 HTTP 复用仍转换为对应的
+Mihomo 参数；原生 raw / JSON / Clash 输出按各自支持范围生成。
+扩展中的 `cascade_mode`、入口密文、`mihomo_only` 和 `client_stream` 不再影响这些输出。
+`/panel/api/commerce/subscriptions/hosts`、`/hosts/:id` 和 `/cascade-entries` 已移除；
+原生 Host API、套餐 Host 授权目录及规则 DNS API 保持可用。
 
 ## 规则、组成员和 DNS
 
@@ -155,7 +148,8 @@ JSON 策略模板只需要 Python 3.11+ 标准库；源 Jinja2 / YAML 模板需�
 具体 Host 保存原公共接入端口，因此目标后端可以改用隔离端口，不会让订阅误连接新后端端口。
 
 `portal.json` 包含 `subscriptions_extension`：公共 / 私有来源、原节点 ID / 密文、
-级联、具体 Host、公共 XHTTP 流和规则模板；manifest 校验模板与所有包成员摘要。
+具体 Host 与规则模板；旧包中的级联、客户端 XHTTP 流仅归档回读，不再生效。
+manifest 校验模板与所有包成员摘要。
 原子事务同时写入第三阶段账本与第四阶段扩展，验证密钥、归属、引用、预算和策略，逐记录回读；
 错误整体回滚，PostgreSQL 推进显式 ID 序列。目标门户默认关闭，也不会启动核心或联系节点。
 工具始终返回 `ready_for_cutover=false`；需要下列实际交付证据才能接管。
@@ -243,7 +237,10 @@ XHTTP / WebSocket 等现有转发路径必须保留精确 location，不能被�
 不能只恢复旧数据库从而丢掉新充值 / 购买。若目标尚未开放写入，可直接回切保存的旧反代；
 保留的旧代理无需重启。线上执行需要明确的切换窗口、主机清单和当时的计数水位。
 
-## 验证证据与限制
+## 原第四阶段验证证据与限制（历史记录）
+
+下述级联验收来自移除扩展前的版本。当前回归改为检查旧扩展不参与输出、原生 XHTTP
+仍可生成；`subscription_runtime_lab.py` 继续覆盖原生上下行与规则 DNS，已移除级联实验。
 
 - Python 合成 SQLite → stage4 bundle 与 Go 实际事务导入使用同一 fixture；核对旧 bcrypt、
   本地凭据、外部 selected / 私有归属、密文刷新、XHTTP 参数、规则 DNS 与错误密钥整体回滚。

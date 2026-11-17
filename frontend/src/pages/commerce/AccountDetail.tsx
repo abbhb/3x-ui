@@ -34,7 +34,7 @@ import {
 } from '@/schemas/commerce';
 import MGMAControls from './MGMAControls';
 import { useLabel } from './CommerceForms';
-import { SecretNotice, PageButtons } from './CommerceShared';
+import { AccountClientLink, SecretNotice, PageButtons } from './CommerceShared';
 import { money, date, bytes } from './commerceFormat';
 type Intent = { path: string; body: Record<string, unknown>; key: string };
 export default function AccountDetail({
@@ -176,6 +176,11 @@ export default function AccountDetail({
                             key: 'user',
                             label: l('permanentID'),
                             children: account.user_id || '—',
+                          },
+                          {
+                            key: 'client',
+                            label: l('client'),
+                            children: <AccountClientLink clientID={account.client_id} />,
                           },
                           {
                             key: 'plan',

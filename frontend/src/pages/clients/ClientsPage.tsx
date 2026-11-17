@@ -431,12 +431,16 @@ export default function ClientsPage() {
 
   const initial = readFilterState();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get('search');
+  const rawClientID = Number(searchParams.get('clientId'));
+  const clientID = Number.isSafeInteger(rawClientID) && rawClientID > 0 ? rawClientID : undefined;
   const [searchKey, setSearchKey] = useState(
-    searchParam !== null ? searchParam : initial.searchKey,
+    clientID ? '' : searchParam !== null ? searchParam : initial.searchKey,
   );
-  const [filters, setFilters] = useState<ClientFilters>(initial.filters);
+  const [filters, setFilters] = useState<ClientFilters>(
+    clientID ? emptyFilters() : initial.filters,
+  );
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   const initialSort = SORT_OPTIONS.find((o) => o.value === initial.sort) ?? DEFAULT_SORT;
@@ -462,10 +466,23 @@ export default function ClientsPage() {
 
   if (location.key !== prevLocationKey) {
     setPrevLocationKey(location.key);
-    if (searchParam !== null) {
+    if (clientID) {
+      setSearchKey('');
+      setDebouncedSearch('');
+      setFilters(emptyFilters());
+      setCurrentPage(1);
+    } else if (searchParam !== null) {
       setSearchKey(searchParam);
       setDebouncedSearch(searchParam);
     }
+  }
+
+  function clearClientFilter() {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('clientId');
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -490,7 +507,7 @@ export default function ClientsPage() {
     // Reset to page 1 whenever a filter or sort changes — otherwise an empty
     // result set on a high page number leaves the user staring at "no clients".
     setCurrentPage(1);
-  }, [debouncedSearch, filters, sortColumn, sortOrder]);
+  }, [clientID, debouncedSearch, filters, sortColumn, sortOrder]);
 
   // The node filter maps onto inbound ids client-side (#4997): the paging API
   // already accepts an inbound CSV, so nodes never have to reach the backend.
@@ -515,6 +532,7 @@ export default function ClientsPage() {
     setQuery({
       page: currentPage,
       pageSize: tablePageSize,
+      clientId: clientID,
       search: debouncedSearch,
       filter: filters.buckets.join(','),
       protocol: filters.protocols.join(','),
@@ -535,6 +553,7 @@ export default function ClientsPage() {
     resolvedPageSize,
     currentPage,
     tablePageSize,
+    clientID,
     debouncedSearch,
     filters,
     effectiveInboundCsv,
@@ -542,7 +561,7 @@ export default function ClientsPage() {
     sortOrder,
   ]);
 
-  const activeCount = activeFilterCount(filters);
+  const activeCount = activeFilterCount(filters) + (clientID ? 1 : 0);
 
   // Row handlers take an email and look the row up here at call time. Keying
   // them on the record object instead would defeat the memoised cells: every
@@ -1577,7 +1596,10 @@ export default function ClientsPage() {
                         {activeCount > 0 && (
                           <Button
                             size={isMobile ? 'small' : 'middle'}
-                            onClick={() => setFilters(emptyFilters())}
+                            onClick={() => {
+                              setFilters(emptyFilters());
+                              if (clientID) clearClientFilter();
+                            }}
                           >
                             {t('pages.clients.clearAllFilters')}
                           </Button>
@@ -1591,6 +1613,11 @@ export default function ClientsPage() {
 
                       {activeCount > 0 && (
                         <div className="filter-chips">
+                          {clientID && (
+                            <Tag closable onClose={clearClientFilter}>
+                              {t('pages.clients.client')} #{clientID}
+                            </Tag>
+                          )}
                           {filters.buckets.map((b) => (
                             <Tag
                               key={`b-${b}`}
