@@ -84,7 +84,7 @@ func TestNativeIPv6RuntimeFixture(t *testing.T) {
 		"api":       map[string]any{"tag": "api", "listen": "127.0.0.1:62789", "services": []string{"HandlerService", "StatsService", "RoutingService"}},
 		"dns":       map[string]any{"hosts": map[string]any{"dual.test": []string{"192.0.2.2", "2001:db8:aa::2"}, "v4-only.test": "192.0.2.2"}},
 		"inbounds":  inbounds,
-		"outbounds": []map[string]any{{"tag": "direct", "protocol": "freedom", "settings": map[string]any{"finalRules": []map[string]any{{"action": "allow", "ip": []string{"2001:db8::/32", "192.0.2.0/24"}}}}}, {"tag": "blocked", "protocol": "blackhole"}},
+		"outbounds": []map[string]any{{"tag": "direct", "protocol": "freedom", "settings": map[string]any{"domainStrategy": "ForceIP", "finalRules": []map[string]any{{"action": "allow", "ip": []string{"2001:db8::/32", "192.0.2.0/24"}}}}}, {"tag": "blocked", "protocol": "blackhole"}},
 		"routing":   map[string]any{"rules": []map[string]any{{"type": "field", "ip": []string{"2001:db8:dead::/48"}, "outboundTag": "blocked"}, {"type": "field", "inboundTag": []string{"LAB4", "LAB6"}, "outboundTag": "direct"}}},
 	}
 	raw, _ := json.Marshal(map[string]any{"template": config, "clients": clients, "leases": leases})

@@ -52,6 +52,22 @@ def lab(binary, test_binary, node):
                     raise RuntimeError("native service fixture failed: " + (result.stdout + result.stderr)[-2500:])
 
             fixture()
+            baseline = json.loads((root / "fixture.json").read_text())
+            (root / "core.json").write_text(json.dumps(baseline["template"]))
+            (root / "core.json").chmod(0o600)
+            fixture(validate=True)
+            baseline_core = subprocess.Popen(["ip", "netns", "exec", proxy, binary, "run", "-config", str(root / "core.json")], stdout=log, stderr=subprocess.STDOUT)
+            children.append(baseline_core)
+            # A positive control proves the unchanged direct branch can resolve
+            # this lab-only name before testing fallback after user-rule edits.
+            for _ in range(20):
+                probe = {"credential": common.USERS["7.sample"], "entry": "127.0.0.1", "entryPort": 11080, "target": "v4-only.test", "port": 18080}
+                observed = json.loads(common.run(["ip", "netns", "exec", proxy, sys.executable, __file__, "request"], json.dumps(probe)))["source"]
+                if observed == "192.0.2.1": break
+                if baseline_core.poll() is not None: raise RuntimeError("baseline core exited")
+                time.sleep(.1)
+            else: raise RuntimeError("the original direct branch cannot resolve the lab IPv4 name")
+            baseline_core.terminate(); baseline_core.wait(timeout=10)
             editor = common.ROOT / "frontend/src/pages/xray/outbounds/native-user-ipv6.ts"
             # Type-only imports are stripped by Node 26. This runs the real UI
             # editor without installing frontend dependencies or starting a browser.

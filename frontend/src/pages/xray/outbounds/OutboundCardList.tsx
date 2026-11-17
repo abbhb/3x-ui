@@ -150,7 +150,7 @@ export default function OutboundCardList({
               <Tag color="green">{record.protocol}</Tag>
               {record.sendThrough && (
                 <Tag style={{ whiteSpace: 'normal', wordBreak: 'break-all' }}>
-                  {t('pages.xray.outboundForm.sendThrough')}: {record.sendThrough}
+                  {t('pages.xray.outbound.sendThrough')}: {record.sendThrough}
                 </Tag>
               )}
               {[Protocols.VMess, Protocols.VLESS, Protocols.Trojan, Protocols.Shadowsocks].includes(
