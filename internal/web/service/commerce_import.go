@@ -460,7 +460,10 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 		}
 	}
 	for _, sub := range b.Subscriptions {
-		if accounts[sub.AccountID] == nil || accounts[sub.AccountID].ClientID == nil || plans[sub.PlanID] == nil || sub.Currency != "CNY" || sub.PricePaidMinor < 0 || sub.ExpiresAt < 0 {
+		if accounts[sub.AccountID] == nil || plans[sub.PlanID] == nil || sub.Currency != "CNY" || sub.PricePaidMinor < 0 || sub.ExpiresAt < 0 {
+			return errPortalImport
+		}
+		if accounts[sub.AccountID].ClientID == nil && sub.DisabledAt == 0 && (sub.ExpiresAt == 0 || sub.ExpiresAt > s.now()) {
 			return errPortalImport
 		}
 		if err := portalImportReadback(tx, &sub, report, "account_id = ?", sub.AccountID); err != nil {
@@ -471,6 +474,14 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 	for _, wire := range b.Purchases {
 		p := wire.PortalPurchase
 		p.IdempotencyKey = wire.Key
+		if len(p.LegacyInboundTags) > 128 {
+			return errPortalImport
+		}
+		for _, tag := range p.LegacyInboundTags {
+			if tag == "" || len(tag) > 256 || strings.ContainsAny(tag, "\r\n\x00") {
+				return errPortalImport
+			}
+		}
 		if p.ID <= 0 || purchases[p.ID] != nil || accounts[p.AccountID] == nil || plans[p.PlanID] == nil || !slices.Contains([]string{"self_purchase", "admin_grant", "admin_renewal"}, p.Kind) || p.AmountMinor < 0 || p.BalanceBeforeMinor-p.AmountMinor != p.BalanceAfterMinor || p.BalanceAfterMinor < 0 || len(p.IdempotencyKey) == 0 || len(p.IdempotencyKey) > 128 || p.Currency != "CNY" {
 			return errPortalImport
 		}

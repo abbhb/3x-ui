@@ -1407,6 +1407,9 @@ export const EXAMPLES: Record<string, unknown> = {
       0
     ],
     "kind": "",
+    "legacy_inbound_tags": [
+      ""
+    ],
     "plan_id": 0,
     "plan_name": "",
     "price_minor": 0

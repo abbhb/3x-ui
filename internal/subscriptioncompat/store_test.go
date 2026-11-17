@@ -95,3 +95,40 @@ func TestPrivateSourceCannotCrossAccountsOrBecomePlanGrant(t *testing.T) {
 		t.Fatalf("cross-account credential=%v", err)
 	}
 }
+
+func TestActiveClientUsesCurrentPlanDespiteStaleLegacySubscriptionExpiry(t *testing.T) {
+	s := compatDB(t)
+	client := model.ClientRecord{Email: "7.synthetic", SubID: "legacy-expiry", Enable: true, ExpiryTime: 4102444800000}
+	if err := s.DB.Create(&client).Error; err != nil {
+		t.Fatal(err)
+	}
+	account := model.PortalAccount{Username: "legacy-expiry", IsActive: true, ClientID: &client.Id}
+	if err := s.DB.Create(&account).Error; err != nil {
+		t.Fatal(err)
+	}
+	source, err := s.CreateSource(nil, SourceInput{Name: "Public", Enabled: true, RefreshMinutes: 15})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.ImportSnapshot(source.ID, nil, []byte(`proxies: [{name: public, type: socks5, server: synthetic.example.test, port: 1080}]`)); err != nil {
+		t.Fatal(err)
+	}
+	plan := model.PortalPlan{Name: "Legacy plan", ExternalSelections: []model.ExternalSelection{{SourceID: source.ID, Mode: "all"}}}
+	if err = s.DB.Create(&plan).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err = s.DB.Create(&model.PortalSubscription{AccountID: account.ID, ExpiresAt: 1, PortalPlanSnapshot: model.PortalPlanSnapshot{PlanID: plan.ID}}).Error; err != nil {
+		t.Fatal(err)
+	}
+	projection, err := s.Projection(client.SubID)
+	if err != nil || len(projection.Sources) != 1 || len(projection.Sources[0].Nodes) != 1 {
+		t.Fatalf("active operational client lost legacy plan: sources=%+v err=%v", projection.Sources, err)
+	}
+	if err = s.DB.Model(&model.PortalSubscription{}).Where("account_id = ?", account.ID).Update("disabled_at", 1).Error; err != nil {
+		t.Fatal(err)
+	}
+	projection, err = s.Projection(client.SubID)
+	if err != nil || len(projection.Sources) != 0 {
+		t.Fatal("disabled entitlement survived")
+	}
+}

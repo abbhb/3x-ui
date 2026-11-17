@@ -978,7 +978,11 @@ func (s *Server) relayUDPResponses(
 	for {
 		srcAddr, respPayload, err := sess.relay.Receive(buf)
 		if err != nil {
-			if ctx.Err() == nil && !sess.relay.closed.Load() {
+			report := ctx.Err() == nil && !sess.relay.closed.Load()
+			// Revoke this failed generation before publishing its failure. A new
+			// packet must not reuse the dead relay while logging is still blocked.
+			associations.release(assocID, association)
+			if report {
 				s.logLimited(tuicLogWarn, "udp-receive", 30*time.Second, "UDP relay receive failed: %v", err)
 			}
 			return

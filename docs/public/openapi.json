@@ -5337,6 +5337,12 @@
           "kind": {
             "type": "string"
           },
+          "legacy_inbound_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "plan_id": {
             "type": "integer"
           },
@@ -9436,6 +9442,9 @@
                         0
                       ],
                       "kind": "",
+                      "legacy_inbound_tags": [
+                        ""
+                      ],
                       "plan_id": 0,
                       "plan_name": "",
                       "price_minor": 0

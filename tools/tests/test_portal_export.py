@@ -109,6 +109,45 @@ class PortalExportTests(unittest.TestCase):
         self.assertNotIn(PEPPER, json.dumps(bundle))
         self.assertNotIn('"' + "G" * 43 + '"', json.dumps(bundle))
 
+    def test_explicit_archive_retains_disabled_unmanaged_identity_and_raw_credentials(self):
+        original = dict(self.db.execute("SELECT * FROM users WHERE id=7").fetchone())
+        original.update(id=11, username="archived_disabled", status="disabled", subscription_token="archive-11", data_limit_reset_strategy="day")
+        self.db.execute("INSERT INTO users (" + ",".join(original) + ") VALUES (" + ",".join("?" for _ in original) + ")", tuple(original.values()))
+        self.db.execute("INSERT INTO proxies VALUES (611,11,'VLESS',?)", (json.dumps({"id":"11111111-1111-4111-8111-000000000011"}),))
+        self.db.commit()
+        with self.assertRaisesRegex(portal.MigrationError, "recurring quota"):
+            self.build()
+        bundle, identities, future = portal.build(self.db, *self.inputs, now=1800000000, archive_unmanaged_disabled=True)
+        self.assertIn(11, bundle["reserved_ids"])
+        self.assertEqual([i["legacy_user_id"] for i in identities], [7,9])
+        archived = future["archived_legacy_users"]
+        self.assertEqual(archived["users"], [original])
+        self.assertEqual(archived["proxies"][0]["user_id"],11)
+        self.assertIn("000000000011",archived["proxies"][0]["settings"])
+        self.db.execute("UPDATE users SET status='active' WHERE id=11")
+        with self.assertRaisesRegex(portal.MigrationError, "recurring quota"):
+            portal.build(self.db, *self.inputs, now=1800000000, archive_unmanaged_disabled=True)
+
+    def test_retired_historical_routes_do_not_become_current_entitlements(self):
+        self.db.execute("UPDATE portal_purchases SET inbound_tags=? WHERE id=10", (json.dumps(["RETIRED_HK", "TEST_VISION"]),))
+        bundle, _, future = self.build()
+        purchase=next(x for x in bundle["purchases"] if x["id"]==10)
+        self.assertEqual(purchase["legacy_inbound_tags"],["RETIRED_HK","TEST_VISION"])
+        self.assertEqual(purchase["inbound_ids"],[101])
+        self.assertEqual(purchase["host_ids"],[1001])
+        self.assertEqual(bundle["subscriptions"][0]["inbound_ids"],[101,102,103])
+        self.assertEqual(future["source_commerce_snapshot"]["portal_purchases"][0]["inbound_tags"],json.dumps(["RETIRED_HK","TEST_VISION"]))
+
+    def test_clientless_historical_subscription_remains_clientless(self):
+        self.db.execute("UPDATE portal_accounts SET user_id=NULL WHERE id=5")
+        self.db.execute("UPDATE portal_subscriptions SET disabled_at=? WHERE account_id=5", (STAMP,))
+        bundle, _, _ = self.build()
+        account=next(a for a in bundle["accounts"] if a["id"]==5)
+        self.assertIsNone(account["client_id"])
+        sub=next(s for s in bundle["subscriptions"] if s["account_id"]==5)
+        self.assertEqual(sub["plan_id"],4)
+        self.assertEqual(sub["price_paid_minor"],1299)
+
     def test_ledger_gap_fails_closed(self):
         self.db.execute("UPDATE wallet_transactions SET balance_after_minor=1702 WHERE id=2")
         with self.assertRaisesRegex(portal.MigrationError, "continuity"):

@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import shutil
 import sys
+import time
 
 from marzban_export import (MigrationError, require, integer, snapshot, table_names,
                             read_json, encode, decode, digest, convert, route_bindings,
@@ -52,22 +53,27 @@ def money(value):
     return integer(value, "money", maximum=MAX_MONEY)
 
 
-def build(db, core, mapping, inventory, route_map, target_hosts, now=None):
+def build(db, core, mapping, inventory, route_map, target_hosts, now=None, archive_unmanaged_disabled=False):
     tables = table_names(db)
     require({"portal_accounts", "portal_subscriptions", "portal_purchases", "wallet_transactions",
              "subscription_plans", "portal_invitation_codes", "portal_invitation_uses",
              "portal_ip_blocks", "portal_security_settings", "mgma_settings", "jwt"} <= tables,
             "stage 3 requires the complete source commerce and MGMA schema")
-    clients, identities = convert(db, core, mapping, inventory, route_map=route_map,
+    source_users = rows(db, "users", tables)
+    linked = {a["user_id"] for a in rows(db, "portal_accounts", tables) if a["user_id"] is not None}
+    pending = {p["user_id"] for p in rows(db, "next_plans", tables)}
+    archived = {u["id"] for u in source_users if archive_unmanaged_disabled and u["status"].lower() == "disabled" and u["id"] not in linked and u["id"] not in pending}
+    selected = [u["id"] for u in source_users if u["id"] not in archived]
+    require(selected, "no managed or active source users to migrate")
+    clients, identities = convert(db, core, mapping, inventory, user_ids=selected, route_map=route_map,
                                  target_hosts=target_hosts, traffic_policy="preserve-total-as-download",
                                  allow_next_plans=True, now=now)
     route_bindings(route_map, target_hosts, mapping)
     for c in clients:
         c["client"]["requireMGMA"] = True
-    source_users = rows(db, "users", tables)
-    users = {u["id"]: u for u in source_users}
+    users = {u["id"]: u for u in source_users if u["id"] not in archived}
     native_by_user = {i["legacy_user_id"]: c for i, c in zip(identities, clients)}
-    reserved = sorted(users)
+    reserved = sorted(u["id"] for u in source_users)
     def grant(tags, selections=None):
         require(isinstance(tags, list) and all(isinstance(t, str) and t in mapping for t in tags),
                 "plan references an unmapped source inbound")
@@ -111,17 +117,22 @@ def build(db, core, mapping, inventory, route_map, target_hosts, now=None):
     purchases = []
     for r in rows(db, "portal_purchases", tables):
         require(r["account_id"] in source_accounts and r["plan_id"] in source_plans and r["currency"] == "CNY", "invalid purchase reference/currency")
-        inbounds, hosts = grant(j(r["inbound_tags"], []))
+        original_tags = j(r["inbound_tags"], [])
+        require(isinstance(original_tags, list) and len(original_tags) <= 128 and all(isinstance(t, str) and 0 < len(t) <= 256 and not any(c in t for c in "\r\n\x00") for t in original_tags), "invalid historical inbound tags")
+        retired_tags = [t for t in original_tags if t not in mapping]
+        inbounds, hosts = grant([t for t in original_tags if t in mapping])
         purchases.append(dict(id=r["id"], account_id=r["account_id"], plan_id=r["plan_id"], plan_name=r["plan_name"],
                               price_minor=money(r["amount_minor"]), amount_minor=money(r["amount_minor"]), currency="CNY", duration_days=r["duration_days"],
                               data_limit=integer(r["data_limit"], "purchase data limit", maximum=10**18), inbound_ids=inbounds, host_ids=hosts,
                               balance_before_minor=money(r["balance_before_minor"]), balance_after_minor=money(r["balance_after_minor"]),
                               kind=r["kind"], actor_admin=r["actor_admin"] or "", idempotency_key=r["idempotency_key"] or f"import-purchase-{r['id']}",
                               effective_expires_at=stamp(r["effective_expires_at"]), created_at=stamp(r["created_at"])))
+        if retired_tags:
+            purchases[-1]["legacy_inbound_tags"] = original_tags
     subscriptions = []
     for r in rows(db, "portal_subscriptions", tables):
         require(r["account_id"] in source_accounts and r["plan_id"] in source_plans, "invalid current subscription reference")
-        require(source_accounts[r["account_id"]]["user_id"] in users, "subscription without proxy user")
+        require(source_accounts[r["account_id"]]["user_id"] in users or (source_accounts[r["account_id"]]["user_id"] is None and (stamp(r["disabled_at"]) > 0 or 0 < stamp(r["expires_at"]) <= int(time.time() if now is None else now)*1000)), "active subscription without proxy user")
         # Current grants follow the current source plan; historical commercial fields stay unchanged.
         plan = next(p for p in plans if p["id"] == r["plan_id"])
         subscriptions.append(dict(account_id=r["account_id"], plan_id=r["plan_id"], plan_name=r["plan_name"], price_minor=money(r["price_paid_minor"]),
@@ -184,6 +195,16 @@ def build(db, core, mapping, inventory, route_map, target_hosts, now=None):
         "portal_accounts", "subscription_plans", "portal_subscriptions", "portal_purchases", "wallet_transactions",
         "portal_invitation_codes", "portal_invitation_uses", "portal_ip_blocks", "portal_security_attempts",
         "portal_security_settings", "mgma_settings", "user_usage_logs")}
+    if archived:
+        proxies = [p for p in rows(db, "proxies", tables) if p["user_id"] in archived]
+        proxy_ids = {p["id"] for p in proxies}
+        future["archived_legacy_users"] = {
+            "reason": "explicitly retained on the legacy service: disabled, no portal account, no pending plan",
+            "users": [u for u in source_users if u["id"] in archived], "proxies": proxies,
+            "exclude_inbounds_association": [dict(r) for r in db.execute("SELECT * FROM exclude_inbounds_association ORDER BY proxy_id,inbound_tag") if r["proxy_id"] in proxy_ids],
+            "user_usage_logs": [r for r in rows(db, "user_usage_logs", tables) if r["user_id"] in archived],
+            "node_user_usages": [r for r in rows(db, "node_user_usages", tables) if r["user_id"] in archived],
+        }
     bundle = dict(schema=SCHEMA, clients=clients, reserved_ids=reserved, accounts=accounts, plans=plans, subscriptions=subscriptions, purchases=purchases,
                   wallet=wallet, invitations=invitations, invitation_uses=uses, ip_blocks=blocks, security_attempts=attempts, settings=settings,
                   access=access, legacy_users=legacy, next_plans=next_plans, usage_history=usage,
@@ -199,7 +220,7 @@ def export(args):
     routes, route_hash = read_json(args.route_map, "route map")
     hosts, host_hash = read_json(args.target_hosts, "target hosts")
     with snapshot(args.database) as (db, db_hash):
-        bundle, identities, future = build(db, core, mapping, inventory, routes, hosts)
+        bundle, identities, future = build(db, core, mapping, inventory, routes, hosts, archive_unmanaged_disabled=getattr(args, "archive_unmanaged_disabled", False))
         template_hash = None
         if getattr(args, "stage4", False):
             from marzban_subscription_export import extend
@@ -245,6 +266,7 @@ def main(argv=None):
         parser.add_argument("--" + field, required=True)
     parser.add_argument("--traffic-policy", required=True, choices=["preserve-total-as-download"])
     parser.add_argument("--ipv6-allocation", action="append", default=[])
+    parser.add_argument("--archive-unmanaged-disabled", action="store_true", help="retain disabled users without portal accounts or pending plans in the private legacy archive, reserving all identities")
     parser.add_argument("--stage4", action="store_true", help="include external ciphertext, cascades, concrete XHTTP routes and policy")
     parser.add_argument("--clash-template")
     parser.add_argument("--tls-name-map")

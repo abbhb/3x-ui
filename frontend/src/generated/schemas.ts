@@ -5305,6 +5305,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "kind": {
         "type": "string"
       },
+      "legacy_inbound_tags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "plan_id": {
         "type": "integer"
       },

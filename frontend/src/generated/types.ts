@@ -1235,6 +1235,7 @@ export interface PortalPurchase {
   id: number;
   inbound_ids: number[];
   kind: string;
+  legacy_inbound_tags?: string[];
   plan_id: number;
   plan_name: string;
   price_minor: number;

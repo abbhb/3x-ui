@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 	"runtime"
@@ -151,14 +152,15 @@ func TestAudit3UDPAssociationMustRecoverAfterBridgeReadFailure(t *testing.T) {
 				t.Fatalf("initial echo %q %v", p, err)
 			}
 
-			s.UpdateRuntimeSettings("recovery-"+name, "bbr", "warn")
+			runTag := fmt.Sprintf("recovery-%s-%d", name, time.Now().UnixNano())
+			s.UpdateRuntimeSettings(runTag, "bbr", "warn")
 			_ = u.Close()
 			audit3SendPacket(t, c, mode, 42131, 2, "while-down")
 			deadline := time.Now().Add(2 * time.Second)
 			for {
 				found := false
 				for _, line := range logger.GetLogs(10000, "DEBUG") {
-					if strings.Contains(line, "recovery-"+name) && strings.Contains(line, "UDP relay receive failed") {
+					if strings.Contains(line, runTag) && strings.Contains(line, "UDP relay receive failed") {
 						found = true
 						break
 					}

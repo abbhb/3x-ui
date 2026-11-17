@@ -1321,6 +1321,7 @@ export const PortalPurchaseSchema = z.object({
   id: z.number().int(),
   inbound_ids: z.array(z.number().int()),
   kind: z.string(),
+  legacy_inbound_tags: z.array(z.string()).optional(),
   plan_id: z.number().int(),
   plan_name: z.string(),
   price_minor: z.number().int(),
