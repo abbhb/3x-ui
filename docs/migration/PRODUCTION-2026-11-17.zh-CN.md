@@ -136,6 +136,7 @@ PR #8 的 CI run `44019485410` 全部 14 项通过；代码合并、构建发布
 amd64 artifact ZIP SHA-256 为 `d59754f6b73f3ae8c8da267c5cfd5a70b664ff2ffeb57a4db916b6bfc0b2d11e`，
 四台主机校验的面板二进制 SHA-256 均为 `7e812efc8d2b28f0951d15169708b82eeb3a3922cbd278de27d75b9a333a740a`。
 只替换面板程序，核心二进制、service.env、systemd 定义、证书与现有转发模板不变。
+各新面板服务依次重启，其管理的新核心也随之重启；旧主 Xray 与旧 HY2 不属于这些服务，未随之重启。
 
 验证分别完成：
 
