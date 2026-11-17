@@ -26,12 +26,14 @@
 {
   "schema": "marzban-live-usage-handoff/v1",
   "bundle_sha256": "替换为导入报告中的64位摘要",
-  "users": [{
-    "source_id": 7,
-    "email": "7.替换为冻结的源用户名",
-    "source_lifetime": 140,
-    "target_usage": 100
-  }]
+  "users": [
+    {
+      "source_id": 7,
+      "email": "7.替换为冻结的源用户名",
+      "source_lifetime": 140,
+      "target_usage": 100
+    }
+  ]
 }
 ```
 
