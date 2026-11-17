@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Button,
   Card,
   ConfigProvider,
-  Descriptions,
   Empty,
   Form,
   Input,
@@ -35,6 +34,10 @@ import { useTheme } from '@/hooks/useTheme';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { HttpUtil } from '@/utils';
 import { xrayPageUrl } from '@/hooks/xrayScope';
+import { fetchXrayConfig } from '@/hooks/useXraySetting';
+import { keys } from '@/api/queryKeys';
+import NativeEgressPanel from './NativeEgressPanel';
+import { nativeIPv6Bindings, type NativeBinding } from './native-bindings';
 import {
   ServiceHostDetailSchema,
   ServiceHostsSchema,
@@ -56,39 +59,54 @@ async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   return schema.parse(msg.obj);
 }
 
-export function connectionRows(reports: HostRuntime[]): Connection[] {
+export function connectionRows(
+  reports: HostRuntime[],
+  bindings: Record<number, NativeBinding[]> = {},
+): Connection[] {
   return reports
     .flatMap((report) =>
       report.observer.records.map((record) => {
         const identity = /^([1-9][0-9]*)\./.exec(record.user)?.[1];
+        const native = bindings[report.nodeId]?.find(
+          (binding) => binding.outbound === record.outbound,
+        );
         return {
           ...record,
           nodeId: report.nodeId,
           service: report.name,
           assignedIPv6:
-            record.outbound.startsWith('mz6-') && report.policy?.inbounds.includes(record.inbound)
+            native?.address ??
+            (record.outbound.startsWith('mz6-') && report.policy?.inbounds.includes(record.inbound)
               ? report.status.users.find((user) => user.identity === identity)?.address
-              : undefined,
-          allocationVerified: report.status.verified,
+              : undefined),
+          allocationVerified: native
+            ? record.local.startsWith(`[${native.address}]:`)
+            : report.status.verified,
         };
       }),
     )
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }
 
-export function ConnectionsPanel({ reports }: { reports: HostRuntime[] }) {
+export function ConnectionsPanel({
+  reports,
+  bindings = {},
+}: {
+  reports: HostRuntime[];
+  bindings?: Record<number, NativeBinding[]>;
+}) {
   const { t } = useTranslation();
   const label = (key: string) => t(`pages.serviceHosts.${key}`);
   const [user, setUser] = useState('');
   const [node, setNode] = useState<number>();
   const rows = useMemo(
     () =>
-      connectionRows(reports).filter(
+      connectionRows(reports, bindings).filter(
         (row) =>
           (node === undefined || row.nodeId === node) &&
           row.user.toLowerCase().includes(user.toLowerCase()),
       ),
-    [reports, node, user],
+    [reports, bindings, node, user],
   );
   return (
     <Space orientation="vertical" size="middle" className="service-host-full">
@@ -176,63 +194,6 @@ export function ConnectionsPanel({ reports }: { reports: HostRuntime[] }) {
         />
       </div>
     </Space>
-  );
-}
-
-function LegacyEgressPanel({ report }: { report: HostRuntime }) {
-  const { t } = useTranslation();
-  const label = (key: string) => t(`pages.serviceHosts.${key}`);
-  return (
-    <Card title={report.name} size="small">
-      <Space orientation="vertical" size="middle" className="service-host-full">
-        <Space>
-          <Link to={xrayPageUrl('/outbound', report.nodeId)}>{t('menu.outbounds')}</Link>
-          <Link to={xrayPageUrl('/routing', report.nodeId)}>{t('menu.routing')}</Link>
-        </Space>
-        <Alert type="info" showIcon title={label('nativeEgressHelp')} />
-        {report.error && (
-          <Alert type="error" title={label('serviceUnavailable')} description={report.error} />
-        )}
-        {report.installed && report.policy && (
-          <>
-            <Descriptions
-              size="small"
-              column={{ xs: 1, sm: 2 }}
-              items={[
-                { key: 'prefix', label: label('prefix'), children: report.policy.prefix },
-                { key: 'interface', label: label('interface'), children: report.policy.interface },
-                {
-                  key: 'state',
-                  label: label('verification'),
-                  children: (
-                    <Tag color={report.status.verified ? 'success' : 'warning'}>
-                      {label(report.status.verified ? 'verified' : 'unverified')}
-                    </Tag>
-                  ),
-                },
-                {
-                  key: 'at',
-                  label: label('lastVerified'),
-                  children: report.status.updatedAt
-                    ? new Date(report.status.updatedAt).toLocaleString()
-                    : '—',
-                },
-              ]}
-            />
-            <Table
-              rowKey="identity"
-              size="small"
-              dataSource={report.status.users}
-              pagination={{ pageSize: 10, showSizeChanger: false }}
-              columns={[
-                { title: label('permanentId'), dataIndex: 'identity' },
-                { title: label('assignedIPv6'), dataIndex: 'address' },
-              ]}
-            />
-          </>
-        )}
-      </Space>
-    </Card>
   );
 }
 
@@ -327,9 +288,23 @@ export default function ServiceHostsPage() {
   const runtime = useQuery({
     queryKey: ['hostRuntime', hostId],
     queryFn: () => read(`${API}/runtime/${hostId}`, HostRuntimesSchema),
-    enabled: hostId > 0 && ['egress', 'connections'].includes(tab),
+    enabled: hostId > 0 && tab === 'connections',
     refetchInterval: 10000,
   });
+  const nativeConfigs = useQueries({
+    queries: (detail.data?.services ?? []).map((service) => ({
+      queryKey: keys.xray.config(service.id),
+      queryFn: () => fetchXrayConfig(service.id),
+      enabled: ['egress', 'connections'].includes(tab),
+      refetchInterval: 10000,
+    })),
+  });
+  const nativeBindings = Object.fromEntries(
+    (detail.data?.services ?? []).map((service, index) => [
+      service.id,
+      nativeConfigs[index]?.data ? nativeIPv6Bindings(nativeConfigs[index].data.xraySetting) : [],
+    ]),
+  );
   useEffect(() => {
     if (initialNode === undefined || hostId || newHost || !hosts.data) return;
     const linked = hosts.data.find((host) =>
@@ -359,7 +334,7 @@ export default function ServiceHostsPage() {
   };
   const reports = runtime.data ?? [];
   const requestError =
-    hosts.error || detail.error || (['egress', 'connections'].includes(tab) ? runtime.error : null);
+    hosts.error || detail.error || (tab === 'connections' ? runtime.error : null);
   const content =
     !hostId && !newHost ? (
       <Card
@@ -444,13 +419,6 @@ export default function ServiceHostsPage() {
                 </Card>
               ) : key === 'lines' ? (
                 <Card>
-                  <Alert
-                    type="info"
-                    showIcon
-                    title={label('lineHelp')}
-                    description={label('classificationHelp')}
-                    className="service-host-help"
-                  />
                   <div
                     className="service-host-table-scroll"
                     role="region"
@@ -503,25 +471,26 @@ export default function ServiceHostsPage() {
                               label('noEntry')
                             ),
                         },
-                        {
-                          title: label('declaredMode'),
-                          render: (_, line) => <Tag>{label(line.egressMode)}</Tag>,
-                        },
                       ]}
                     />
                   </div>
                 </Card>
               ) : key === 'egress' ? (
-                <Spin aria-live="off" spinning={runtime.isFetching}>
-                  <Space orientation="vertical" size="middle" className="service-host-full">
-                    {reports.map((report) => (
-                      <LegacyEgressPanel key={report.nodeId} report={report} />
-                    ))}
-                  </Space>
-                </Spin>
+                <Space orientation="vertical" size="middle" className="service-host-full">
+                  {detail.data.services.map((service, index) => (
+                    <NativeEgressPanel
+                      key={service.id}
+                      nodeId={service.id}
+                      name={service.name}
+                      config={nativeConfigs[index]?.data}
+                      error={nativeConfigs[index]?.error}
+                      loading={nativeConfigs[index]?.isLoading ?? false}
+                    />
+                  ))}
+                </Space>
               ) : (
                 <Spin aria-live="off" spinning={runtime.isFetching}>
-                  <ConnectionsPanel reports={reports} />
+                  <ConnectionsPanel reports={reports} bindings={nativeBindings} />
                 </Spin>
               ),
           }))}
@@ -531,7 +500,9 @@ export default function ServiceHostsPage() {
   return (
     <ConfigProvider theme={antdThemeConfig}>
       {messageHolder}
-      <Layout className={`page-layout${isDark ? ' dark' : ''}${isUltra ? ' ultra' : ''}`}>
+      <Layout
+        className={`hosts-page service-hosts-page${isDark ? ' is-dark' : ''}${isUltra ? ' is-ultra' : ''}`}
+      >
         <AppSidebar />
         <Layout className="content-shell">
           <Layout.Content className="content-area service-host-content" id="content-layout">
@@ -549,7 +520,9 @@ export default function ServiceHostsPage() {
                   void hosts.refetch();
                   if (hostId > 0) {
                     void detail.refetch();
-                    if (['egress', 'connections'].includes(tab)) void runtime.refetch();
+                    if (tab === 'connections') void runtime.refetch();
+                    if (['egress', 'connections'].includes(tab))
+                      for (const config of nativeConfigs) void config.refetch();
                   }
                 }}
               >

@@ -26,8 +26,3 @@ func (r *Remote) HostReport(ctx context.Context) (*hostops.Report, error) {
 	}
 	return &report, nil
 }
-
-func (r *Remote) SaveHostPolicy(ctx context.Context, policy hostops.Policy) error {
-	_, err := r.do(ctx, http.MethodPost, "panel/api/server/hostEgress", policy)
-	return err
-}

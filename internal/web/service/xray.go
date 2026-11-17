@@ -176,6 +176,10 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	templateConfig, err = reconcileNativeAutoIPv6(context.Background(), templateConfig)
+	if err != nil {
+		return nil, err
+	}
 	if err := prepareNativeIPv6Bindings(context.Background(), templateConfig); err != nil {
 		return nil, err
 	}

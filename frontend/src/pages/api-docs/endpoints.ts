@@ -1253,7 +1253,7 @@ export const sections: readonly Section[] = [
     id: 'service-hosts',
     title: 'Service hosts and IPv6 egress',
     description:
-      'Physical-machine grouping, existing subscription entry routes, and node-local IPv6 controller reports. Host grouping and route classification do not deploy or activate egress. Host management requires an administrator token/session. Node-sync tokens can read only the local runtime report; applying local egress requires node-admin or administrator authority.',
+      'Physical-machine grouping, native subscription entry endpoints, and bounded recent dial observations. IPv6 source bindings and user routing are read and edited through the native Xray service scope. Host management requires an administrator token/session; node-sync can read only its local runtime report.',
     endpoints: [
       {
         method: 'GET',
@@ -1286,36 +1286,19 @@ export const sections: readonly Section[] = [
       {
         method: 'GET',
         path: '/panel/api/serviceHosts/runtime/:id',
-        summary: 'Aggregate bounded per-service egress and recent dial reports',
+        summary: 'Aggregate bounded per-service recent dial reports',
         description:
           'Unavailable or old nodes return a per-service error, without fabricated socket evidence. Recent successful dials are not active-connection counts. Socket local address is before NAT.',
         responseSchema: 'HostInstanceReport',
         responseSchemaArray: true,
       },
       {
-        method: 'POST',
-        path: '/panel/api/serviceHosts/policy/:id/:node',
-        deprecated: true,
-        summary: 'Apply installed egress policy and restart the selected service',
-        description:
-          'Retained for the legacy controller contract only. New services use native /xray outbounds and routing with nodeId. Requires a pre-installed node-local bootstrap/controller. Prefix, interface, namespace and mark ownership cannot be changed through this API.',
-        requestSchema: { $ref: '#/components/schemas/Policy' },
-      },
-      {
         method: 'GET',
         path: '/panel/api/server/hostRuntime',
-        summary: 'Read this service core and controller report',
+        summary: 'Read this service core and recent dial report',
         description:
           'Read-only local endpoint used by the parent panel. No executable paths, API credentials or raw core config are returned.',
         responseSchema: 'Report',
-      },
-      {
-        method: 'POST',
-        path: '/panel/api/server/hostEgress',
-        summary: 'Update this installed service policy and restart its core',
-        description:
-          'Node-admin or administrator authority required. enabled must be explicitly provided. Local bootstrap file and allocation ownership remain fixed.',
-        requestSchema: { $ref: '#/components/schemas/Policy' },
       },
     ],
   },

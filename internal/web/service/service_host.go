@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/netip"
 	"slices"
 	"strings"
@@ -48,18 +47,16 @@ type HostEndpoint struct {
 }
 
 type HostLineView struct {
-	ID         int            `json:"id"`
-	NodeID     int            `json:"nodeId"`
-	Tag        string         `json:"tag"`
-	Name       string         `json:"name"`
-	Protocol   string         `json:"protocol"`
-	Transport  string         `json:"transport"`
-	Listen     string         `json:"listen"`
-	Port       int            `json:"port"`
-	Enable     bool           `json:"enable"`
-	EgressMode string         `json:"egressMode"`
-	Note       string         `json:"note"`
-	Endpoints  []HostEndpoint `json:"endpoints"`
+	ID        int            `json:"id"`
+	NodeID    int            `json:"nodeId"`
+	Tag       string         `json:"tag"`
+	Name      string         `json:"name"`
+	Protocol  string         `json:"protocol"`
+	Transport string         `json:"transport"`
+	Listen    string         `json:"listen"`
+	Port      int            `json:"port"`
+	Enable    bool           `json:"enable"`
+	Endpoints []HostEndpoint `json:"endpoints"`
 }
 
 type ServiceHostDetail struct {
@@ -201,7 +198,6 @@ func (s *ServiceHostService) Get(id int) (*ServiceHostDetail, error) {
 		return nil, err
 	}
 	var hosts []model.Host
-	var lines []model.ServiceLine
 	ids := make([]int, 0, len(inbounds))
 	for _, ib := range inbounds {
 		ids = append(ids, ib.Id)
@@ -210,13 +206,6 @@ func (s *ServiceHostService) Get(id int) (*ServiceHostDetail, error) {
 		if err := db.Where("inbound_id IN ?", ids).Order("sort_order,id").Find(&hosts).Error; err != nil {
 			return nil, err
 		}
-		if err := db.Where("inbound_id IN ?", ids).Find(&lines).Error; err != nil {
-			return nil, err
-		}
-	}
-	classified := map[int]model.ServiceLine{}
-	for _, line := range lines {
-		classified[line.InboundId] = line
 	}
 	detail := &ServiceHostDetail{ServiceHostView: *selected, Lines: []HostLineView{}}
 	for _, ib := range inbounds {
@@ -230,10 +219,7 @@ func (s *ServiceHostService) Get(id int) (*ServiceHostDetail, error) {
 		_ = json.Unmarshal([]byte(ib.StreamSettings), &stream)
 		line := HostLineView{
 			ID: ib.Id, NodeID: node, Tag: ib.Tag, Name: ib.Remark, Protocol: string(ib.Protocol), Transport: stream.Network,
-			Listen: ib.Listen, Port: ib.Port, Enable: ib.Enable, EgressMode: classified[ib.Id].EgressMode, Note: classified[ib.Id].Note, Endpoints: []HostEndpoint{},
-		}
-		if line.EgressMode == "" {
-			line.EgressMode = "unclassified"
+			Listen: ib.Listen, Port: ib.Port, Enable: ib.Enable, Endpoints: []HostEndpoint{},
 		}
 		for _, h := range hosts {
 			if h.InboundId != ib.Id {
@@ -261,9 +247,6 @@ func (s *ServiceHostService) Get(id int) (*ServiceHostDetail, error) {
 type (
 	hostReporter interface {
 		HostReport(context.Context) (*hostops.Report, error)
-	}
-	hostPolicyWriter interface {
-		SaveHostPolicy(context.Context, hostops.Policy) error
 	}
 )
 
@@ -334,66 +317,4 @@ func (s *ServiceHostService) Runtime(ctx context.Context, id int) ([]HostInstanc
 	}
 	wg.Wait()
 	return result, nil
-}
-
-func SaveLocalHostPolicy(policy hostops.Policy) error {
-	// A removed inbound must never prevent switching the installed policy off.
-	if policy.Enabled {
-		var inbounds []model.Inbound
-		if err := database.GetDB().Where("node_id IS NULL AND tag IN ?", policy.Inbounds).Find(&inbounds).Error; err != nil {
-			return err
-		}
-		if len(inbounds) != len(policy.Inbounds) {
-			return errors.New("managed inbounds must be local service inbounds")
-		}
-		for _, ib := range inbounds {
-			if !slices.Contains([]model.Protocol{model.VLESS, model.VMESS, model.Trojan, model.Shadowsocks, model.Hysteria}, ib.Protocol) {
-				return errors.New("selected inbound cannot identify users for IPv6 egress")
-			}
-		}
-	}
-	if err := hostops.SavePolicy(policy); err != nil {
-		return err
-	}
-	return (&XrayService{}).RestartXray(true)
-}
-
-func (s *ServiceHostService) ApplyPolicy(ctx context.Context, id, node int, policy hostops.Policy) error {
-	detail, err := s.Get(id)
-	if err != nil {
-		return err
-	}
-	found := false
-	for _, instance := range detail.Services {
-		if instance.ID == node {
-			found = true
-		}
-	}
-	if !found {
-		return errors.New("service does not belong to this host")
-	}
-	if node == 0 {
-		return SaveLocalHostPolicy(policy)
-	}
-	mgr := runtime.GetManager()
-	if mgr == nil {
-		return errors.New("runtime manager unavailable")
-	}
-	rt, err := mgr.RuntimeFor(&node)
-	if err != nil {
-		return err
-	}
-	writer, ok := rt.(hostPolicyWriter)
-	if !ok {
-		return errors.New("node version does not support egress policy updates")
-	}
-	if err := policy.Validate(); err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	if err := writer.SaveHostPolicy(ctx, policy); err != nil {
-		return fmt.Errorf("node policy update failed: %w", err)
-	}
-	return nil
 }

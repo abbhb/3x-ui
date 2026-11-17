@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { planNativeUserIPv6 } from '@/pages/xray/outbounds/native-user-ipv6';
+import {
+  disableNativeUserIPv6Auto,
+  enableNativeUserIPv6Auto,
+  nativeUserIPv6AutoEnabled,
+  planNativeUserIPv6,
+} from '@/pages/xray/outbounds/native-user-ipv6';
 import { propagateOutboundTagRename } from '@/pages/xray/basics/helpers';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 
@@ -44,6 +49,37 @@ function fixture() {
 }
 
 describe('native per-user IPv6 editor', () => {
+  it('expresses automatic grants with visible native rules and a pending IPv6 guard', () => {
+    const before = fixture();
+    const enabled = planNativeUserIPv6(before, 'entry', clients, false, true)(leases);
+    expect(nativeUserIPv6AutoEnabled(enabled, 'entry')).toBe(true);
+    expect(enabled.routing?.rules?.map((rule) => rule.ruleTag)).toEqual([
+      undefined,
+      'user6-7-entry',
+      'user6-9-entry',
+      'user6-pending-entry',
+      'user6-auto-entry',
+      undefined,
+    ]);
+    expect(enabled.routing?.rules?.[3]).toMatchObject({
+      ip: ['::/0'],
+      inboundTag: ['entry'],
+      outboundTag: 'blocked',
+    });
+    const later = { id: 11, email: '11.new', inbounds: ['entry'] };
+    const added = planNativeUserIPv6(enabled, 'entry', [later])([
+      { clientId: 11, address: '2001:db8:1::11', ready: true },
+    ]);
+    expect(added.routing?.rules?.[3].ruleTag).toBe('user6-11-entry');
+    expect(added.routing?.rules?.[4].ruleTag).toBe('user6-pending-entry');
+    const disabled = disableNativeUserIPv6Auto(enabled, 'entry');
+    expect(nativeUserIPv6AutoEnabled(disabled, 'entry')).toBe(false);
+    expect(disabled.outbounds).toEqual(enabled.outbounds);
+    expect(disabled.routing?.rules?.at(-1)).toEqual(before.routing?.rules?.at(-1));
+    expect(enableNativeUserIPv6Auto(disabled, 'entry').routing?.rules).toEqual(
+      enabled.routing?.rules,
+    );
+  });
   it('requires an explicit direct branch when runtime subscriptions can change the default', () => {
     const value = fixture();
     value.routing!.rules = [];

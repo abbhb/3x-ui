@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"testing"
 
@@ -48,12 +47,12 @@ func TestServiceHostMembershipRoutesAndCredentialBoundary(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// Existing migration annotations remain readable, but are not editable
-	// forwarding policies. A record for another host must stay out of this view.
-	if err := db.Create(&[]model.ServiceLine{
-		{InboundId: local.Id, EgressMode: "user_ipv6"},
-		{InboundId: foreign.Id, EgressMode: "tunnel"},
-	}).Error; err != nil {
+	// Old annotations may remain in an archived database, but no longer
+	// participate in the current host contract or fresh schema.
+	if err := db.Exec("CREATE TABLE service_lines (inbound_id INTEGER PRIMARY KEY, egress_mode TEXT)").Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("INSERT INTO service_lines VALUES (?, ?)", local.Id, "retired-annotation").Error; err != nil {
 		t.Fatal(err)
 	}
 	detail, err := svc.Get(host.Id)
@@ -63,11 +62,11 @@ func TestServiceHostMembershipRoutesAndCredentialBoundary(t *testing.T) {
 	if detail.Name != "physical-a" || len(detail.Services) != 2 || len(detail.Lines) != 2 {
 		t.Fatalf("detail=%+v", detail)
 	}
-	if len(detail.Lines[0].Endpoints) != 2 || detail.Lines[0].Endpoints[1].Family != "IPv6" || detail.Lines[0].EgressMode != "user_ipv6" {
+	if len(detail.Lines[0].Endpoints) != 2 || detail.Lines[0].Endpoints[1].Family != "IPv6" {
 		t.Fatalf("entry classification=%+v", detail.Lines[0])
 	}
 	raw, _ := json.Marshal(detail)
-	for _, secret := range []string{"synthetic-secret-token", "synthetic-private-uuid", "synthetic-private-auth", "settings"} {
+	for _, secret := range []string{"synthetic-secret-token", "synthetic-private-uuid", "synthetic-private-auth", "settings", "egressMode", "retired-annotation"} {
 		if strings.Contains(string(raw), secret) {
 			t.Fatalf("host DTO leaked %s", secret)
 		}
@@ -79,16 +78,10 @@ func TestServiceHostMembershipRoutesAndCredentialBoundary(t *testing.T) {
 
 type hostTestRuntime struct {
 	fakeNodeRuntime
-	report  hostops.Report
-	applied int
+	report hostops.Report
 }
 
 func (r *hostTestRuntime) HostReport(context.Context) (*hostops.Report, error) { return &r.report, nil }
-
-func (r *hostTestRuntime) SaveHostPolicy(context.Context, hostops.Policy) error {
-	r.applied++
-	return nil
-}
 
 func TestServiceHostRuntimeIsBoundedByMembershipAndKeepsUnavailableServices(t *testing.T) {
 	setupBulkDB(t)
@@ -115,16 +108,6 @@ func TestServiceHostRuntimeIsBoundedByMembershipAndKeepsUnavailableServices(t *t
 	if !reports[0].Installed || reports[1].Error == "" {
 		t.Fatal("unavailable service was hidden or fabricated")
 	}
-	policy := hostops.Policy{Enabled: true, Namespace: "test", Interface: "eth0", Prefix: "2001:db8:1::/64", MarkPrefix: 100, Inbounds: []string{"entry"}}
-	if err := svc.ApplyPolicy(context.Background(), host.Id, a.Id, policy); err != nil {
-		t.Fatal(err)
-	}
-	if provider.applied != 1 {
-		t.Fatal("selected service did not receive policy")
-	}
-	if err := svc.ApplyPolicy(context.Background(), host.Id, 999, policy); err == nil {
-		t.Fatal("foreign service accepted")
-	}
 }
 
 func TestLocalHostReportDoesNotVerifyAStoppedCore(t *testing.T) {
@@ -136,19 +119,5 @@ func TestLocalHostReportDoesNotVerifyAStoppedCore(t *testing.T) {
 	report := LocalHostReport()
 	if report.Observer.Ready || report.Status.Verified || report.Status.Reason != "core_stopped" {
 		t.Fatalf("stopped core was reported as ready: %+v", report)
-	}
-}
-
-func TestDisabledHostPolicyCanReferToARemovedInbound(t *testing.T) {
-	setupBulkDB(t)
-	t.Setenv("XUI_EGRESS_CONFIG", "")
-	t.Setenv("XUI_XRAY_LAUNCHER", "")
-	policy := hostops.Policy{Namespace: "test", Interface: "eth0", Prefix: "2001:db8:1::/64", MarkPrefix: 100, Inbounds: []string{"removed-entry"}}
-	if err := SaveLocalHostPolicy(policy); !errors.Is(err, hostops.ErrNotInstalled) {
-		t.Fatalf("disable was blocked by removed inbound before loading bootstrap: %v", err)
-	}
-	policy.Enabled = true
-	if err := SaveLocalHostPolicy(policy); err == nil || !strings.Contains(err.Error(), "local service inbounds") {
-		t.Fatalf("enable accepted an unknown inbound: %v", err)
 	}
 }

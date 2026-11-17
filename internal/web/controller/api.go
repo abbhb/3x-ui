@@ -129,7 +129,6 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 }
 
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
-	"/server/hostEgress":  {http.MethodPost: {}},
 	"/server/updatePanel": {http.MethodPost: {}},
 }
 

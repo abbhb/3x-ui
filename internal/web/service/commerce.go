@@ -185,6 +185,9 @@ func (s *CommerceService) Plans(visibleOnly bool) ([]model.PortalPlan, error) {
 		query = query.Where("is_visible = ?", true)
 	}
 	err := query.Find(&rows).Error
+	for i := range rows {
+		rows[i].HasRoutes = len(rows[i].InboundIDs) > 0 || len(rows[i].ExternalSelections) > 0
+	}
 	if visibleOnly {
 		for i := range rows {
 			rows[i].HostSignatures = nil
@@ -201,7 +204,7 @@ func (s *CommerceService) Plans(visibleOnly bool) ([]model.PortalPlan, error) {
 func portalValidatePlan(tx *gorm.DB, p *model.PortalPlan) ([]model.Inbound, error) {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Description = strings.TrimSpace(p.Description)
-	if p.Name == "" || len(p.Name) > 128 || len(p.Description) > 1000 || p.Currency != "CNY" || p.PriceMinor < 0 || p.PriceMinor > portalMaxAmount || p.DurationDays < 1 || p.DurationDays > 3650 || p.DataLimit < 0 || p.DataLimit > 1_000_000_000_000_000_000 || (len(p.InboundIDs) == 0 && len(p.ExternalSelections) == 0) || len(p.InboundIDs) > 128 || (len(p.InboundIDs) > 0 && len(p.HostIDs) == 0 && len(p.AutoHostInboundIDs) == 0) || len(p.HostIDs) > 32768 || p.CompatibilityPending {
+	if p.Name == "" || len(p.Name) > 128 || len(p.Description) > 1000 || p.Currency != "CNY" || p.PriceMinor < 0 || p.PriceMinor > portalMaxAmount || p.DurationDays < 1 || p.DurationDays > 3650 || p.DataLimit < 0 || p.DataLimit > 1_000_000_000_000_000_000 || (len(p.InboundIDs) == 0 && len(p.ExternalSelections) == 0) || len(p.InboundIDs) > 128 || (len(p.InboundIDs) > 0 && len(p.HostIDs) == 0 && len(p.AutoHostInboundIDs) == 0) || len(p.HostIDs) > 32768 {
 		return nil, ErrPortalInvalid
 	}
 	for _, id := range p.AutoHostInboundIDs {
@@ -266,7 +269,6 @@ func (s *CommerceService) SavePlan(id int, p model.PortalPlan) (*model.PortalPla
 					return ErrPortalUnavailable
 				}
 				p.CreatedAt = old.CreatedAt
-				p.CompatibilityPending = old.CompatibilityPending
 				p.LegacyMetadata = old.LegacyMetadata
 				if p.HostSignatures == nil {
 					p.HostSignatures = old.HostSignatures
@@ -279,6 +281,9 @@ func (s *CommerceService) SavePlan(id int, p model.PortalPlan) (*model.PortalPla
 			if err != nil {
 				return err
 			}
+			// Old import markers never override validated native entitlements.
+			p.CompatibilityPending = false
+			p.HasRoutes = true
 			changed := !slices.Equal(p.InboundIDs, old.InboundIDs) || !slices.Equal(p.HostIDs, old.HostIDs) || !slices.Equal(p.AutoHostInboundIDs, old.AutoHostInboundIDs)
 			if err := tx.Save(&p).Error; err != nil {
 				return err

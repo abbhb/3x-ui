@@ -20,7 +20,7 @@ export const PlanSchema = z.object({
   inbound_ids: ids,
   host_ids: ids,
   is_visible: z.boolean(),
-  compatibility_pending: z.boolean(),
+  has_routes: z.boolean(),
   created_at: int,
   updated_at: int,
 });

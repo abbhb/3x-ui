@@ -286,7 +286,7 @@ export default function AccountDetail({
                               >
                                 <Select
                                   options={plans
-                                    .filter((p) => !p.compatibility_pending)
+                                    .filter((p) => p.has_routes)
                                     .map((p) => ({ value: p.id, label: p.name }))}
                                 />
                               </Form.Item>

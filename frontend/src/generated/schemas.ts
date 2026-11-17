@@ -3256,9 +3256,6 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "HostLineView": {
     "properties": {
-      "egressMode": {
-        "type": "string"
-      },
       "enable": {
         "type": "boolean"
       },
@@ -3280,9 +3277,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "nodeId": {
         "type": "integer"
       },
-      "note": {
-        "type": "string"
-      },
       "port": {
         "type": "integer"
       },
@@ -3297,14 +3291,12 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
-      "egressMode",
       "enable",
       "endpoints",
       "id",
       "listen",
       "name",
       "nodeId",
-      "note",
       "port",
       "protocol",
       "tag",
@@ -5174,6 +5166,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "array"
       },
       "compatibility_pending": {
+        "description": "CompatibilityPending is retained for old import bundles only. Runtime availability uses native entitlements.",
         "type": "boolean"
       },
       "created_at": {
@@ -5207,6 +5200,9 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "array"
         },
         "type": "object"
+      },
+      "has_routes": {
+        "type": "boolean"
       },
       "host_ids": {
         "items": {
@@ -5254,6 +5250,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "duration_days",
       "external_selections",
       "group_members",
+      "has_routes",
       "host_ids",
       "host_signatures",
       "id",

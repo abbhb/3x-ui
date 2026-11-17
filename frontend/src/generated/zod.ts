@@ -809,14 +809,12 @@ export const HostInstanceReportSchema = z.object({
 export type HostInstanceReport = z.infer<typeof HostInstanceReportSchema>;
 
 export const HostLineViewSchema = z.object({
-  egressMode: z.string(),
   enable: z.boolean(),
   endpoints: z.array(z.lazy(() => HostEndpointSchema)),
   id: z.number().int(),
   listen: z.string(),
   name: z.string(),
   nodeId: z.number().int(),
-  note: z.string(),
   port: z.number().int(),
   protocol: z.string(),
   tag: z.string(),
@@ -1303,6 +1301,7 @@ export const PortalPlanSchema = z.object({
   duration_days: z.number().int(),
   external_selections: z.array(z.lazy(() => ExternalSelectionSchema)),
   group_members: z.record(z.string(), z.array(z.string())),
+  has_routes: z.boolean(),
   host_ids: z.array(z.number().int()),
   host_signatures: z.record(z.string(), z.string()),
   id: z.number().int(),

@@ -140,7 +140,44 @@ writeFileSync(root+'/core.json',JSON.stringify(config));"""
             check_shared_source()
             if get("9.sample", "dual.test", True, True) != expected["9.sample"]:
                 raise AssertionError("restart changed a user's permanent IPv6")
-            print(f"PASS: {probes} native TCP/UDP probes; fixed ingress, distinct user IPv6, IPv4 routing and lease restoration; shared sources preserved with valid deprecated leases")
+            process.terminate(); process.wait(timeout=10)
+            enable_auto = """import {readFileSync,writeFileSync} from 'node:fs';
+const {enableNativeUserIPv6Auto}=await import(process.argv[2]);
+const root=process.argv[1]; let config=JSON.parse(readFileSync(root+'/core.json','utf8'));
+for(const inbound of ['LAB4','LAB6']) config=enableNativeUserIPv6Auto(config,inbound);
+writeFileSync(root+'/core.json',JSON.stringify(config));"""
+            common.run([node, "--input-type=module", "-e", enable_auto, str(root), editor.as_uri()])
+            # Simulate a freshly hot-added credential before native reconcile.
+            # IPv4 remains usable, but an unprepared user must never leak via
+            # the shared IPv6 while its permanent address is being prepared.
+            process = start()
+            for ipv6 in (False, True):
+                for udp in (False, True):
+                    if get("11.shared", "192.0.2.2", ipv6, udp) != "192.0.2.1":
+                        raise AssertionError("pending guard changed IPv4 routing")
+                    if get("11.shared", "2001:db8:aa::2", ipv6, udp) is not None:
+                        raise AssertionError("pending user leaked through shared IPv6")
+            process.terminate(); process.wait(timeout=10)
+            fixture(validate=True)
+            report = json.loads((root / "report.json").read_text())
+            address = next(lease["address"] for lease in report["leases"] if lease["clientId"] == 11 and lease["ready"])
+            if address in expected.values():
+                raise AssertionError("new grant reused an existing user's IPv6")
+            process = start()
+            for ipv6 in (False, True):
+                for udp in (False, True):
+                    for destination in ("2001:db8:aa::2", "dual.test", "192.0.2.2", "v4-only.test"):
+                        want = "192.0.2.1" if destination in ("192.0.2.2", "v4-only.test") else address
+                        if get("11.shared", destination, ipv6, udp) != want:
+                            raise AssertionError("new grant did not receive its permanent native binding")
+                        probes += 1
+            process.terminate(); process.wait(timeout=10)
+            common.run(["ip", "-n", proxy, "-6", "address", "del", address + "/128", "dev", left])
+            fixture(validate=True)
+            process = start()
+            if get("11.shared", "dual.test", True, True) != address:
+                raise AssertionError("new grant's lease changed after restoration")
+            print(f"PASS: {probes} native TCP/UDP probes; ingress/source independence, shared source preservation, pending guard, automatic grants and permanent lease restoration")
         except Exception:
             print((root / "core.log").read_text()[-2000:], file=sys.stderr)
             raise

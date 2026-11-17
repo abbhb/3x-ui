@@ -28,24 +28,26 @@ type PortalIdentity struct {
 }
 
 type PortalPlan struct {
-	AutoHostInboundIDs   []int               `json:"auto_host_inbound_ids" gorm:"serializer:json"`
-	HostSignatures       map[string]string   `json:"host_signatures" gorm:"serializer:json"`
-	ExternalSelections   []ExternalSelection `json:"external_selections" gorm:"serializer:json"`
-	GroupMembers         map[string][]string `json:"group_members" gorm:"serializer:json"`
-	CompatibilityPending bool                `json:"compatibility_pending"`
-	LegacyMetadata       string              `json:"-"`
-	ID                   int                 `json:"id" gorm:"primaryKey"`
-	Name                 string              `json:"name" gorm:"uniqueIndex;not null"`
-	Description          string              `json:"description"`
-	PriceMinor           int64               `json:"price_minor" gorm:"not null;check:portal_price_nonnegative,price_minor >= 0"`
-	Currency             string              `json:"currency"`
-	DurationDays         int                 `json:"duration_days"`
-	DataLimit            int64               `json:"data_limit"`
-	InboundIDs           []int               `json:"inbound_ids" gorm:"serializer:json"`
-	HostIDs              []int               `json:"host_ids" gorm:"serializer:json"`
-	IsVisible            bool                `json:"is_visible"`
-	CreatedAt            int64               `json:"created_at" gorm:"autoCreateTime:milli"`
-	UpdatedAt            int64               `json:"updated_at" gorm:"autoUpdateTime:milli"`
+	AutoHostInboundIDs []int               `json:"auto_host_inbound_ids" gorm:"serializer:json"`
+	HostSignatures     map[string]string   `json:"host_signatures" gorm:"serializer:json"`
+	ExternalSelections []ExternalSelection `json:"external_selections" gorm:"serializer:json"`
+	GroupMembers       map[string][]string `json:"group_members" gorm:"serializer:json"`
+	// CompatibilityPending is retained for old import bundles only. Runtime availability uses native entitlements.
+	CompatibilityPending bool   `json:"compatibility_pending"`
+	HasRoutes            bool   `json:"has_routes" gorm:"-"`
+	LegacyMetadata       string `json:"-"`
+	ID                   int    `json:"id" gorm:"primaryKey"`
+	Name                 string `json:"name" gorm:"uniqueIndex;not null"`
+	Description          string `json:"description"`
+	PriceMinor           int64  `json:"price_minor" gorm:"not null;check:portal_price_nonnegative,price_minor >= 0"`
+	Currency             string `json:"currency"`
+	DurationDays         int    `json:"duration_days"`
+	DataLimit            int64  `json:"data_limit"`
+	InboundIDs           []int  `json:"inbound_ids" gorm:"serializer:json"`
+	HostIDs              []int  `json:"host_ids" gorm:"serializer:json"`
+	IsVisible            bool   `json:"is_visible"`
+	CreatedAt            int64  `json:"created_at" gorm:"autoCreateTime:milli"`
+	UpdatedAt            int64  `json:"updated_at" gorm:"autoUpdateTime:milli"`
 }
 
 // Financial terms are historical; current route grants can follow plan edits.
