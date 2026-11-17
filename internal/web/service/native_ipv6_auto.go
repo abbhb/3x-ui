@@ -186,8 +186,10 @@ func reconcileNativeAutoIPv6(ctx context.Context, raw string) (string, error) {
 			}
 			socket["domainStrategy"] = "ForceIPv6"
 			config["outbounds"] = append(config["outbounds"].([]any), outbound)
-			rule := map[string]any{"type": "field", "ruleTag": tag, "comment": client.Email + " → " + leases[0].Address,
-				"inboundTag": []string{scope.inbound}, "user": []string{client.Email}, "ip": []string{"::/0"}, "outboundTag": tag}
+			rule := map[string]any{
+				"type": "field", "ruleTag": tag, "comment": client.Email + " → " + leases[0].Address,
+				"inboundTag": []string{scope.inbound}, "user": []string{client.Email}, "ip": []string{"::/0"}, "outboundTag": tag,
+			}
 			at := slices.IndexFunc(rules, func(item any) bool {
 				candidate, _ := item.(map[string]any)
 				return candidate["ruleTag"] == scope.guard["ruleTag"]

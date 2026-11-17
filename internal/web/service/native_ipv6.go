@@ -286,7 +286,9 @@ func prepareNativeIPv6Address(ctx context.Context, pool NativeIPv6Pool, address 
 	if err != nil || !netip.MustParsePrefix(pool.Prefix).Contains(ip) {
 		return errors.New("lease is outside the configured pool")
 	}
-	for attempt := range 20 {
+	// Linux DAD includes a randomized initial delay plus retransmission. Two
+	// seconds can expire just before a valid restored address leaves tentative.
+	for attempt := range 50 {
 		interfaces, err := nativeIPv6Network(ctx)
 		if err != nil {
 			return err
