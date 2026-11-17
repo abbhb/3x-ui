@@ -1,14 +1,19 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 )
 
 func portalImportFixture(t *testing.T) string {
@@ -123,6 +128,71 @@ func TestPortalOfflineImportInvalidLastRecordRollsBackEverything(t *testing.T) {
 		var count int64
 		if err := database.GetDB().Model(m).Count(&count).Error; err != nil || count != 0 {
 			t.Fatal("offline import partially committed")
+		}
+	}
+	var inbounds []model.Inbound
+	database.GetDB().Find(&inbounds)
+	for _, ib := range inbounds {
+		if clients, err := ParseInboundSettingsClients(ib.Settings); err != nil || len(clients) != 0 {
+			t.Fatal("failed import left node client payloads behind")
+		}
+	}
+}
+
+func TestPortalOfflineImportFirstNodeReconcilePreservesClients(t *testing.T) {
+	root := portalImportFixture(t)
+	if _, err := (&CommerceService{}).ImportPortalBundle(root, true, false, false); err != nil {
+		t.Fatal(err)
+	}
+	var mu sync.Mutex
+	pushed := map[string][]model.Client{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var obj any
+		if r.URL.Path == "/panel/api/inbounds/list" {
+			obj = []map[string]any{{"id": 101, "tag": "portal-import-vision"}, {"id": 102, "tag": "portal-import-xhttp"}, {"id": 103, "tag": "portal-import-hy2"}}
+		} else if strings.HasPrefix(r.URL.Path, "/panel/api/inbounds/update/") {
+			if err := r.ParseForm(); err != nil {
+				t.Error(err)
+			}
+			clients, err := ParseInboundSettingsClients(r.Form.Get("settings"))
+			if err != nil {
+				t.Error(err)
+			}
+			mu.Lock()
+			pushed[r.Form.Get("tag")] = clients
+			mu.Unlock()
+		} else {
+			t.Errorf("unexpected node request: %s", r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"success": true, "obj": obj})
+	}))
+	t.Cleanup(server.Close)
+	node := reconcileTestNode(t, server, "imported-node", "all", nil)
+	if err := database.GetDB().Model(&model.Inbound{}).Where("id IN ?", []int{101, 102, 103}).Update("node_id", node.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := (&InboundService{}).ReconcileNode(context.Background(), runtime.NewRemote(node, nil), node); err != nil {
+		t.Fatal(err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(pushed) != 3 {
+		t.Fatalf("pushed %d inbounds, want 3", len(pushed))
+	}
+	for tag, clients := range pushed {
+		if len(clients) != 2 || clients[0].Email != "7.sample_a" || !clients[0].Enable || clients[1].Email != "9.sample_b" || clients[1].Enable {
+			t.Fatalf("first node reconcile lost identities or enable state for %s", tag)
+		}
+		if clients[0].ID != "11111111-1111-4111-8111-111111111111" || clients[0].Auth != "synthetic-hy2-a" {
+			t.Fatalf("first node reconcile changed credentials for %s", tag)
+		}
+		wantFlow := ""
+		if tag == "portal-import-vision" {
+			wantFlow = "xtls-rprx-vision"
+		}
+		if clients[0].Flow != wantFlow || clients[1].Flow != wantFlow {
+			t.Fatalf("first node reconcile changed per-inbound flow for %s", tag)
 		}
 	}
 }

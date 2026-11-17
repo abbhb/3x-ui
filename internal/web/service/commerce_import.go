@@ -387,6 +387,39 @@ func (s *CommerceService) importPortalRows(tx *gorm.DB, b *portalImportBundle, r
 		}
 		report.VerifiedRows++
 	}
+	// Node reconciliation and inbound snapshots still carry settings.clients on
+	// the wire. Seed that projection from the imported canonical associations in
+	// the same transaction, or the first push removes every client on the node.
+	var importedInbounds []model.Inbound
+	if err := tx.Order("id ASC").Find(&importedInbounds).Error; err != nil {
+		return err
+	}
+	for _, inbound := range importedInbounds {
+		clients, err := (&ClientService{}).ListForInbound(tx, inbound.Id)
+		if err != nil {
+			return err
+		}
+		var settings map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(inbound.Settings), &settings); err != nil || settings == nil {
+			return errPortalImport
+		}
+		settings["clients"], err = json.Marshal(clients)
+		if err != nil {
+			return err
+		}
+		encoded, err := json.Marshal(settings)
+		if err != nil {
+			return err
+		}
+		if err := tx.Model(&inbound).Update("settings", string(encoded)).Error; err != nil {
+			return err
+		}
+		var read model.Inbound
+		if tx.First(&read, inbound.Id).Error != nil || read.Settings != string(encoded) {
+			return errPortalImport
+		}
+		report.VerifiedRows++
+	}
 	reserved := map[int64]bool{}
 	for _, id := range b.ReservedIDs {
 		if id <= 0 || id == int64(^uint64(0)>>1) || reserved[id] {
