@@ -108,7 +108,6 @@ func TestServiceHostRuntimeIsBoundedByMembershipAndKeepsUnavailableServices(t *t
 	if !reports[0].Installed || reports[1].Error == "" {
 		t.Fatal("unavailable service was hidden or fabricated")
 	}
-
 }
 
 func TestLocalHostReportDoesNotVerifyAStoppedCore(t *testing.T) {
