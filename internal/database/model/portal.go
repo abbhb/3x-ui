@@ -71,11 +71,12 @@ type PortalSubscription struct {
 }
 
 type PortalPurchase struct {
-	ID                 int    `json:"id" gorm:"primaryKey"`
-	AccountID          int    `json:"account_id" gorm:"index;uniqueIndex:portal_purchase_key,priority:1"`
-	IdempotencyKey     string `json:"-" gorm:"uniqueIndex:portal_purchase_key,priority:2"`
-	Kind               string `json:"kind"`
-	ActorAdmin         string `json:"actor_admin"`
+	LegacyInboundTags  []string `json:"legacy_inbound_tags,omitempty" gorm:"serializer:json"`
+	ID                 int      `json:"id" gorm:"primaryKey"`
+	AccountID          int      `json:"account_id" gorm:"index;uniqueIndex:portal_purchase_key,priority:1"`
+	IdempotencyKey     string   `json:"-" gorm:"uniqueIndex:portal_purchase_key,priority:2"`
+	Kind               string   `json:"kind"`
+	ActorAdmin         string   `json:"actor_admin"`
 	PortalPlanSnapshot `gorm:"embedded"`
 	AmountMinor        int64 `json:"amount_minor"`
 	BalanceBeforeMinor int64 `json:"balance_before_minor"`

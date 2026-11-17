@@ -1,6 +1,7 @@
 """Frozen route catalog, ciphertext and policy projection used by Go import tests."""
 from copy import deepcopy
 import json
+import importlib.util
 import os
 from pathlib import Path
 import sqlite3
@@ -63,6 +64,18 @@ class SubscriptionExportTests(unittest.TestCase):
         subscriptions.extend(self.db, bundle, core, mapping, routes, hosts, self.template)
         return bundle
 
+    def test_saved_group_order_ignores_retired_groups_and_appends_new_template_groups(self):
+        self.db.execute('CREATE TABLE subscription_group_order(id INTEGER PRIMARY KEY, group_names TEXT)')
+        self.db.execute('INSERT INTO subscription_group_order VALUES (1,?)', (json.dumps(['AI', 'retired group', 'PROXY']),))
+        document = json.loads(self.template.read_text())
+        document['proxy-groups'].append({'name': 'New group', 'type': 'select', 'proxies': ['PROXY']})
+        self.template.write_text(json.dumps(document))
+        extension = self.build()['subscriptions_extension']
+        names = [group['name'] for group in document['proxy-groups']]
+        expected = [name for name in ['AI', 'PROXY'] if name in names]
+        expected += [name for name in names if name not in expected]
+        self.assertEqual(extension['policy']['group_order'], expected)
+
     def test_shared_full_bundle_and_no_plaintext_external_credentials(self):
         got = self.build()
         expected = json.loads((ROOT / 'internal/web/service/testdata/marzban_stage4_portal.json').read_text())
@@ -78,6 +91,17 @@ class SubscriptionExportTests(unittest.TestCase):
         self.assertEqual(sum(h['isDisabled'] for h in extension['hosts']), 1)
         self.assertTrue(extension['policy']['secure_dns'])
 
+    def test_sqlite_flags_match_source_orm_route_identity(self):
+        row=dict(self.db.execute("SELECT * FROM hosts WHERE id=1").fetchone())
+        cached=subscriptions.cached_host(row)
+        self.assertIs(cached["allowinsecure"],False)
+        self.assertIs(cached["mux_enable"],False)
+        self.assertIn("29d569dd2a78f4ccd03e5487172e1f1de48f7f7cedbe8895f975dac55ad15af1", self.inputs[3]["TEST_VISION"])
+        row.update(allowinsecure=None,mux_enable=None,random_user_agent=None,use_sni_as_host=None)
+        cached=subscriptions.cached_host(row)
+        for key in ("allowinsecure","mux_enable","random_user_agent","use_sni_as_host"):
+            self.assertIsNone(cached[key])
+
     def test_catalog_cannot_drop_route_or_change_tls_behind_a_grant(self):
         bundle = self.build()
         core, mapping, _, routes, hosts = self.inputs
@@ -87,6 +111,31 @@ class SubscriptionExportTests(unittest.TestCase):
         bad_hosts = deepcopy(hosts);bad_hosts[0]['security'] = 'none'
         with self.assertRaisesRegex(portal.MigrationError, 'parameters differ'):
             subscriptions.extend(self.db, bundle, core, mapping, routes, bad_hosts, self.template)
+
+    @unittest.skipUnless(importlib.util.find_spec("jinja2") and importlib.util.find_spec("yaml"), "optional template dependencies")
+    def test_nested_template_uses_frozen_root_and_hashes_included_content(self):
+        folder=Path(self.tmp.name)/"templates"/"clash";folder.mkdir(parents=True)
+        root=folder/"private.yml";included=folder/"base.yml"
+        root.write_text('{% include "clash/base.yml" %}')
+        included.write_text('proxy-groups: [{name: PROXY, type: select, proxies: [__MGMA_LOCAL_NODES__]}]\nrules: ["MATCH,PROXY"]\n')
+        doc,primary,secure,first_hash=subscriptions.load_policy(root)
+        self.assertEqual(primary,"PROXY")
+        self.assertEqual(doc["rules"],["MATCH,PROXY"])
+        self.assertFalse(secure)
+        included.write_text(included.read_text()+"ipv6: true\n")
+        _,_,_,changed_hash=subscriptions.load_policy(root)
+        self.assertNotEqual(first_hash,changed_hash)
+        root.write_text('{% include "../outside.yml" %}')
+        with self.assertRaises(portal.MigrationError):subscriptions.load_policy(root)
+
+    def test_hidden_empty_historical_plan_stays_unsellable(self):
+        self.db.execute("INSERT INTO subscription_plans SELECT 99,'Retired plan',description,price_minor,currency,duration_days,data_limit,'[]','{}','{}',0,created_at,updated_at FROM subscription_plans WHERE id=4")
+        bundle=self.build()
+        plan=next(p for p in bundle["plans"] if p["id"]==99)
+        self.assertTrue(plan["compatibility_pending"])
+        self.assertFalse(plan["is_visible"])
+        self.assertEqual(plan["inbound_ids"],[])
+        self.assertEqual(plan["external_selections"],[])
 
     def test_missing_source_key_is_blocked_before_preparing_bundle(self):
         with patch.dict(os.environ, {'EXTERNAL_SUBSCRIPTION_ENCRYPTION_KEY': ''}):

@@ -166,3 +166,75 @@ func TestPortalImportCLIRequiresAcknowledgementBeforeOpeningTarget(t *testing.T)
 		t.Fatal("invalid CLI invocation created or migrated a target database")
 	}
 }
+
+func TestPortalOfflineImportPreservesRetiredPurchaseRoutesWithoutGrantingThem(t *testing.T) {
+	root := portalImportFixture(t)
+	raw, err := os.ReadFile(filepath.Join(root, "portal.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bundle portalImportBundle
+	if err = json.Unmarshal(raw, &bundle); err != nil {
+		t.Fatal(err)
+	}
+	bundle.Purchases[0].LegacyInboundTags = []string{"RETIRED_HK", "TEST_VISION"}
+	bundle.Purchases[0].InboundIDs = []int{101}
+	bundle.Purchases[0].HostIDs = []int{1001}
+	raw, err = json.Marshal(bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writePortalTestBundle(t, root, raw)
+	if _, err = (&CommerceService{}).ImportPortalBundle(root, true, false, false); err != nil {
+		t.Fatal(err)
+	}
+	db := database.GetDB()
+	var purchase model.PortalPurchase
+	if err = db.First(&purchase, 10).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(purchase.LegacyInboundTags) != 2 || purchase.LegacyInboundTags[0] != "RETIRED_HK" || len(purchase.InboundIDs) != 1 || purchase.InboundIDs[0] != 101 {
+		t.Fatalf("historical route readback=%+v", purchase)
+	}
+	var current model.PortalSubscription
+	if err = db.First(&current, 5).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(current.InboundIDs) != 3 {
+		t.Fatalf("historical routes changed current rights: %+v", current.InboundIDs)
+	}
+}
+
+func TestPortalOfflineImportKeepsDisabledClientlessSubscriptionForHistory(t *testing.T) {
+	root := portalImportFixture(t)
+	raw, err := os.ReadFile(filepath.Join(root, "portal.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bundle portalImportBundle
+	if err = json.Unmarshal(raw, &bundle); err != nil {
+		t.Fatal(err)
+	}
+	bundle.Accounts[0].ClientID = nil
+	bundle.Subscriptions[0].DisabledAt = 1793491200000
+	raw, err = json.Marshal(bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writePortalTestBundle(t, root, raw)
+	if _, err = (&CommerceService{}).ImportPortalBundle(root, true, false, false); err != nil {
+		t.Fatal(err)
+	}
+	var account model.PortalAccount
+	var sub model.PortalSubscription
+	db := database.GetDB()
+	if err = db.First(&account, 5).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err = db.First(&sub, 5).Error; err != nil {
+		t.Fatal(err)
+	}
+	if account.ClientID != nil || sub.DisabledAt != 1793491200000 || sub.PlanID != 4 {
+		t.Fatalf("disabled history rebound to a client: account=%d sub=%+v", account.ID, sub)
+	}
+}

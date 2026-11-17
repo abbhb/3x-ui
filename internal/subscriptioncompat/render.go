@@ -60,7 +60,9 @@ func (s *Service) Projection(subID string) (Projection, error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return result, err
 	}
-	if err == nil && sub.DisabledAt == 0 && (sub.ExpiresAt == 0 || sub.ExpiresAt > time.Now().UnixMilli()) {
+	// The operational client's expiry is authoritative after legacy admin extensions;
+	// keep the imported subscription dates as historical commerce information.
+	if err == nil && sub.DisabledAt == 0 {
 		var plan model.PortalPlan
 		if err = s.DB.First(&plan, sub.PlanID).Error; err != nil {
 			return result, err

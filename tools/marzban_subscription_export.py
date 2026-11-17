@@ -97,13 +97,15 @@ def resolved_inbounds(core, tls_names=None):
 def cached_host(row):
     def split(value):
         return [x.strip() for x in value.split(",")] if value else []
+    def boolean(value):
+        return None if value is None else bool(value)
     return dict(remark=row["remark"], id=row["id"], cascade_mode=row.get("cascade_mode") or "off", address=split(row["address"]),
                 port=row.get("port"), path=row.get("path") or None, sni=split(row.get("sni")), host=split(row.get("host")),
                 alpn="" if row.get("alpn") in (None, "none") else row["alpn"],
                 fingerprint="" if row.get("fingerprint") in (None, "none") else row["fingerprint"],
                 tls=None if row.get("security") in (None, "inbound_default") else row["security"],
-                allowinsecure=row.get("allowinsecure"), mux_enable=bool(row.get("mux_enable", 0)), fragment_setting=row.get("fragment_setting"),
-                noise_setting=row.get("noise_setting"), random_user_agent=bool(row.get("random_user_agent", 0)), use_sni_as_host=bool(row.get("use_sni_as_host", 0)))
+                allowinsecure=boolean(row.get("allowinsecure")), mux_enable=boolean(row.get("mux_enable")), fragment_setting=row.get("fragment_setting"),
+                noise_setting=row.get("noise_setting"), random_user_agent=boolean(row.get("random_user_agent")), use_sni_as_host=boolean(row.get("use_sni_as_host")))
 
 
 def route_key(host, profile, inbound):
@@ -165,13 +167,21 @@ def catalog(db, core, mapping, tls_names=None, first_id=10001):
 def load_policy(template_path):
     path = Path(template_path)
     blob = path.read_bytes()
+    included = {}
     try:
         document = json.loads(blob)
     except (ValueError, UnicodeError):
         try:
             import yaml
+            from jinja2 import FileSystemLoader
             from jinja2.sandbox import SandboxedEnvironment
-            environment = SandboxedEnvironment(autoescape=False)
+            class FrozenTemplateLoader(FileSystemLoader):
+                def get_source(self, environment, template):
+                    content, filename, uptodate = super().get_source(environment, template)
+                    included[template] = digest(content.encode())
+                    return content, filename, uptodate
+            loader = FrozenTemplateLoader([str(path.parent), str(path.parent.parent)])
+            environment = SandboxedEnvironment(autoescape=False, loader=loader)
             environment.filters["yaml"] = lambda v: yaml.safe_dump(v, allow_unicode=True, sort_keys=False)
             environment.filters["except"] = lambda v, *keys: {k: item for k, item in v.items() if k not in keys}
             rendered = environment.from_string(blob.decode()).render(conf={"proxies": [], "proxy-groups": []}, proxy_remarks=[LOCAL])
@@ -190,7 +200,8 @@ def load_policy(template_path):
             if group.get("name") == primary:
                 group["proxies"] = [LOCAL] + group.get("proxies", [])
                 group.pop("include-all-proxies", None)
-    return document, primary, secure, digest(blob)
+    checksum = digest(encode({"root": digest(blob), "includes": included})) if included else digest(blob)
+    return document, primary, secure, checksum
 
 
 def extend(db, bundle, core, mapping, route_map, target_hosts, template_path, tls_names=None):
@@ -245,7 +256,10 @@ def extend(db, bundle, core, mapping, route_map, target_hosts, template_path, tl
         auto = sorted({ident for tag in tags if local.get(tag) is None for ident in mapping[tag]})
         plan["auto_host_inbound_ids"] = auto
         plan["host_ids"] = [ident for ident in plan["host_ids"] if hosts_by_id[ident]["inboundId"] not in auto]
-        plan.update(group_members=translated, compatibility_pending=False, is_visible=required_bool(source_plans[plan["id"]]["is_visible"]))
+        visible = required_bool(source_plans[plan["id"]]["is_visible"])
+        empty = not plan["inbound_ids"] and not plan["external_selections"]
+        require(not empty or not visible, "visible source plan has no entitlements")
+        plan.update(group_members=translated, compatibility_pending=empty, is_visible=visible)
     for subscription in bundle["subscriptions"]:
         subscription["host_ids"] = next(p["host_ids"] for p in bundle["plans"] if p["id"] == subscription["plan_id"])
     document, primary, secure, template_hash = load_policy(template_path)
@@ -254,6 +268,13 @@ def extend(db, bundle, core, mapping, route_map, target_hosts, template_path, tl
         document["rules"] = j(rules[0]["rules"], [])
     order = rows(db, "subscription_group_order", tables)
     group_order = j(order[0].get("group_names"), []) if order else []
+    # Source ordering is a stable preference list: retired names are ignored,
+    # and new template groups follow the saved names in template order.
+    if group_order:
+        positions = {name: index for index, name in enumerate(group_order)}
+        names = [group["name"] for group in document.get("proxy-groups", [])
+                 if group.get("name") != "MGMA · External"]
+        group_order = sorted(names, key=lambda name: positions.get(name, len(positions)))
     secret = os.environ.get("EXTERNAL_SUBSCRIPTION_ENCRYPTION_KEY", "")
     has_cipher = any(s["url_ciphertext"] for s in sources) or bool(nodes) or any(r["entry_ciphertext"] for r in extensions)
     require(not has_cipher or len(secret.encode()) >= 32, "external ciphertext import requires the source encryption key for its fingerprint")
