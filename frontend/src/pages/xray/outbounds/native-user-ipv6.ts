@@ -33,6 +33,7 @@ export function planNativeUserIPv6(
   template: XraySettingsValue,
   inbound: string,
   clients: NativeIPv6Client[],
+  hasInjectedOutbounds = false,
 ) {
   const next = JSON.parse(JSON.stringify(template)) as NativeTemplate;
   const routing = next.routing ?? { rules: [] };
@@ -47,13 +48,21 @@ export function planNativeUserIPv6(
     'ruleTag',
     'inboundTag',
     'outboundTag',
+    'balancerTag',
   ]);
   let at = rules.findIndex(
     (r) =>
       r.enabled !== false &&
-      Object.keys(r).every((k) => catchAllKeys.has(k)) &&
+      Object.entries(r).every(
+        ([k, value]) =>
+          catchAllKeys.has(k) ||
+          value == null ||
+          value === '' ||
+          (Array.isArray(value) && value.length === 0),
+      ) &&
       (!r.inboundTag?.length || r.inboundTag.includes(inbound)),
   );
+  if (at < 0 && hasInjectedOutbounds) throw new Error('pages.xray.user6.explicitDirect');
   const baseTag = at >= 0 ? rules[at].outboundTag : next.outbounds?.[0]?.tag;
   if (at < 0) at = rules.length;
   const base = next.outbounds?.find((o) => o.tag === baseTag);

@@ -1886,6 +1886,7 @@
         "generate": "Add to native outbounds and routing",
         "generated": "Native objects added. Save on the page to apply.",
         "selectClients": "Select an inbound and its authorized clients.",
+        "explicitDirect": "Runtime subscription outbounds can change the default exit. First add an explicit native direct route for this inbound.",
         "manualRouting": "This service uses a routing script. Edit its native routing explicitly.",
         "directOnly": "This inbound does not end in an eligible direct outbound. Its tunnel, source binding or redirect must be managed in native routing.",
         "alreadyExists": "A generated outbound already exists. Edit it in native outbounds and routing.",

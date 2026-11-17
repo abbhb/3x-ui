@@ -22,12 +22,14 @@ export default function NativeUserIPv6Modal({
   template,
   setTemplate,
   inboundTags,
+  hasInjectedOutbounds,
 }: {
   open: boolean;
   onClose: () => void;
   template: XraySettingsValue | null;
   setTemplate: SetTemplate;
   inboundTags: string[];
+  hasInjectedOutbounds: boolean;
 }) {
   const { t } = useTranslation();
   const uid = useId();
@@ -66,7 +68,7 @@ export default function NativeUserIPv6Modal({
     try {
       if (!template || !inbound) throw new Error(label('selectClients'));
       const selected = available.filter((c) => clients.includes(c.id));
-      const apply = planNativeUserIPv6(template, inbound, selected);
+      const apply = planNativeUserIPv6(template, inbound, selected, hasInjectedOutbounds);
       setBusy(true);
       const leases: NativeIPv6Address[] = [];
       for (let offset = 0; offset < selected.length; offset += 8) {

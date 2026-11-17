@@ -678,6 +678,7 @@ export default function OutboundsTab({
 
         {userIPv6Open && (
           <NativeUserIPv6Modal
+            hasInjectedOutbounds={(subscriptionOutbounds?.length ?? 0) > 0}
             open={userIPv6Open}
             onClose={() => setUserIPv6Open(false)}
             template={templateSettings}

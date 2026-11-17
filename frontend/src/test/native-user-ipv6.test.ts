@@ -43,6 +43,17 @@ function fixture() {
 }
 
 describe('native per-user IPv6 editor', () => {
+  it('requires an explicit direct branch when runtime subscriptions can change the default', () => {
+    const value = fixture();
+    value.routing!.rules = [];
+    expect(() => planNativeUserIPv6(value, 'entry', clients, true)).toThrow('explicitDirect');
+    expect(() => planNativeUserIPv6(fixture(), 'entry', clients, true)(leases)).not.toThrow();
+    value.routing!.rules = [{ type: 'field', balancerTag: 'existing-balancer' }];
+    expect(() => planNativeUserIPv6(value, 'entry', clients)).toThrow('directOnly');
+    value.outbounds!.push({ tag: 'tunnel', protocol: 'freedom', sendThrough: '10.66.66.3' });
+    value.routing!.rules = [{ type: 'field', outboundTag: 'tunnel', user: [], ip: [] }];
+    expect(() => planNativeUserIPv6(value, 'entry', clients)).toThrow('directOnly');
+  });
   it('keeps ingress, credentials, earlier restrictions and IPv4 routing intact', () => {
     const before = fixture();
     const original = JSON.stringify(before);
