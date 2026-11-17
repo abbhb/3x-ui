@@ -986,6 +986,45 @@ func TestSub_HostCipherSuitesPinUnsafeFingerprint_JSON(t *testing.T) {
 
 // Xray reads a client's TLS verification fields at the top of tlsSettings; a
 // nested "settings" map is panel-only shape and xray silently ignores it.
+func TestSub_HostCertificatePinReachesMihomoWithoutLegacyPinField(t *testing.T) {
+	seedSubDB(t)
+	basePin, overridePin := strings.Repeat("a", 64), strings.Repeat("b", 64)
+	ib := seedSubInbound(t, "s1", "tls-pin", 4460, 1,
+		`{"network":"tcp","security":"tls","tlsSettings":{"serverName":"base.example.test","settings":{"fingerprint":"chrome","pinnedPeerCertSha256":["`+basePin+`"]}}}`)
+	for index, pin := range []string{overridePin, ""} {
+		host := &model.Host{InboundId: ib.Id, SortOrder: index, Remark: fmt.Sprintf("pinned-%d", index), Address: "edge.example.test", Port: 443, Security: "tls"}
+		if pin != "" {
+			host.PinnedPeerCertSha256 = []string{pin}
+		}
+		seedHost(t, host)
+	}
+	out, _, err := NewSubClashService(false, "", false, NewSubService("{{HOST}}")).GetClash("s1", "request.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config map[string]any
+	if err := yaml.Unmarshal([]byte(out), &config); err != nil {
+		t.Fatal(err)
+	}
+	proxies := config["proxies"].([]any)
+	if len(proxies) != 2 {
+		t.Fatalf("got %d proxies, want both hosts", len(proxies))
+	}
+	for index, want := range []string{overridePin, basePin} {
+		proxy := proxies[index].(map[string]any)
+		fingerprint, _ := proxy["fingerprint"].(string)
+		if strings.ToLower(strings.ReplaceAll(fingerprint, ":", "")) != want || proxy["client-fingerprint"] != "chrome" {
+			t.Fatalf("host %d lost its certificate pin or TLS hello fingerprint: %#v", index, proxy)
+		}
+		if _, exists := proxy["pin-sha256"]; exists {
+			t.Fatal("certificate hash was also emitted as an SPKI hash")
+		}
+		if _, exists := proxy["skip-cert-verify"]; exists {
+			t.Fatal("certificate pin must not enable insecure verification")
+		}
+	}
+}
+
 func TestSub_HostTLSVerificationJSONAtXrayLevel(t *testing.T) {
 	seedSubDB(t)
 	ib := seedSubInbound(t, "s1", "ech", 4461, 1,

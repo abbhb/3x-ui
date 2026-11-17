@@ -1348,8 +1348,16 @@ func (s *SubClashService) applySecurity(proxy map[string]any, security string, s
 					proxy["skip-cert-verify"] = true
 				}
 			}
-			if pins, ok := tlsSettings["pin-sha256"].([]any); ok && len(pins) > 0 {
-				proxy["pin-sha256"] = pins
+			pins := tlsSettings["pinnedPeerCertSha256"]
+			if inner, ok := tlsSettings["settings"].(map[string]any); ok {
+				if override, exists := inner["pinnedPeerCertSha256"]; exists {
+					pins = override
+				}
+			}
+			// Mihomo's fingerprint verifies the full certificate hash, including
+			// host overrides applied after streamData normalized the base TLS.
+			if fingerprint := mihomoCertFingerprint(pins); fingerprint != "" {
+				proxy["fingerprint"] = fingerprint
 			}
 		}
 		return true
@@ -1411,7 +1419,7 @@ func (s *SubClashService) tlsData(tData map[string]any) map[string]any {
 		tlsData["fingerprint"] = fingerprint
 	}
 	if pins, ok := tlsClientSettings["pinnedPeerCertSha256"].([]any); ok && len(pins) > 0 {
-		tlsData["pin-sha256"] = pins
+		tlsData["pinnedPeerCertSha256"] = pins
 	}
 	return tlsData
 }
