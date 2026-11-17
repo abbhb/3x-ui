@@ -329,7 +329,7 @@ export default function PortalPage() {
                                     disabled={
                                       !!pending ||
                                       busy ||
-                                      p.compatibility_pending ||
+                                      !p.has_routes ||
                                       p.price_minor > a.wallet_balance_minor
                                     }
                                   >

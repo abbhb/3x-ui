@@ -37,8 +37,6 @@ export const HostLineSchema = z.object({
   listen: z.string(),
   port: z.number(),
   enable: z.boolean(),
-  egressMode: z.string(),
-  note: z.string(),
   endpoints: list(Endpoint),
 });
 export const ServiceHostDetailSchema = ServiceHostSchema.extend({ lines: list(HostLineSchema) });

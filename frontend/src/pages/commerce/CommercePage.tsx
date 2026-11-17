@@ -252,7 +252,7 @@ export default function CommercePage() {
                               >
                                 <Select
                                   options={(plans.data || [])
-                                    .filter((p) => !p.compatibility_pending)
+                                    .filter((p) => p.has_routes)
                                     .map((p) => ({ value: p.id, label: p.name }))}
                                 />
                               </Form.Item>
@@ -306,8 +306,8 @@ export default function CommercePage() {
                                 {
                                   title: l('status'),
                                   render: (_, p) =>
-                                    p.compatibility_pending ? (
-                                      <Tag>{l('stage4Pending')}</Tag>
+                                    !p.has_routes ? (
+                                      <Tag>{l('unconfiguredPlan')}</Tag>
                                     ) : (
                                       l(p.is_visible ? 'visible' : 'hidden')
                                     ),

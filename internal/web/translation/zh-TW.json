@@ -1890,7 +1890,10 @@
         "manualRouting": "This service uses a routing script. Edit its native routing explicitly.",
         "directOnly": "This inbound does not end in an eligible direct outbound. Its tunnel, source binding or redirect must be managed in native routing.",
         "alreadyExists": "A generated outbound already exists. Edit it in native outbounds and routing.",
-        "notReady": "The allocated IPv6 address is not ready."
+        "notReady": "The allocated IPv6 address is not ready.",
+        "followNewUsers": "此入站所有已授權及後續新增使用者自動分配固定 IPv6",
+        "autoEnabled": "已啟用自動納入：使用者位址和原生規則就緒前阻止其 IPv6 連線，IPv4 保持原直出。",
+        "disableAuto": "停止自動納入新使用者（保留現有綁定）"
       },
       "save": "儲存",
       "restartSuccess": "Xray 已成功重新啟動",
@@ -2621,7 +2624,12 @@
       "socketSource": "Socket source (before NAT)",
       "assignedIPv6": "Assigned egress IPv6",
       "outbound": "Outbound",
-      "strictGrantHelp": "This migrated account uses a strict entry allowlist. Clearing the selection publishes no routes; it does not restore all endpoints."
+      "strictGrantHelp": "This migrated account uses a strict entry allowlist. Clearing the selection publishes no routes; it does not restore all endpoints.",
+      "nativeBindingsHelp": "These source bindings and user rules come from this service’s native configuration. Edit them in Outbounds and Routing; rule order still applies.",
+      "noNativeBindings": "No fixed IPv6 source binding is configured. This service follows its native routing.",
+      "allUsers": "All users",
+      "ruleEnabled": "Rule enabled",
+      "ruleNotSelected": "No enabled selecting rule"
     },
     "commerce": {
       "adminTitle": "Portal & commerce",
@@ -2711,7 +2719,8 @@
       "strictGrantHelp": "Only the selected concrete endpoints are delivered. New endpoints are not granted automatically.",
       "visible": "Visible for purchase",
       "hidden": "Hidden from purchase",
-      "stage4Pending": "External entitlements await stage 4. Purchase and grant are blocked.",
+      "unconfiguredPlan": "未配置線路",
+      "unconfiguredPlanHelp": "請選擇本地入站或外部訂閱後儲存；未配置線路的方案不能購買或贈送。",
       "oneTimeSecret": "Copy now. This secret is shown only once.",
       "permanentID": "Permanent proxy identity",
       "status": "Status",

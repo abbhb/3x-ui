@@ -877,7 +877,6 @@ export const EXAMPLES: Record<string, unknown> = {
     }
   },
   "HostLineView": {
-    "egressMode": "",
     "enable": false,
     "endpoints": [
       {
@@ -893,7 +892,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "listen": "",
     "name": "",
     "nodeId": 0,
-    "note": "",
     "port": 0,
     "protocol": "",
     "tag": "",
@@ -1393,6 +1391,7 @@ export const EXAMPLES: Record<string, unknown> = {
       }
     ],
     "group_members": {},
+    "has_routes": false,
     "host_ids": [
       0
     ],
@@ -1661,7 +1660,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "lines": [
       {
-        "egressMode": "",
         "enable": false,
         "endpoints": [
           {
@@ -1677,7 +1675,6 @@ export const EXAMPLES: Record<string, unknown> = {
         "listen": "",
         "name": "",
         "nodeId": 0,
-        "note": "",
         "port": 0,
         "protocol": "",
         "tag": "",

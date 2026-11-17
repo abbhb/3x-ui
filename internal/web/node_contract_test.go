@@ -19,7 +19,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -366,7 +365,6 @@ func TestMasterNodeContract(t *testing.T) {
 
 // Remote methods that never reach the node, or that this table must not run.
 var remoteMethodsOutsideContract = map[string]string{
-	"SaveHostPolicy":        "requires node-admin; covered by TestHostEgressWriteContract",
 	"XrayRequest":           "requires node-admin; covered by TestNativeXrayWriteContract",
 	"Name":                  "local label",
 	"RecordAdoptedInbound":  "local fingerprint bookkeeping",
@@ -411,30 +409,6 @@ func TestNativeXrayWriteContract(t *testing.T) {
 	}
 }
 
-func TestHostEgressWriteContract(t *testing.T) {
-	for _, scope := range []string{model.ApiScopeAdmin, model.ApiScopeNodeAdmin, model.ApiScopeNodeSync} {
-		t.Run(scope, func(t *testing.T) {
-			t.Setenv("XUI_EGRESS_CONFIG", "")
-			t.Setenv("XUI_XRAY_LAUNCHER", "")
-			node := startContractNode(t)
-			master := node.masterWithToken(t, scope)
-			err := master.SaveHostPolicy(context.Background(), hostops.Policy{})
-			refused := node.takeRefused()
-			if scope == model.ApiScopeNodeSync {
-				if err == nil || len(refused) != 1 || !strings.HasSuffix(refused[0], " -> 403") {
-					t.Fatalf("node-sync write was not forbidden: err=%v refused=%v", err, refused)
-				}
-			} else if err == nil || len(refused) != 0 || !strings.Contains(err.Error(), "invalid egress") {
-				// An authorized request reaches policy validation, without installing
-				// or restarting anything in this router contract test.
-				t.Fatalf("authorized write did not reach controller: err=%v refused=%v", err, refused)
-			}
-		})
-	}
-}
-
-// A Remote method with no cell is how activeInbounds and bulkResetTraffic
-// drifted out of the node-sync allowlist unnoticed.
 func assertEveryRemoteCallCovered(t *testing.T, covered map[string]bool) {
 	t.Helper()
 	rt := reflect.TypeOf(&runtime.Remote{})

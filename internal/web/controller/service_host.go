@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/hostops"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -29,21 +28,7 @@ func NewServiceHostController(api *gin.RouterGroup) {
 		value, err := svc.Runtime(c.Request.Context(), hostParam(c, "id"))
 		jsonObj(c, value, err)
 	})
-	group.POST("/policy/:id/:node", func(c *gin.Context) {
-		policy, ok := bindHostPolicy(c)
-		if !ok {
-			return
-		}
-		jsonObj(c, nil, svc.ApplyPolicy(c.Request.Context(), hostParam(c, "id"), hostParam(c, "node"), policy))
-	})
 	api.GET("/server/hostRuntime", func(c *gin.Context) { jsonObj(c, service.LocalHostReport(), nil) })
-	api.POST("/server/hostEgress", func(c *gin.Context) {
-		policy, ok := bindHostPolicy(c)
-		if !ok {
-			return
-		}
-		jsonObj(c, nil, service.SaveLocalHostPolicy(policy))
-	})
 }
 
 func hostParam(c *gin.Context, name string) int {
@@ -52,17 +37,4 @@ func hostParam(c *gin.Context, name string) int {
 		return -1
 	}
 	return id
-}
-
-func bindHostPolicy(c *gin.Context) (hostops.Policy, bool) {
-	var input struct {
-		hostops.Policy
-		Enabled *bool `json:"enabled"`
-	}
-	if err := c.ShouldBindJSON(&input); err != nil || input.Enabled == nil {
-		jsonObj(c, nil, errors.New("invalid egress policy; explicit enabled flag required"))
-		return hostops.Policy{}, false
-	}
-	input.Policy.Enabled = *input.Enabled
-	return input.Policy, true
 }

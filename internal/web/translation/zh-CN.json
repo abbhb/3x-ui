@@ -1890,7 +1890,10 @@
         "manualRouting": "当前服务使用路由脚本，请在原生路由中明确配置。",
         "directOnly": "该入站的最终出口不适合自动生成直连。请在原生路由中管理已有隧道、源地址绑定或重定向。",
         "alreadyExists": "对应出站已存在，请直接在原生出站和路由中编辑。",
-        "notReady": "分配的 IPv6 地址尚未准备完成。"
+        "notReady": "分配的 IPv6 地址尚未准备完成。",
+        "followNewUsers": "此入站所有已授权用户及后续新增用户自动分配固定 IPv6",
+        "autoEnabled": "已开启自动纳入：用户地址和原生规则就绪前阻止其 IPv6 连接，IPv4 保持原直出。",
+        "disableAuto": "停止自动纳入新用户（保留现有绑定）"
       },
       "importRules": "导入规则",
       "exportRules": "导出规则",
@@ -2621,7 +2624,12 @@
       "socketSource": "socket 源地址（NAT 前）",
       "assignedIPv6": "固定分配的出口 IPv6",
       "outbound": "出站",
-      "strictGrantHelp": "此迁移账号使用严格入口授权。清空选择后不发布任何线路，不会恢复为全部入口。"
+      "strictGrantHelp": "此迁移账号使用严格入口授权。清空选择后不发布任何线路，不会恢复为全部入口。",
+      "nativeBindingsHelp": "以下源地址绑定和用户规则直接读取此服务的原生配置；请在出站、路由页编辑，仍按规则顺序匹配。",
+      "noNativeBindings": "未配置固定 IPv6 源地址绑定，此服务沿用原生路由。",
+      "allUsers": "全部用户",
+      "ruleEnabled": "规则已启用",
+      "ruleNotSelected": "未被启用规则选择"
     },
     "commerce": {
       "adminTitle": "门户与交易",
@@ -2711,7 +2719,8 @@
       "strictGrantHelp": "只下发选中的具体方案。新建方案不会自动获得授权。",
       "visible": "开放购买",
       "hidden": "不开放购买",
-      "stage4Pending": "外部订阅权益待第四阶段兼容，已阻止购买和赠送。",
+      "unconfiguredPlan": "未配置线路",
+      "unconfiguredPlanHelp": "请选择本地入站或外部订阅后保存；未配置线路的套餐不能购买或赠送。",
       "oneTimeSecret": "请立即复制，此凭据仅显示一次。",
       "permanentID": "永久代理身份 ID",
       "status": "状态",

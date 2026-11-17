@@ -45,7 +45,6 @@ func migrationModels() []any {
 		&model.ServiceHostMember{},
 		&model.ApiToken{},
 		&model.Inbound{},
-		&model.ServiceLine{},
 		&model.NativeIPv6Lease{},
 		&xray.ClientTraffic{},
 		&model.OutboundTraffics{},

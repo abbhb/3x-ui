@@ -3288,9 +3288,6 @@
       },
       "HostLineView": {
         "properties": {
-          "egressMode": {
-            "type": "string"
-          },
           "enable": {
             "type": "boolean"
           },
@@ -3312,9 +3309,6 @@
           "nodeId": {
             "type": "integer"
           },
-          "note": {
-            "type": "string"
-          },
           "port": {
             "type": "integer"
           },
@@ -3329,14 +3323,12 @@
           }
         },
         "required": [
-          "egressMode",
           "enable",
           "endpoints",
           "id",
           "listen",
           "name",
           "nodeId",
-          "note",
           "port",
           "protocol",
           "tag",
@@ -5206,6 +5198,7 @@
             "type": "array"
           },
           "compatibility_pending": {
+            "description": "CompatibilityPending is retained for old import bundles only. Runtime availability uses native entitlements.",
             "type": "boolean"
           },
           "created_at": {
@@ -5239,6 +5232,9 @@
               "type": "array"
             },
             "type": "object"
+          },
+          "has_routes": {
+            "type": "boolean"
           },
           "host_ids": {
             "items": {
@@ -5286,6 +5282,7 @@
           "duration_days",
           "external_selections",
           "group_members",
+          "has_routes",
           "host_ids",
           "host_signatures",
           "id",
@@ -6875,7 +6872,7 @@
     },
     {
       "name": "Service hosts and IPv6 egress",
-      "description": "Physical-machine grouping, existing subscription entry routes, and node-local IPv6 controller reports. Host grouping and route classification do not deploy or activate egress. Host management requires an administrator token/session. Node-sync tokens can read only the local runtime report; applying local egress requires node-admin or administrator authority."
+      "description": "Physical-machine grouping, native subscription entry endpoints, and bounded recent dial observations. IPv6 source bindings and user routing are read and edited through the native Xray service scope. Host management requires an administrator token/session; node-sync can read only its local runtime report."
     },
     {
       "name": "Authentication",
@@ -8505,6 +8502,7 @@
                         }
                       ],
                       "group_members": {},
+                      "has_routes": false,
                       "host_ids": [
                         0
                       ],
@@ -8652,6 +8650,7 @@
                       }
                     ],
                     "group_members": {},
+                    "has_routes": false,
                     "host_ids": [
                       0
                     ],
@@ -8811,6 +8810,7 @@
                       }
                     ],
                     "group_members": {},
+                    "has_routes": false,
                     "host_ids": [
                       0
                     ],
@@ -11250,7 +11250,6 @@
                     "id": 0,
                     "lines": [
                       {
-                        "egressMode": "",
                         "enable": false,
                         "endpoints": [
                           {
@@ -11266,7 +11265,6 @@
                         "listen": "",
                         "name": "",
                         "nodeId": 0,
-                        "note": "",
                         "port": 0,
                         "protocol": "",
                         "tag": "",
@@ -11404,7 +11402,7 @@
         "tags": [
           "Service hosts and IPv6 egress"
         ],
-        "summary": "Aggregate bounded per-service egress and recent dial reports",
+        "summary": "Aggregate bounded per-service recent dial reports",
         "operationId": "get_panel_api_serviceHosts_runtime_id",
         "description": "Unavailable or old nodes return a per-service error, without fabricated socket evidence. Recent successful dials are not active-connection counts. Socket local address is before NAT.",
         "parameters": [
@@ -11502,74 +11500,12 @@
         }
       }
     },
-    "/panel/api/serviceHosts/policy/{id}/{node}": {
-      "post": {
-        "tags": [
-          "Service hosts and IPv6 egress"
-        ],
-        "summary": "Apply installed egress policy and restart the selected service",
-        "operationId": "post_panel_api_serviceHosts_policy_id_node",
-        "description": "Retained for the legacy controller contract only. New services use native /xray outbounds and routing with nodeId. Requires a pre-installed node-local bootstrap/controller. Prefix, interface, namespace and mark ownership cannot be changed through this API.",
-        "deprecated": true,
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "node",
-            "in": "path",
-            "required": true,
-            "description": "",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Policy"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "obj": {}
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/panel/api/server/hostRuntime": {
       "get": {
         "tags": [
           "Service hosts and IPv6 egress"
         ],
-        "summary": "Read this service core and controller report",
+        "summary": "Read this service core and recent dial report",
         "operationId": "get_panel_api_server_hostRuntime",
         "description": "Read-only local endpoint used by the parent panel. No executable paths, API credentials or raw core config are returned.",
         "responses": {
@@ -11641,47 +11577,6 @@
                       ],
                       "verified": false
                     }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/panel/api/server/hostEgress": {
-      "post": {
-        "tags": [
-          "Service hosts and IPv6 egress"
-        ],
-        "summary": "Update this installed service policy and restart its core",
-        "operationId": "post_panel_api_server_hostEgress",
-        "description": "Node-admin or administrator authority required. enabled must be explicitly provided. Local bootstrap file and allocation ownership remain fixed.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Policy"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "obj": {}
                   }
                 }
               }

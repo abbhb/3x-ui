@@ -34,7 +34,7 @@ const plan = {
   inbound_ids: [101],
   host_ids: [1001],
   is_visible: true,
-  compatibility_pending: false,
+  has_routes: true,
   created_at: 0,
   updated_at: 0,
 };

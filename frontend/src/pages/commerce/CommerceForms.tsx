@@ -50,7 +50,14 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
       extra={<Button onClick={close}>{l('back')}</Button>}
     >
       {(error || hosts.error) && <Alert type="error" showIcon title={l('failed')} />}
-      {plan?.compatibility_pending && <Alert type="warning" showIcon title={l('stage4Pending')} />}
+      {plan && !plan.has_routes && (
+        <Alert
+          type="info"
+          showIcon
+          title={l('unconfiguredPlan')}
+          description={l('unconfiguredPlanHelp')}
+        />
+      )}
       <Form
         form={form}
         layout="vertical"
@@ -82,7 +89,7 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
                 is_visible: false,
               }
         }
-        disabled={busy || plan?.compatibility_pending}
+        disabled={busy}
         onFinish={async (v) => {
           setBusy(true);
           setError(false);

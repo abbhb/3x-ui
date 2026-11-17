@@ -759,14 +759,12 @@ export interface HostInstanceReport {
 }
 
 export interface HostLineView {
-  egressMode: string;
   enable: boolean;
   endpoints: HostEndpoint[];
   id: number;
   listen: string;
   name: string;
   nodeId: number;
-  note: string;
   port: number;
   protocol: string;
   tag: string;
@@ -1215,6 +1213,7 @@ export interface PortalPlan {
   duration_days: number;
   external_selections: ExternalSelection[];
   group_members: Record<string, string[]>;
+  has_routes: boolean;
   host_ids: number[];
   host_signatures: Record<string, string>;
   id: number;

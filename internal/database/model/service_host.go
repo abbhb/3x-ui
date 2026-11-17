@@ -14,13 +14,3 @@ type ServiceHostMember struct {
 	NodeId int `json:"nodeId" gorm:"primaryKey;autoIncrement:false"`
 	HostId int `json:"hostId" gorm:"index;not null"`
 }
-
-// ServiceLine preserves an imported exit annotation for read-only migration
-// reference. It never configures forwarding: native Xray outbounds/routing and
-// a configured address allocator own effective egress. Keep existing rows when
-// upgrading; they are not an alternative editable policy model.
-type ServiceLine struct {
-	InboundId  int    `json:"inboundId" gorm:"primaryKey;autoIncrement:false"`
-	EgressMode string `json:"egressMode"`
-	Note       string `json:"note"`
-}

@@ -65,6 +65,9 @@ func (s *XraySettingService) SaveXraySetting(newXraySettings string) error {
 	if err := s.CheckXrayConfig(newXraySettings); err != nil {
 		return err
 	}
+	if _, _, _, err := nativeIPv6AutoScopes(newXraySettings); err != nil {
+		return err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := prepareNativeIPv6Bindings(ctx, newXraySettings); err != nil {

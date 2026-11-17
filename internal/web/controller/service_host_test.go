@@ -18,7 +18,7 @@ func TestServiceHostRestrictedScopeBoundary(t *testing.T) {
 		{model.ApiScopeMonitor, http.MethodGet, "/server/hostRuntime", false},
 		{model.ApiScopeNodeSync, http.MethodGet, "/server/hostRuntime", true},
 		{model.ApiScopeNodeSync, http.MethodPost, "/server/hostEgress", false},
-		{model.ApiScopeNodeAdmin, http.MethodPost, "/server/hostEgress", true},
+		{model.ApiScopeNodeAdmin, http.MethodPost, "/server/hostEgress", false},
 		{model.ApiScopeNodeAdmin, http.MethodPost, "/serviceHosts/save/0", false},
 		{model.ApiScopeNodeSync, http.MethodPost, "/xray/update", false},
 		{model.ApiScopeNodeAdmin, http.MethodPost, "/xray/update", true},
@@ -40,10 +40,12 @@ func TestServiceHostRestrictedScopeBoundary(t *testing.T) {
 func TestServiceHostDoesNotExposeAnnotationAsForwardingControl(t *testing.T) {
 	engine := gin.New()
 	NewServiceHostController(engine.Group("/panel/api"))
-	response := httptest.NewRecorder()
-	engine.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/panel/api/serviceHosts/line/3", nil))
-	if response.Code != http.StatusNotFound {
-		t.Fatalf("retired annotation control is still writable: %d", response.Code)
+	for _, path := range []string{"/panel/api/serviceHosts/line/3", "/panel/api/serviceHosts/policy/3/4", "/panel/api/server/hostEgress"} {
+		response := httptest.NewRecorder()
+		engine.ServeHTTP(response, httptest.NewRequest(http.MethodPost, path, nil))
+		if response.Code != http.StatusNotFound {
+			t.Fatalf("retired forwarding control is still writable: %s %d", path, response.Code)
+		}
 	}
 }
 

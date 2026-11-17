@@ -1890,7 +1890,10 @@
         "manualRouting": "This service uses a routing script. Edit its native routing explicitly.",
         "directOnly": "This inbound does not end in an eligible direct outbound. Its tunnel, source binding or redirect must be managed in native routing.",
         "alreadyExists": "A generated outbound already exists. Edit it in native outbounds and routing.",
-        "notReady": "The allocated IPv6 address is not ready."
+        "notReady": "The allocated IPv6 address is not ready.",
+        "followNewUsers": "Automatically include all authorized and future users of this inbound",
+        "autoEnabled": "Automatic enrolment is enabled. Pending IPv6 connections are blocked until each user address and native rule are ready. IPv4 keeps its direct route.",
+        "disableAuto": "Stop enrolling new users (keep existing bindings)"
       },
       "importRules": "ルールをインポート",
       "exportRules": "ルールをエクスポート",
@@ -2621,7 +2624,12 @@
       "socketSource": "Socket source (before NAT)",
       "assignedIPv6": "Assigned egress IPv6",
       "outbound": "Outbound",
-      "strictGrantHelp": "This migrated account uses a strict entry allowlist. Clearing the selection publishes no routes; it does not restore all endpoints."
+      "strictGrantHelp": "This migrated account uses a strict entry allowlist. Clearing the selection publishes no routes; it does not restore all endpoints.",
+      "nativeBindingsHelp": "These source bindings and user rules come from this service’s native configuration. Edit them in Outbounds and Routing; rule order still applies.",
+      "noNativeBindings": "No fixed IPv6 source binding is configured. This service follows its native routing.",
+      "allUsers": "All users",
+      "ruleEnabled": "Rule enabled",
+      "ruleNotSelected": "No enabled selecting rule"
     },
     "commerce": {
       "adminTitle": "Portal & commerce",
@@ -2711,7 +2719,8 @@
       "strictGrantHelp": "Only the selected concrete endpoints are delivered. New endpoints are not granted automatically.",
       "visible": "Visible for purchase",
       "hidden": "Hidden from purchase",
-      "stage4Pending": "External entitlements await stage 4. Purchase and grant are blocked.",
+      "unconfiguredPlan": "No routes configured",
+      "unconfiguredPlanHelp": "Select local inbounds or external subscriptions and save. A plan without routes cannot be purchased or granted.",
       "oneTimeSecret": "Copy now. This secret is shown only once.",
       "permanentID": "Permanent proxy identity",
       "status": "Status",

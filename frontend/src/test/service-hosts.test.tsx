@@ -7,6 +7,9 @@ import ServiceHostsPage, {
   ConnectionsPanel,
 } from '@/pages/service-hosts/ServiceHostsPage';
 import { hostRuntimeFixture } from '@/pages/service-hosts/fixtures';
+import { nativeIPv6Bindings } from '@/pages/service-hosts/native-bindings';
+import NativeEgressPanel from '@/pages/service-hosts/NativeEgressPanel';
+import type { fetchXrayConfig } from '@/hooks/useXraySetting';
 import { HttpUtil } from '@/utils';
 import { renderWithProviders } from './test-utils';
 
@@ -22,6 +25,77 @@ function Location() {
 }
 
 describe('service hosts', () => {
+  it('reads native user bindings and links to the owning service without a legacy controller', () => {
+    const config = {
+      xraySetting: {
+        outbounds: [
+          { tag: 'direct', protocol: 'freedom' },
+          { tag: 'v4-tunnel', protocol: 'freedom', sendThrough: '192.0.2.4' },
+          { tag: 'user-7', protocol: 'freedom', sendThrough: '2001:db8:1::7' },
+        ],
+        routing: {
+          rules: [
+            {
+              type: 'field',
+              user: ['7.sample'],
+              inboundTag: ['HY2'],
+              ip: ['::/0'],
+              outboundTag: 'user-7',
+            },
+          ],
+        },
+      },
+      runtime: { running: true, heldBack: '' },
+    } as Awaited<ReturnType<typeof fetchXrayConfig>>;
+    const bindings = nativeIPv6Bindings(config.xraySetting);
+    expect(bindings).toHaveLength(1);
+    expect(bindings[0].users).toEqual(['7.sample']);
+    renderWithProviders(
+      <MemoryRouter>
+        <NativeEgressPanel nodeId={4} name="HY2 native" config={config} loading={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('2001:db8:1::7')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Outbounds' }).getAttribute('href')).toBe(
+      '/outbound?nodeId=4',
+    );
+    expect(screen.queryByText(/legacy controller/i)).toBeNull();
+  });
+
+  it('compares native configured sources with observed sockets independently', () => {
+    const report = {
+      ...hostRuntimeFixture,
+      observer: {
+        ...hostRuntimeFixture.observer,
+        records: [
+          {
+            ...hostRuntimeFixture.observer.records[0],
+            outbound: 'native-user-7',
+            local: '[2001:db8:1::7]:30000',
+          },
+        ],
+      },
+    };
+    const bindings = {
+      1: [
+        {
+          key: 'native-user-7',
+          outbound: 'native-user-7',
+          address: '2001:db8:1::7',
+          users: ['7.sample'],
+          inbounds: ['TEST_ENTRY'],
+          destinations: ['::/0'],
+          enabled: true,
+        },
+      ],
+    };
+    expect(connectionRows([report], bindings)[0].allocationVerified).toBe(true);
+    bindings[1][0].address = '2001:db8:1::9';
+    const changed = connectionRows([report], bindings)[0];
+    expect(changed.assignedIPv6).toBe('2001:db8:1::9');
+    expect(changed.local).toBe('[2001:db8:1::7]:30000');
+    expect(changed.allocationVerified).toBe(false);
+  });
   it('keeps observed socket source separate from assigned post-NAT policy', () => {
     const rows = connectionRows([hostRuntimeFixture]);
     expect(rows.find((r) => r.user === '7.sample')?.assignedIPv6).toBe('2001:db8:1::7');
@@ -82,7 +156,7 @@ describe('service hosts', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('shows migrated exit annotations without a fake routing control', async () => {
+  it('shows native entries without retired exit annotations or a second routing control', async () => {
     const host = {
       id: 3,
       name: 'Imported machine',
@@ -114,8 +188,9 @@ describe('service hosts', () => {
         <ServiceHostsPage />
       </MemoryRouter>,
     );
-    await screen.findByText('Migration exit record');
-    expect(screen.getByText(/Read-only migration records/)).toBeTruthy();
+    await screen.findByText('Imported IPv6 entry');
+    expect(screen.queryByText('Migration exit record')).toBeNull();
+    expect(screen.queryByText(/Read-only migration records/)).toBeNull();
     expect(screen.queryByRole('combobox')).toBeNull();
     fireEvent.click(screen.getByText('Imported IPv6 entry'));
     expect(post).not.toHaveBeenCalled();

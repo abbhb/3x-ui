@@ -41,7 +41,22 @@ func TestNativeIPv6RuntimeFixture(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		value, err = reconcileNativeAutoIPv6(ctx, value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := prepareNativeIPv6Bindings(ctx, value); err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(filepath.Join(root, "core.json"), []byte(value), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		report, err := NativeIPv6PoolReport(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		reportJSON, _ := json.Marshal(report)
+		if err := os.WriteFile(filepath.Join(root, "report.json"), reportJSON, 0o600); err != nil {
 			t.Fatal(err)
 		}
 		return
