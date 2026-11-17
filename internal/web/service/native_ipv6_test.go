@@ -34,7 +34,7 @@ func nativeIPv6Fixture(t *testing.T) (*model.ClientRecord, *model.Inbound, map[s
 			}
 			return json.Marshal([]map[string]any{{"ifname": "eth0", "addr_info": info}})
 		}
-		if len(args) != 6 || strings.Join(args[:3], " ") != "-6 address add" || args[4] != "dev" || args[5] != "eth0" {
+		if len(args) != 9 || strings.Join(args[:3], " ") != "-6 address add" || args[4] != "dev" || args[5] != "eth0" || strings.Join(args[6:], " ") != "preferred_lft 0 noprefixroute" {
 			t.Fatalf("unexpected host mutation: %v", args)
 		}
 		if fail {
