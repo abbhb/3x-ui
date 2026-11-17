@@ -591,6 +591,15 @@ func (s *SubClashService) buildHysteriaProxy(subReq *SubService, inbound *model.
 	tlsSettings, _ := rawStream["tlsSettings"].(map[string]any)
 	clientTLS, _ := tlsSettings["settings"].(map[string]any)
 	applyHysteriaTLS(proxy, tlsSettings, clientTLS)
+	if sni, ok := externalProxySNI(ep); ok {
+		proxy["sni"] = sni
+	}
+	if alpn := clashStringList(ep["alpn"]); len(alpn) > 0 {
+		proxy["alpn"] = alpn
+	}
+	if fingerprint, _ := ep["fingerprint"].(string); fingerprint != "" {
+		proxy["client-fingerprint"] = fingerprint
+	}
 	if insecure, ok := ep["allowInsecure"].(bool); ok && insecure {
 		proxy["skip-cert-verify"] = true
 	}
@@ -1348,8 +1357,16 @@ func (s *SubClashService) applySecurity(proxy map[string]any, security string, s
 					proxy["skip-cert-verify"] = true
 				}
 			}
-			if pins, ok := tlsSettings["pin-sha256"].([]any); ok && len(pins) > 0 {
-				proxy["pin-sha256"] = pins
+			pins := tlsSettings["pinnedPeerCertSha256"]
+			if inner, ok := tlsSettings["settings"].(map[string]any); ok {
+				if override, exists := inner["pinnedPeerCertSha256"]; exists {
+					pins = override
+				}
+			}
+			// Mihomo's fingerprint verifies the full certificate hash, including
+			// host overrides applied after streamData normalized the base TLS.
+			if fingerprint := mihomoCertFingerprint(pins); fingerprint != "" {
+				proxy["fingerprint"] = fingerprint
 			}
 		}
 		return true
@@ -1411,7 +1428,7 @@ func (s *SubClashService) tlsData(tData map[string]any) map[string]any {
 		tlsData["fingerprint"] = fingerprint
 	}
 	if pins, ok := tlsClientSettings["pinnedPeerCertSha256"].([]any); ok && len(pins) > 0 {
-		tlsData["pin-sha256"] = pins
+		tlsData["pinnedPeerCertSha256"] = pins
 	}
 	return tlsData
 }
