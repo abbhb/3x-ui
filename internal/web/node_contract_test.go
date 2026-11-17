@@ -367,6 +367,7 @@ func TestMasterNodeContract(t *testing.T) {
 // Remote methods that never reach the node, or that this table must not run.
 var remoteMethodsOutsideContract = map[string]string{
 	"SaveHostPolicy":        "requires node-admin; covered by TestHostEgressWriteContract",
+	"XrayRequest":           "requires node-admin; covered by TestNativeXrayWriteContract",
 	"Name":                  "local label",
 	"RecordAdoptedInbound":  "local fingerprint bookkeeping",
 	"AdoptInboundAlias":     "local alias bookkeeping",
@@ -375,6 +376,39 @@ var remoteMethodsOutsideContract = map[string]string{
 	"ForgetPushedInbound":   "local fingerprint bookkeeping",
 	"ForgetInbound":         "local bookkeeping for an inbound the node no longer has",
 	"UpdatePanel":           "replaces the node binary; node-sync is denied it on purpose (#6201)",
+}
+
+func TestNativeXrayWriteContract(t *testing.T) {
+	for _, scope := range []string{model.ApiScopeAdmin, model.ApiScopeNodeAdmin, model.ApiScopeNodeSync} {
+		t.Run(scope, func(t *testing.T) {
+			node := startContractNode(t)
+			master := node.masterWithToken(t, scope)
+			_, err := master.XrayRequest(context.Background(), http.MethodPost, "panel/api/xray/", nil, nil)
+			refused := node.takeRefused()
+			if scope == model.ApiScopeNodeSync {
+				if err == nil || len(refused) != 1 || !strings.HasSuffix(refused[0], " -> 403") {
+					t.Fatalf("node-sync accessed native configuration: err=%v refused=%v", err, refused)
+				}
+				return
+			}
+			if err != nil || len(refused) != 0 {
+				t.Fatalf("native read: %v %v", err, refused)
+			}
+			config := `{"outbounds":[{"tag":"contract-native-direct","protocol":"freedom","settings":{}}]}`
+			if _, err := master.XrayRequest(context.Background(), http.MethodPost, "panel/api/xray/update", nil, url.Values{"xraySetting": {config}}); err != nil {
+				t.Fatal(err)
+			}
+			value, err := (&service.SettingService{}).GetXrayConfigTemplate()
+			if err != nil || !strings.Contains(value, "contract-native-direct") {
+				t.Fatalf("native write not persisted: %v %s", err, value)
+			}
+			// An invalid pool must reach validation without any host operation.
+			_, err = master.XrayRequest(context.Background(), http.MethodPost, "panel/api/xray/ipv6Pool", nil, map[string]any{})
+			if err == nil || !strings.Contains(err.Error(), "owned global IPv6 /64") || len(node.takeRefused()) != 0 {
+				t.Fatalf("pool validation was not reached: %v", err)
+			}
+		})
+	}
 }
 
 func TestHostEgressWriteContract(t *testing.T) {

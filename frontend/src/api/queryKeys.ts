@@ -43,15 +43,21 @@ export const keys = {
   },
   xray: {
     root: () => ['xray'] as const,
-    config: () => ['xray', 'config'] as const,
-    outboundsTraffic: () => ['xray', 'outboundsTraffic'] as const,
+    config: (nodeId = 0) => ['xray', 'config', nodeId] as const,
+    outboundsTraffic: (nodeId = 0) => ['xray', 'outboundsTraffic', nodeId] as const,
     geodata: {
       root: () => ['xray', 'geodata'] as const,
-      files: () => ['xray', 'geodata', 'files'] as const,
-      categories: (file: string, query: string) =>
-        ['xray', 'geodata', 'categories', file, query] as const,
-      entries: (file: string, code: string, query: string, offset: number, limit: number) =>
-        ['xray', 'geodata', 'entries', file, code, query, offset, limit] as const,
+      files: (nodeId = 0) => ['xray', 'geodata', 'files', nodeId] as const,
+      categories: (file: string, query: string, nodeId = 0) =>
+        ['xray', 'geodata', 'categories', file, query, nodeId] as const,
+      entries: (
+        file: string,
+        code: string,
+        query: string,
+        offset: number,
+        limit: number,
+        nodeId = 0,
+      ) => ['xray', 'geodata', 'entries', file, code, query, offset, limit, nodeId] as const,
     },
   },
 } as const;

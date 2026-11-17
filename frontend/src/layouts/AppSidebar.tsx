@@ -151,7 +151,7 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
   const navigate = useNavigate();
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
   const { allSetting } = useAllSettings();
   const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
   const showSubBalancers = !!allSetting.subJsonEnable;
@@ -323,9 +323,16 @@ export default function AppSidebar() {
         window.location.href = window.X_UI_BASE_PATH || '/';
         return;
       }
-      navigate(key);
+      const selected = new URLSearchParams(search).get('nodeId');
+      const [path, fragment] = key.split('#');
+      const scoped = selected && ['/xray', '/outbound', '/routing'].includes(path);
+      navigate(
+        scoped
+          ? `${path}?nodeId=${encodeURIComponent(selected)}${fragment ? `#${fragment}` : ''}`
+          : key,
+      );
     },
-    [navigate],
+    [navigate, search],
   );
 
   const onMenuClick = useCallback<NonNullable<MenuProps['onClick']>>(

@@ -3881,6 +3881,132 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NativeIPv6Address": {
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "integer"
+      },
+      "ready": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "address",
+      "clientId",
+      "ready"
+    ],
+    "type": "object"
+  },
+  "NativeIPv6AllocationInput": {
+    "properties": {
+      "clientIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clientIds"
+    ],
+    "type": "object"
+  },
+  "NativeIPv6Client": {
+    "properties": {
+      "email": {
+        "type": "string"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "inbounds": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "inbounds"
+    ],
+    "type": "object"
+  },
+  "NativeIPv6Lease": {
+    "description": "NativeIPv6Lease is address ownership, not a forwarding policy. The actual\nsendThrough and user rules remain in the native Xray template. Client IDs\nsurvive credential rotation; retired leases are deliberately not recycled.",
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "address",
+      "clientId"
+    ],
+    "type": "object"
+  },
+  "NativeIPv6Pool": {
+    "properties": {
+      "interface": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "interface",
+      "prefix"
+    ],
+    "type": "object"
+  },
+  "NativeIPv6Report": {
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/NativeIPv6Client"
+        },
+        "type": "array"
+      },
+      "error": {
+        "type": "string"
+      },
+      "interfaces": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "leases": {
+        "items": {
+          "$ref": "#/components/schemas/NativeIPv6Address"
+        },
+        "type": "array"
+      },
+      "pool": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NativeIPv6Pool"
+          }
+        ],
+        "nullable": true
+      }
+    },
+    "required": [
+      "clients",
+      "error",
+      "interfaces",
+      "leases"
+    ],
+    "type": "object"
+  },
   "NewUUIDResponse": {
     "properties": {
       "uuid": {

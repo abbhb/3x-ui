@@ -2640,8 +2640,11 @@ func (s *InboundService) updateClientTraffics(tx *gorm.DB, oldInbound *model.Inb
 	return nil
 }
 
-func (s *InboundService) GetInboundTags() (string, error) {
+func (s *InboundService) GetInboundTags(localOnly ...bool) (string, error) {
 	db := database.GetDB()
+	if len(localOnly) > 0 && localOnly[0] {
+		db = db.Where("node_id IS NULL")
+	}
 	var inboundTags []string
 	err := db.Model(model.Inbound{}).Select("tag").Find(&inboundTags).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -2651,8 +2654,11 @@ func (s *InboundService) GetInboundTags() (string, error) {
 	return string(tags), nil
 }
 
-func (s *InboundService) GetClientReverseTags() (string, error) {
+func (s *InboundService) GetClientReverseTags(localOnly ...bool) (string, error) {
 	db := database.GetDB()
+	if len(localOnly) > 0 && localOnly[0] {
+		db = db.Where("node_id IS NULL")
+	}
 	var inbounds []model.Inbound
 	err := db.Model(model.Inbound{}).Select("settings").Where("protocol = ?", "vless").Find(&inbounds).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

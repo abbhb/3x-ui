@@ -1986,6 +1986,34 @@
       "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting."
     },
     "xray": {
+      "service": "Service",
+      "localService": "Panel service (local)",
+      "scopeUnsaved": "Discard unsaved changes and switch service?",
+      "scopeHelp": "Save validates and applies the selected service configuration. A stopped core stays stopped.",
+      "coreRunning": "Core running",
+      "coreStopped": "Core stopped",
+      "user6": {
+        "title": "Per-user IPv6",
+        "help": "Generate native source-bound outbounds and IPv6 user rules for one inbound. IPv4 destinations retain their original routing. Earlier rules keep priority; routing DNS strategy becomes IPOnDemand. Save on the page to apply.",
+        "poolHelp": "Use an actually allocated and routed /64. Interface and prefix are fixed once leases exist. Deleting an outbound retains its address lease for stable reuse.",
+        "interface": "Network interface",
+        "prefix": "Owned IPv6 /64",
+        "configure": "Configure address pool",
+        "inbound": "Inbound",
+        "users": "Clients",
+        "address": "Assigned IPv6 source",
+        "status": "Address readiness",
+        "ready": "Prepared on interface",
+        "pending": "Pending preparation",
+        "generate": "Add to native outbounds and routing",
+        "generated": "Native objects added. Save on the page to apply.",
+        "selectClients": "Select an inbound and its authorized clients.",
+        "explicitDirect": "Runtime subscription outbounds can change the default exit. First add an explicit native direct route for this inbound.",
+        "manualRouting": "This service uses a routing script. Edit its native routing explicitly.",
+        "directOnly": "This inbound does not end in an eligible direct outbound. Its tunnel, source binding or redirect must be managed in native routing.",
+        "alreadyExists": "A generated outbound already exists. Edit it in native outbounds and routing.",
+        "notReady": "The allocated IPv6 address is not ready."
+      },
       "save": "Save",
       "restartSuccess": "Xray has been successfully relaunched.",
       "stopSuccess": "Xray has been successfully stopped.",
@@ -2527,6 +2555,7 @@
       "yourBrandText": "Put your company in front of thousands of server admins who open 3X-UI every day."
     },
     "serviceHosts": {
+      "nativeEgressHelp": "Manage this service through native outbounds and routing. This view only reads retained legacy controller status. Fixed IPv6 ingress and user egress are independent.",
       "title": "Service hosts",
       "addHost": "Add host",
       "intro": "Group the local core and remote services by their physical machine. Open a host to inspect its services, entry routes, egress and recent connections.",

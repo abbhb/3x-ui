@@ -38,12 +38,13 @@ import {
 } from '@ant-design/icons';
 
 import { isOutboundProtocol } from '@/schemas/primitives';
-import { HttpUtil } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import { onNumber } from '@/utils/onNumber';
 import PromptModal from '@/components/feedback/PromptModal';
 import TextModal from '@/components/feedback/TextModal';
 
 import OutboundFormModal from './OutboundFormModal';
+import NativeUserIPv6Modal from './NativeUserIPv6Modal';
 import { propagateOutboundTagRename } from '../basics/helpers';
 import { planOutboundDeletion, applyOutboundDeletion } from '../reference-cleanup';
 import DeletionImpactList from '../DeletionImpactList';
@@ -123,12 +124,14 @@ export default function OutboundsTab({
   onShowPia,
   onRefreshXrayData,
 }: OutboundsTabProps) {
+  const HttpUtil = useXrayHttp();
   const { t } = useTranslation();
   const uid = useId();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [testMode, setTestMode] = useState<OutboundTestMode>('tcp');
   const [modalOpen, setModalOpen] = useState(false);
+  const [userIPv6Open, setUserIPv6Open] = useState(false);
   const [editingOutbound, setEditingOutbound] = useState<Record<string, unknown> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [existingTags, setExistingTags] = useState<string[]>([]);
@@ -551,7 +554,7 @@ export default function OutboundsTab({
     <>
       {modalContextHolder}
       {messageContextHolder}
-      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="middle" style={{ width: '100%' }} wrap>
         <Row gutter={[12, 12]} align="middle" justify="space-between">
           <Col xs={24} sm={12}>
             <Space size="small" wrap>
@@ -561,6 +564,7 @@ export default function OutboundsTab({
               <Button icon={<CloudOutlined aria-hidden />} onClick={openSubManager}>
                 {t('pages.xray.outboundSub.manage')}
               </Button>
+              <Button onClick={() => setUserIPv6Open(true)}>{t('pages.xray.user6.title')}</Button>
               <Dropdown
                 trigger={['click']}
                 menu={{
@@ -672,6 +676,16 @@ export default function OutboundsTab({
           />
         )}
 
+        {userIPv6Open && (
+          <NativeUserIPv6Modal
+            hasInjectedOutbounds={(subscriptionOutbounds?.length ?? 0) > 0}
+            open={userIPv6Open}
+            onClose={() => setUserIPv6Open(false)}
+            template={templateSettings}
+            setTemplate={setTemplateSettings}
+            inboundTags={_inboundTags}
+          />
+        )}
         <OutboundFormModal
           open={modalOpen}
           outbound={editingOutbound}

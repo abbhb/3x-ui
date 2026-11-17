@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Col, Input, InputNumber, Row, Select, Space, Tag } from 'antd';
 import { AimOutlined } from '@ant-design/icons';
 
-import { HttpUtil } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { buildRemarkByTag, formatInboundTag } from './helpers';
 
@@ -22,6 +22,7 @@ interface RouteTestResult {
 const PROTOCOL_OPTIONS = ['http', 'tls', 'quic', 'bittorrent'].map((p) => ({ label: p, value: p }));
 
 export default function RouteTester({ inboundTags, isMobile }: RouteTesterProps) {
+  const HttpUtil = useXrayHttp();
   const { t } = useTranslation();
   const { data: inboundOptions } = useInboundOptions();
   const remarkByTag = useMemo(() => buildRemarkByTag(inboundOptions || []), [inboundOptions]);

@@ -15,7 +15,6 @@ import {
   Select,
   Space,
   Spin,
-  Switch,
   Table,
   Tabs,
   Tag,
@@ -35,6 +34,7 @@ import { selectTagRender } from '@/components/form/SelectTag';
 import { useTheme } from '@/hooks/useTheme';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import { HttpUtil } from '@/utils';
+import { xrayPageUrl } from '@/hooks/xrayScope';
 import {
   ServiceHostDetailSchema,
   ServiceHostsSchema,
@@ -42,7 +42,6 @@ import {
   type ServiceHost,
   type HostLine,
   type HostRuntime,
-  type EgressPolicy,
   type Connection,
 } from '@/schemas/service-host';
 import './ServiceHostsPage.css';
@@ -55,11 +54,6 @@ async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   const msg = await HttpUtil.get(path, undefined, { silent: true });
   if (!msg?.success) throw new Error(msg?.msg || 'Host information unavailable');
   return schema.parse(msg.obj);
-}
-
-async function write(path: string, body: unknown): Promise<void> {
-  const msg = await HttpUtil.post(path, body, JSON_OPTIONS);
-  if (!msg?.success) throw new Error(msg?.msg || 'Host settings could not be saved');
 }
 
 export function connectionRows(reports: HostRuntime[]): Connection[] {
@@ -185,120 +179,59 @@ export function ConnectionsPanel({ reports }: { reports: HostRuntime[] }) {
   );
 }
 
-function PolicyPanel({
-  report,
-  hostId,
-  refresh,
-}: {
-  report: HostRuntime;
-  hostId: number;
-  refresh: () => void;
-}) {
+function LegacyEgressPanel({ report }: { report: HostRuntime }) {
   const { t } = useTranslation();
   const label = (key: string) => t(`pages.serviceHosts.${key}`);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [form] = Form.useForm<EgressPolicy>();
-  useEffect(() => {
-    if (report.policy) form.setFieldsValue(report.policy);
-  }, [report.policy, form]);
-  const submit = async (values: EgressPolicy) => {
-    if (!report.policy) return;
-    setSaving(true);
-    setError('');
-    try {
-      await write(`${API}/policy/${hostId}/${report.nodeId}`, { ...report.policy, ...values });
-      refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : label('saveFailed'));
-    } finally {
-      setSaving(false);
-    }
-  };
   return (
     <Card title={report.name} size="small">
-      {report.error ? (
-        <Alert type="error" title={label('serviceUnavailable')} description={report.error} />
-      ) : !report.installed || !report.policy ? (
-        <Alert type="info" title={label('notInstalled')} description={label('installHelp')} />
-      ) : (
-        <Space orientation="vertical" size="middle" className="service-host-full">
-          <Descriptions
-            size="small"
-            column={{ xs: 1, sm: 2 }}
-            items={[
-              { key: 'prefix', label: label('prefix'), children: report.policy.prefix },
-              { key: 'interface', label: label('interface'), children: report.policy.interface },
-              {
-                key: 'state',
-                label: label('verification'),
-                children: (
-                  <Tag color={report.status.verified ? 'success' : 'warning'}>
-                    {label(report.status.verified ? 'verified' : 'unverified')}
-                  </Tag>
-                ),
-              },
-              {
-                key: 'at',
-                label: label('lastVerified'),
-                children: report.status.updatedAt
-                  ? new Date(report.status.updatedAt).toLocaleString()
-                  : '—',
-              },
-            ]}
-          />
-          <Alert
-            type="info"
-            showIcon
-            title={label('egressHelp')}
-            description={label('sharedInboundHelp')}
-          />
-          {report.status.blockedUsers.length > 0 && (
-            <Alert
-              type="warning"
-              title={label('blockedTitle')}
-              description={report.status.blockedUsers.join(', ')}
-            />
-          )}
-          {error && <Alert type="error" title={label('saveFailed')} description={error} />}
-          <Form form={form} layout="vertical" onFinish={(values) => void submit(values)}>
-            <Form.Item name="enabled" label={label('enablePolicy')} valuePropName="checked">
-              <Switch />
-            </Form.Item>
-            <Form.Item
-              name="inbounds"
-              label={label('managedInbounds')}
-              rules={[{ required: true, message: label('selectInbound') }]}
-            >
-              <Select
-                mode="multiple"
-                tagRender={selectTagRender}
-                options={report.inbounds
-                  .filter((i) =>
-                    ['vless', 'vmess', 'trojan', 'shadowsocks', 'hysteria'].includes(i.protocol),
-                  )
-                  .map((i) => ({ value: i.tag, label: `${i.tag} · ${i.protocol}` }))}
-              />
-            </Form.Item>
-            <Button htmlType="submit" type="primary" loading={saving}>
-              {label('applyPolicy')}
-            </Button>
-            <Typography.Paragraph type="secondary" className="service-host-help">
-              {label('restartHelp')}
-            </Typography.Paragraph>
-          </Form>
-          <Table
-            rowKey="identity"
-            size="small"
-            dataSource={report.status.users}
-            pagination={{ pageSize: 10, showSizeChanger: false }}
-            columns={[
-              { title: label('permanentId'), dataIndex: 'identity' },
-              { title: label('assignedIPv6'), dataIndex: 'address' },
-            ]}
-          />
+      <Space orientation="vertical" size="middle" className="service-host-full">
+        <Space>
+          <Link to={xrayPageUrl('/outbound', report.nodeId)}>{t('menu.outbounds')}</Link>
+          <Link to={xrayPageUrl('/routing', report.nodeId)}>{t('menu.routing')}</Link>
         </Space>
-      )}
+        <Alert type="info" showIcon title={label('nativeEgressHelp')} />
+        {report.error && (
+          <Alert type="error" title={label('serviceUnavailable')} description={report.error} />
+        )}
+        {report.installed && report.policy && (
+          <>
+            <Descriptions
+              size="small"
+              column={{ xs: 1, sm: 2 }}
+              items={[
+                { key: 'prefix', label: label('prefix'), children: report.policy.prefix },
+                { key: 'interface', label: label('interface'), children: report.policy.interface },
+                {
+                  key: 'state',
+                  label: label('verification'),
+                  children: (
+                    <Tag color={report.status.verified ? 'success' : 'warning'}>
+                      {label(report.status.verified ? 'verified' : 'unverified')}
+                    </Tag>
+                  ),
+                },
+                {
+                  key: 'at',
+                  label: label('lastVerified'),
+                  children: report.status.updatedAt
+                    ? new Date(report.status.updatedAt).toLocaleString()
+                    : '—',
+                },
+              ]}
+            />
+            <Table
+              rowKey="identity"
+              size="small"
+              dataSource={report.status.users}
+              pagination={{ pageSize: 10, showSizeChanger: false }}
+              columns={[
+                { title: label('permanentId'), dataIndex: 'identity' },
+                { title: label('assignedIPv6'), dataIndex: 'address' },
+              ]}
+            />
+          </>
+        )}
+      </Space>
     </Card>
   );
 }
@@ -493,6 +426,19 @@ export default function ServiceHostsPage() {
                       { title: label('controlAddress'), dataIndex: 'address' },
                       { title: label('status'), dataIndex: 'status' },
                       { title: label('coreStatus'), dataIndex: 'xrayState' },
+                      {
+                        title: t('pages.xray.service'),
+                        render: (_, service) => (
+                          <Space>
+                            <Link to={xrayPageUrl('/outbound', service.id)}>
+                              {t('menu.outbounds')}
+                            </Link>
+                            <Link to={xrayPageUrl('/routing', service.id)}>
+                              {t('menu.routing')}
+                            </Link>
+                          </Space>
+                        ),
+                      },
                     ]}
                   />
                 </Card>
@@ -569,14 +515,7 @@ export default function ServiceHostsPage() {
                 <Spin aria-live="off" spinning={runtime.isFetching}>
                   <Space orientation="vertical" size="middle" className="service-host-full">
                     {reports.map((report) => (
-                      <PolicyPanel
-                        key={report.nodeId}
-                        report={report}
-                        hostId={hostId}
-                        refresh={() => {
-                          void runtime.refetch();
-                        }}
-                      />
+                      <LegacyEgressPanel key={report.nodeId} report={report} />
                     ))}
                   </Space>
                 </Spin>

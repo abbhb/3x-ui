@@ -4,7 +4,8 @@ import { Alert, Button, Collapse, Divider, Form, Input, message, Modal, Tag } fr
 import { ApiOutlined, SyncOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { HttpUtil, SizeFormatter, ObjectUtil, Wireguard } from '@/utils';
+import { SizeFormatter, ObjectUtil, Wireguard } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import { FormField } from '@/components/form/rhf';
 import './WarpModal.css';
 
@@ -162,6 +163,7 @@ export default function WarpModal({
   onResetOutbound,
   onRemoveOutbound,
 }: WarpModalProps) {
+  const HttpUtil = useXrayHttp();
   const { t } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
@@ -195,14 +197,16 @@ export default function WarpModal({
         const raw = msg.obj;
         setWarpData(raw && raw.length > 0 ? JSON.parse(raw) : null);
       }
-      const settingMsg = await HttpUtil.post<Record<string, unknown>>('/panel/api/setting/all');
+      const settingMsg = await HttpUtil.post<Record<string, unknown>>(
+        '/panel/api/xray/warp/settings',
+      );
       if (settingMsg?.success && settingMsg.obj) {
         methods.setValue('updateInterval', Number(settingMsg.obj.warpUpdateInterval) || 0);
       }
     } finally {
       setLoading(false);
     }
-  }, [methods]);
+  }, [methods, HttpUtil]);
 
   const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {

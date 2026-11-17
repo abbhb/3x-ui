@@ -4,7 +4,7 @@ import { Button, Divider, Form, Input, message, Modal, Select, Tabs } from 'antd
 import { LoginOutlined, SaveOutlined } from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { HttpUtil } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import { FormField } from '@/components/form/rhf';
 import { countryFlag, countryName } from '../outbounds/outbounds-tab-helpers';
 import './NordModal.css';
@@ -126,6 +126,7 @@ export default function NordModal({
   onAddOutbound,
   onResetOutbound,
 }: NordModalProps) {
+  const HttpUtil = useXrayHttp();
   const { t, i18n } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
@@ -184,7 +185,7 @@ export default function NordModal({
   const fetchCountries = useCallback(async () => {
     const msg = await HttpUtil.post<string>('/panel/api/xray/nord/countries');
     if (msg?.success && msg.obj) setCountries(JSON.parse(msg.obj));
-  }, []);
+  }, [HttpUtil]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -198,7 +199,7 @@ export default function NordModal({
     } finally {
       setLoading(false);
     }
-  }, [fetchCountries]);
+  }, [fetchCountries, HttpUtil]);
 
   useEffect(() => {
     if (!open) return;

@@ -1040,6 +1040,54 @@ export const EXAMPLES: Record<string, unknown> = {
     "obj": null,
     "success": false
   },
+  "NativeIPv6Address": {
+    "address": "",
+    "clientId": 0,
+    "ready": false
+  },
+  "NativeIPv6AllocationInput": {
+    "clientIds": [
+      0
+    ]
+  },
+  "NativeIPv6Client": {
+    "email": "",
+    "id": 0,
+    "inbounds": [
+      ""
+    ]
+  },
+  "NativeIPv6Lease": {
+    "address": "",
+    "clientId": 0
+  },
+  "NativeIPv6Pool": {
+    "interface": "",
+    "prefix": ""
+  },
+  "NativeIPv6Report": {
+    "clients": [
+      {
+        "email": "",
+        "id": 0,
+        "inbounds": [
+          ""
+        ]
+      }
+    ],
+    "error": "",
+    "interfaces": [
+      ""
+    ],
+    "leases": [
+      {
+        "address": "",
+        "clientId": 0,
+        "ready": false
+      }
+    ],
+    "pool": null
+  },
   "NewUUIDResponse": {
     "uuid": "550e8400-e29b-41d4-a716-446655440000"
   },

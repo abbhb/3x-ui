@@ -40,7 +40,7 @@ import { planBalancerDeletion, applyBalancerDeletion } from '../reference-cleanu
 import DeletionImpactList from '../DeletionImpactList';
 import ObservatorySettingsTab from './ObservatorySettingsTab';
 import { catTabLabel } from '@/pages/settings/catTabLabel';
-import { HttpUtil } from '@/utils';
+import { useXrayHttp } from '@/hooks/xrayScope';
 import type { XraySettingsValue, SetTemplate } from '@/hooks/useXraySetting';
 import type {
   BalancerObject,
@@ -91,6 +91,7 @@ export default function BalancersTab({
   subscriptionOutboundTags,
   isMobile,
 }: BalancersTabProps) {
+  const HttpUtil = useXrayHttp();
   const { t } = useTranslation();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -187,7 +188,7 @@ export default function BalancersTab({
     } finally {
       setLiveLoading(false);
     }
-  }, [liveTags]);
+  }, [liveTags, HttpUtil]);
 
   useEffect(() => {
     let cancelled = false;

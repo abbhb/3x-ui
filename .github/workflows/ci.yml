@@ -74,6 +74,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y nftables iproute2 curl
       - name: Preserve fixed ingress and verify per-user TCP and UDP IPv6 SNAT
         run: sudo python3 tools/egress/runtime_lab.py lab "$RUNNER_TEMP/xray-observer"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Native per-user IPv6 source binding and IPv4 routing
+        run: |
+          set -euo pipefail
+          go test -c -o "$RUNNER_TEMP/native-ipv6.test" ./internal/web/service
+          sudo python3 tools/egress/native_runtime_lab.py --xray "$RUNNER_TEMP/xray-observer" --service-test "$RUNNER_TEMP/native-ipv6.test" --node "$(command -v node)"
 
   marzban-export:
     runs-on: ubuntu-latest

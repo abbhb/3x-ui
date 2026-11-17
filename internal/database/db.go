@@ -74,6 +74,7 @@ func allModels() []any {
 		&model.ServiceHost{},
 		&model.ServiceHostMember{},
 		&model.ServiceLine{},
+		&model.NativeIPv6Lease{},
 		&model.ApiToken{},
 		&model.ClientRecord{},
 		&model.ClientInbound{},

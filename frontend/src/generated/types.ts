@@ -907,6 +907,40 @@ export interface Msg {
   success: boolean;
 }
 
+export interface NativeIPv6Address {
+  address: string;
+  clientId: number;
+  ready: boolean;
+}
+
+export interface NativeIPv6AllocationInput {
+  clientIds: number[];
+}
+
+export interface NativeIPv6Client {
+  email: string;
+  id: number;
+  inbounds: string[];
+}
+
+export interface NativeIPv6Lease {
+  address: string;
+  clientId: number;
+}
+
+export interface NativeIPv6Pool {
+  interface: string;
+  prefix: string;
+}
+
+export interface NativeIPv6Report {
+  clients: NativeIPv6Client[];
+  error: string;
+  interfaces: string[];
+  leases: NativeIPv6Address[];
+  pool?: NativeIPv6Pool | null;
+}
+
 export interface NewUUIDResponse {
   uuid: string;
 }

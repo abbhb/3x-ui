@@ -212,6 +212,10 @@ func (r *Remote) baseURL() (string, error) {
 }
 
 func (r *Remote) do(ctx context.Context, method, path string, body any) (*envelope, error) {
+	return r.doWithTimeout(ctx, method, path, body, remoteHTTPTimeout)
+}
+
+func (r *Remote) doWithTimeout(ctx context.Context, method, path string, body any, timeout time.Duration) (*envelope, error) {
 	// mtls nodes authenticate via the client certificate, so a bearer token is
 	// optional for them; every other mode still requires one.
 	if r.node.ApiToken == "" && r.node.TlsVerifyMode != "mtls" {
@@ -259,7 +263,7 @@ func (r *Remote) do(ctx context.Context, method, path string, body any) (*envelo
 		reqBody = bytes.NewReader(bodyBytes)
 	}
 
-	cctx, cancel := context.WithTimeout(netsafe.ContextWithAllowPrivate(ctx, r.node.AllowPrivateAddress), remoteHTTPTimeout)
+	cctx, cancel := context.WithTimeout(netsafe.ContextWithAllowPrivate(ctx, r.node.AllowPrivateAddress), timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(cctx, method, target, reqBody)
 	if err != nil {
@@ -288,7 +292,10 @@ func (r *Remote) do(ctx context.Context, method, path string, body any) (*envelo
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.Do(req)
+	// Share the verified transport, but do not mutate the cached client's timeout.
+	requestClient := *client
+	requestClient.Timeout = timeout
+	resp, err := requestClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", method, path, err)
 	}

@@ -58,6 +58,7 @@ export const XrayConfigPayloadSchema = z
     subscriptionOutbounds: z.array(z.unknown()).optional(),
     subscriptionOutboundTags: z.array(z.string()).optional(),
     geodataSources: z.array(z.object({ url: z.string(), file: z.string() })).optional(),
+    runtime: z.object({ running: z.boolean(), heldBack: z.string() }).optional(),
   })
   .loose();
 

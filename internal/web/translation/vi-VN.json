@@ -1864,6 +1864,34 @@
       "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại."
     },
     "xray": {
+      "service": "Service",
+      "localService": "Panel service (local)",
+      "scopeUnsaved": "Discard unsaved changes and switch service?",
+      "scopeHelp": "Save validates and applies the selected service configuration. A stopped core stays stopped.",
+      "coreRunning": "Core running",
+      "coreStopped": "Core stopped",
+      "user6": {
+        "title": "Per-user IPv6",
+        "help": "Generate native source-bound outbounds and IPv6 user rules for one inbound. IPv4 destinations retain their original routing. Earlier rules keep priority; routing DNS strategy becomes IPOnDemand. Save on the page to apply.",
+        "poolHelp": "Use an actually allocated and routed /64. Interface and prefix are fixed once leases exist. Deleting an outbound retains its address lease for stable reuse.",
+        "interface": "Network interface",
+        "prefix": "Owned IPv6 /64",
+        "configure": "Configure address pool",
+        "inbound": "Inbound",
+        "users": "Clients",
+        "address": "Assigned IPv6 source",
+        "status": "Address readiness",
+        "ready": "Prepared on interface",
+        "pending": "Pending preparation",
+        "generate": "Add to native outbounds and routing",
+        "generated": "Native objects added. Save on the page to apply.",
+        "selectClients": "Select an inbound and its authorized clients.",
+        "explicitDirect": "Runtime subscription outbounds can change the default exit. First add an explicit native direct route for this inbound.",
+        "manualRouting": "This service uses a routing script. Edit its native routing explicitly.",
+        "directOnly": "This inbound does not end in an eligible direct outbound. Its tunnel, source binding or redirect must be managed in native routing.",
+        "alreadyExists": "A generated outbound already exists. Edit it in native outbounds and routing.",
+        "notReady": "The allocated IPv6 address is not ready."
+      },
       "importRules": "Nhập quy tắc",
       "exportRules": "Xuất quy tắc",
       "importOutbounds": "Nhập outbound",
@@ -2527,6 +2555,7 @@
       "yourBrandText": "Đưa công ty bạn đến hàng nghìn quản trị viên máy chủ mở 3X-UI mỗi ngày."
     },
     "serviceHosts": {
+      "nativeEgressHelp": "Manage this service through native outbounds and routing. This view only reads retained legacy controller status. Fixed IPv6 ingress and user egress are independent.",
       "title": "Service hosts",
       "addHost": "Add host",
       "intro": "Group the local core and remote services by their physical machine. Open a host to inspect its services, entry routes, egress and recent connections.",

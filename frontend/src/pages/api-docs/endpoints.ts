@@ -1295,9 +1295,10 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/serviceHosts/policy/:id/:node',
+        deprecated: true,
         summary: 'Apply installed egress policy and restart the selected service',
         description:
-          'Requires a pre-installed node-local bootstrap/controller. Prefix, interface, namespace and mark ownership cannot be changed through this API. Newly authenticated users remain blocked until controller readback.',
+          'Retained for the legacy controller contract only. New services use native /xray outbounds and routing with nodeId. Requires a pre-installed node-local bootstrap/controller. Prefix, interface, namespace and mark ownership cannot be changed through this API.',
         requestSchema: { $ref: '#/components/schemas/Policy' },
       },
       {
@@ -3314,6 +3315,30 @@ export const sections: readonly Section[] = [
       'Xray configuration template, outbound management, Warp/Nord/PIA integration, and config testing. All endpoints under /panel/api/xray.',
     endpoints: [
       {
+        method: 'GET',
+        path: '/panel/api/xray/ipv6Pool',
+        summary: 'Read the selected service address pool, local clients and lease readiness',
+        responseSchema: 'NativeIPv6Report',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/ipv6Pool',
+        summary: 'Configure an owned IPv6 /64 and local interface',
+        description:
+          'Address preparation only. Pool ownership cannot change while leases exist. Never changes native routing, NAT, listeners or legacy controllers.',
+        requestSchema: { $ref: '#/components/schemas/NativeIPv6Pool' },
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/ipv6Pool/allocate',
+        summary: 'Reserve stable client IPv6 addresses and prepare their /128 bindings',
+        description:
+          'Only local clients with identifiable inbound grants are accepted. Retired leases are retained. A failed address preparation remains pending and retries reuse its address. This does not save forwarding rules.',
+        requestSchema: { $ref: '#/components/schemas/NativeIPv6AllocationInput' },
+        responseSchema: 'NativeIPv6Address',
+        responseSchemaArray: true,
+      },
+      {
         method: 'POST',
         path: '/panel/api/xray/',
         summary:
@@ -4026,3 +4051,22 @@ export const sections: readonly Section[] = [
     ],
   },
 ];
+
+// Scope the same native endpoints; no duplicate remote configuration contract.
+for (const section of sections) {
+  for (const endpoint of section.endpoints) {
+    if (endpoint.path.startsWith('/panel/api/xray/')) {
+      endpoint.params = [
+        ...(endpoint.params ?? []),
+        {
+          name: 'nodeId',
+          in: 'query',
+          type: 'integer',
+          optional: true,
+          defaultValue: 0,
+          desc: '0 is the panel service. A positive enabled node ID dispatches to that node using its node-admin token. Restricted node tokens cannot dispatch further.',
+        },
+      ];
+    }
+  }
+}

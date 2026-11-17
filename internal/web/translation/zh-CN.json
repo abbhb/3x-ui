@@ -1864,6 +1864,34 @@
       "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。"
     },
     "xray": {
+      "service": "服务",
+      "localService": "面板服务（本机）",
+      "scopeUnsaved": "丢弃未保存的修改并切换服务？",
+      "scopeHelp": "保存时校验并应用到所选服务；已停止的核心保持停止。",
+      "coreRunning": "核心运行中",
+      "coreStopped": "核心已停止",
+      "user6": {
+        "title": "按用户 IPv6",
+        "help": "为一个入站生成原生源地址绑定出站和 IPv6 用户路由；IPv4 目标沿用原路由，更早规则保持优先。路由域名策略会设为 IPOnDemand，完成后点击页面保存应用。",
+        "poolHelp": "填写实际分配且可路由的 /64。分配后网卡与前缀固定；删除出站会保留地址租约，方便重建时沿用。",
+        "interface": "网卡",
+        "prefix": "自有 IPv6 /64",
+        "configure": "配置地址池",
+        "inbound": "入站",
+        "users": "客户端用户",
+        "address": "分配的 IPv6 源地址",
+        "status": "地址准备状态",
+        "ready": "已配置到网卡",
+        "pending": "待准备",
+        "generate": "加入原生出站和路由",
+        "generated": "已加入原生配置，请点击页面保存应用。",
+        "selectClients": "请选择入站及其已授权的客户端用户。",
+        "explicitDirect": "运行时订阅出站可能改变默认出口，请先在原生路由明确该入站的最终直连出口。",
+        "manualRouting": "当前服务使用路由脚本，请在原生路由中明确配置。",
+        "directOnly": "该入站的最终出口不适合自动生成直连。请在原生路由中管理已有隧道、源地址绑定或重定向。",
+        "alreadyExists": "对应出站已存在，请直接在原生出站和路由中编辑。",
+        "notReady": "分配的 IPv6 地址尚未准备完成。"
+      },
       "importRules": "导入规则",
       "exportRules": "导出规则",
       "importOutbounds": "导入出站",
@@ -2527,6 +2555,7 @@
       "yourBrandText": "让每天打开 3X-UI 的数千名服务器管理员看到您的公司。"
     },
     "serviceHosts": {
+      "nativeEgressHelp": "在对应服务的原生出站和路由管理出口。此处只回读保留的旧控制器状态；固定 IPv6 接入地址与用户出口独立。",
       "title": "服务主机",
       "addHost": "添加主机",
       "intro": "按物理主机归组面板本机和远程服务，点进主机查看服务、接入线路、出口与近期连接。",
