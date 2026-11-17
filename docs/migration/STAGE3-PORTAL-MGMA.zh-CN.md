@@ -1,5 +1,7 @@
 # 第三阶段：门户、交易与 MGMA
 
+当前状态：剩余旧服务已于 2026-11-18 完成交接并解除新业务冻结。本文中的旧核保留、阶段性限制和冻结步骤是历史交接说明；现行状态见[最终交接记录](FINAL-CUTOVER.zh-CN.md)。
+
 本阶段基于 PR #2 的合并提交 `a52b7dd42f57191f8c39d09466f4f992e9b30868`。
 来源合同是 `abbhb/Marzban@0ebdd8052743066fbe5d845153a6adc24334ea6a` 的
 `PORTAL-COMMERCE.zh-CN.md`、`MGMA.zh-CN.md` 及对应数据库、服务、路由实现。
