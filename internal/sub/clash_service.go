@@ -591,6 +591,15 @@ func (s *SubClashService) buildHysteriaProxy(subReq *SubService, inbound *model.
 	tlsSettings, _ := rawStream["tlsSettings"].(map[string]any)
 	clientTLS, _ := tlsSettings["settings"].(map[string]any)
 	applyHysteriaTLS(proxy, tlsSettings, clientTLS)
+	if sni, ok := externalProxySNI(ep); ok {
+		proxy["sni"] = sni
+	}
+	if alpn := clashStringList(ep["alpn"]); len(alpn) > 0 {
+		proxy["alpn"] = alpn
+	}
+	if fingerprint, _ := ep["fingerprint"].(string); fingerprint != "" {
+		proxy["client-fingerprint"] = fingerprint
+	}
 	if insecure, ok := ep["allowInsecure"].(bool); ok && insecure {
 		proxy["skip-cert-verify"] = true
 	}

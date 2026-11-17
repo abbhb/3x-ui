@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/goccy/go-yaml"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -103,8 +104,15 @@ func TestGetClashEmitsPinnedCertSha256(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetClash: %v", err)
 	}
-	if !strings.Contains(out, "pin-sha256") {
-		t.Fatalf("Clash proxy dropped the pinned cert sha256:\n%s", out)
+	var document struct {
+		Proxies []map[string]any `yaml:"proxies"`
+	}
+	if err := yaml.Unmarshal([]byte(out), &document); err != nil || len(document.Proxies) != 1 {
+		t.Fatal("invalid Clash output")
+	}
+	fingerprint, _ := document.Proxies[0]["fingerprint"].(string)
+	if strings.ToLower(strings.ReplaceAll(fingerprint, ":", "")) != pin {
+		t.Fatal("Clash proxy dropped or changed the full certificate hash")
 	}
 }
 

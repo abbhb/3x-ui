@@ -1025,6 +1025,39 @@ func TestSub_HostCertificatePinReachesMihomoWithoutLegacyPinField(t *testing.T) 
 	}
 }
 
+func TestSub_HysteriaHostsRetainIndependentTLSOverrides(t *testing.T) {
+	seedSubDB(t)
+	ib := seedSubInbound(t, "s1", "hy2-hosts", 4462, 1,
+		`{"network":"hysteria","security":"tls","tlsSettings":{"serverName":"base.example.test","alpn":["h3"],"settings":{}}}`)
+	ib.Protocol = model.Hysteria
+	ib.Settings = `{"version":2,"clients":[]}`
+	if err := database.GetDB().Save(ib).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("sub_id = ?", "s1").Update("auth", "synthetic-hy2-auth").Error; err != nil {
+		t.Fatal(err)
+	}
+	for index, sni := range []string{"first.example.test", "second.example.test"} {
+		seedHost(t, &model.Host{InboundId: ib.Id, SortOrder: index, Remark: sni, Address: "198.51.100.8", Port: 443, Sni: sni, Alpn: []string{"h3", sni}, Fingerprint: "firefox"})
+	}
+	out, _, err := NewSubClashService(false, "", false, NewSubService("{{HOST}}")).GetClash("s1", "request.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Proxies []map[string]any `yaml:"proxies"`
+	}
+	if err := yaml.Unmarshal([]byte(out), &document); err != nil || len(document.Proxies) != 2 {
+		t.Fatal("invalid Hysteria hosts output")
+	}
+	for index, sni := range []string{"first.example.test", "second.example.test"} {
+		proxy := document.Proxies[index]
+		if proxy["sni"] != sni || proxy["client-fingerprint"] != "firefox" || fmt.Sprint(proxy["alpn"]) != fmt.Sprint([]string{"h3", sni}) {
+			t.Fatalf("host %d lost TLS overrides: %#v", index, proxy)
+		}
+	}
+}
+
 func TestSub_HostTLSVerificationJSONAtXrayLevel(t *testing.T) {
 	seedSubDB(t)
 	ib := seedSubInbound(t, "s1", "ech", 4461, 1,
