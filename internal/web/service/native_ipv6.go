@@ -310,7 +310,9 @@ func prepareNativeIPv6Address(ctx context.Context, pool NativeIPv6Pool, address 
 			}
 		}
 		if !found && attempt == 0 {
-			if _, err := nativeIPv6IP(ctx, "-6", "address", "add", address+"/128", "dev", pool.Interface); err != nil {
+			// Explicit sendThrough bindings can use a valid deprecated address;
+			// unrelated unbound connections must keep their normal source selection.
+			if _, err := nativeIPv6IP(ctx, "-6", "address", "add", address+"/128", "dev", pool.Interface, "preferred_lft", "0", "noprefixroute"); err != nil {
 				return err
 			}
 		}

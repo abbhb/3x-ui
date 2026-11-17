@@ -40,7 +40,12 @@ def lab(binary, test_binary, node):
                 common.run(["ip", "-n", ns, "address", "add", ipv6, "dev", dev, "nodad"])
                 common.run(["ip", "-n", ns, "address", "add", ipv4, "dev", dev])
             common.run(["ip", "-n", target, "-6", "route", "add", "2001:db8:bb::/64", "via", "2001:db8:aa::1", "dev", right])
-            for host in ("2001:db8:aa::2", "192.0.2.2"):
+            # A destination in the lease prefix makes a preferred alias more
+            # attractive than the primary address, so the shared-source check
+            # detects source-selection contamination instead of passing by luck.
+            common.run(["ip", "-n", target, "address", "add", "2001:db8:bb::2/128", "dev", right, "nodad", "noprefixroute"])
+            common.run(["ip", "-n", proxy, "-6", "route", "add", "2001:db8:bb::/64", "via", "2001:db8:aa::2", "dev", left])
+            for host in ("2001:db8:aa::2", "2001:db8:bb::2", "192.0.2.2"):
                 children.append(subprocess.Popen(["ip", "netns", "exec", target, sys.executable, __file__, "serve", host], stdout=log, stderr=subprocess.STDOUT))
 
             def fixture(validate=False):
@@ -53,6 +58,16 @@ def lab(binary, test_binary, node):
 
             fixture()
             baseline = json.loads((root / "fixture.json").read_text())
+
+            def check_address_lifetimes():
+                interfaces = json.loads(common.run(["ip", "-n", proxy, "-j", "-6", "address", "show", "dev", left]))
+                addresses = {a["local"]: a for i in interfaces for a in i["addr_info"]}
+                for lease in baseline["leases"]:
+                    address = addresses[lease["address"]]
+                    if address["preferred_life_time"] != 0 or address["valid_life_time"] == 0:
+                        raise AssertionError("a native lease may affect automatic source selection or is invalid")
+
+            check_address_lifetimes()
             (root / "core.json").write_text(json.dumps(baseline["template"]))
             (root / "core.json").chmod(0o600)
             fixture(validate=True)
@@ -75,7 +90,8 @@ def lab(binary, test_binary, node):
 const {planNativeUserIPv6}=await import(process.argv[2]);
 const root=process.argv[1]; const f=JSON.parse(readFileSync(root+'/fixture.json','utf8'));
 let config=f.template;
-for (const inbound of ['LAB4','LAB6']) config=planNativeUserIPv6(config,inbound,f.clients)(f.leases);
+const selected=f.clients.filter(c=>f.leases.some(l=>l.clientId===c.id));
+for (const inbound of ['LAB4','LAB6']) config=planNativeUserIPv6(config,inbound,selected)(f.leases);
 writeFileSync(root+'/core.json',JSON.stringify(config));"""
             common.run([node, "--input-type=module", "-e", javascript, str(root), editor.as_uri()])
             fixture(validate=True)
@@ -83,8 +99,15 @@ writeFileSync(root+'/core.json',JSON.stringify(config));"""
             expected = {str(lease["clientId"]) + ".sample": lease["address"] for lease in data["leases"]}
 
             def get(user, dest, ipv6=False, udp=False):
-                payload = {"credential": common.USERS[user], "entry": "2001:db8:aa::1" if ipv6 else "127.0.0.1", "entryPort": 11081 if ipv6 else 11080, "target": dest, "port": 18082 if udp else 18080, "udp": udp}
+                credential = "33333333-3333-4333-8333-333333333333" if user == "11.shared" else common.USERS[user]
+                payload = {"credential": credential, "entry": "2001:db8:aa::1" if ipv6 else "127.0.0.1", "entryPort": 11081 if ipv6 else 11080, "target": dest, "port": 18082 if udp else 18080, "udp": udp}
                 return json.loads(common.run(["ip", "netns", "exec", proxy, sys.executable, __file__, "request"], json.dumps(payload)))["source"]
+
+            def check_shared_source():
+                for ipv6 in (False, True):
+                    for udp in (False, True):
+                        if get("11.shared", "2001:db8:bb::2", ipv6, udp) != "2001:db8:aa::1":
+                            raise AssertionError("an unselected user's shared source address changed")
 
             def start():
                 process = subprocess.Popen(["ip", "netns", "exec", proxy, binary, "run", "-config", str(root / "core.json")], stdout=log, stderr=subprocess.STDOUT)
@@ -98,6 +121,7 @@ writeFileSync(root+'/core.json',JSON.stringify(config));"""
                 raise RuntimeError("native core did not become ready")
 
             process = start()
+            check_shared_source()
             probes = 0
             for user in common.USERS:
                 for ipv6 in (False, True):
@@ -111,10 +135,12 @@ writeFileSync(root+'/core.json',JSON.stringify(config));"""
             process.terminate(); process.wait(timeout=10)
             common.run(["ip", "-n", proxy, "-6", "address", "del", expected["7.sample"] + "/128", "dev", left])
             fixture(validate=True)  # Native validation restores only its owned lease.
+            check_address_lifetimes()
             process = start()
+            check_shared_source()
             if get("9.sample", "dual.test", True, True) != expected["9.sample"]:
                 raise AssertionError("restart changed a user's permanent IPv6")
-            print(f"PASS: {probes} native TCP/UDP probes; fixed ingress, distinct user IPv6, IPv4 routing and lease restoration")
+            print(f"PASS: {probes} native TCP/UDP probes; fixed ingress, distinct user IPv6, IPv4 routing and lease restoration; shared sources preserved with valid deprecated leases")
         except Exception:
             print((root / "core.log").read_text()[-2000:], file=sys.stderr)
             raise

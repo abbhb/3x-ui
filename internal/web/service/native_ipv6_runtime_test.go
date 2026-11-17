@@ -47,7 +47,11 @@ func TestNativeIPv6RuntimeFixture(t *testing.T) {
 		return
 	}
 	db := database.GetDB()
-	users := []model.ClientRecord{{Id: 7, Email: "7.sample", UUID: "11111111-1111-4111-8111-111111111111", Enable: true}, {Id: 9, Email: "9.sample", UUID: "22222222-2222-4222-8222-222222222222", Enable: true}}
+	users := []model.ClientRecord{
+		{Id: 7, Email: "7.sample", UUID: "11111111-1111-4111-8111-111111111111", Enable: true},
+		{Id: 9, Email: "9.sample", UUID: "22222222-2222-4222-8222-222222222222", Enable: true},
+		{Id: 11, Email: "11.shared", UUID: "33333333-3333-4333-8333-333333333333", Enable: true},
+	}
 	if err := db.Create(&users).Error; err != nil {
 		t.Fatal(err)
 	}
