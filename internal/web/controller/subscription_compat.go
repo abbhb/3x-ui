@@ -40,7 +40,6 @@ func NewSubscriptionAdminController(commerce *gin.RouterGroup) {
 		value, err := (&subscriptioncompat.Service{DB: database.GetDB()}).SavePolicy(input)
 		portalReply(c, value, err, true)
 	})
-
 }
 
 func newExternalSourceRoutes(parent *gin.RouterGroup, admin bool) {
