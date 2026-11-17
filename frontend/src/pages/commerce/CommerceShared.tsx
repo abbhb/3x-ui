@@ -1,6 +1,15 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router';
 import { Alert, Button, Input, Space } from 'antd';
 import { useLabel } from './CommerceForms';
+export function AccountClientLink({ clientID }: { clientID: number | null }) {
+  const l = useLabel();
+  return clientID ? (
+    <Link to={`/clients?clientId=${clientID}`}>{l('viewClient')}</Link>
+  ) : (
+    <span>{l('noClient')}</span>
+  );
+}
 export function SecretNotice({ secret, clear }: { secret: string; clear: () => void }) {
   const l = useLabel();
   useEffect(() => {

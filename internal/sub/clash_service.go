@@ -49,11 +49,6 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	if err != nil {
 		return "", "", err
 	}
-	if legacy || s.shadowrocket {
-		if err := subReq.checkCapabilities(inbounds, subId, "clash-legacy"); err != nil {
-			return "", "", err
-		}
-	}
 	compat := &subscriptioncompat.Service{DB: database.GetDB(), SuppressSecureDNS: s.shadowrocket}
 	projection, err := compat.Projection(subId)
 	if err != nil {
@@ -445,29 +440,10 @@ func (s *SubClashService) getProxies(subReq *SubService, inbound *model.Inbound,
 			applyExternalProxyTLSToStream(extPrxy, workingStream, security)
 		}
 		applyHostStreamOverrides(extPrxy, workingStream)
-		var clientStream map[string]any
-		if raw, _ := extPrxy["mgmaClientStream"].(string); raw != "" {
-			if json.Unmarshal([]byte(raw), &clientStream) != nil {
-				continue
-			}
-			workingStream = clientStream
-			if a, ok := clientStream["address"].(string); ok {
-				workingInbound.Listen = strings.Trim(a, "[]")
-			}
-			if p, ok := clientStream["port"].(float64); ok {
-				workingInbound.Port = int(p)
-			}
-		}
 
 		proxy := s.buildProxy(subReq, &workingInbound, client, workingStream, extPrxy)
 		if len(proxy) > 0 {
-			proxy["_mgma-host-id"] = extPrxy["mgmaHostID"]
 			proxy["_mgma-inbound-id"] = inbound.Id
-			if clientStream != nil {
-				for key, value := range subscriptioncompat.MihomoConnection(clientStream) {
-					proxy[key] = value
-				}
-			}
 			// Host-only mihomo knob: ip-version is a top-level proxy field, set
 			// last so it cannot be clobbered. Absent for legacy externalProxy.
 			if v, _ := extPrxy["mihomoIpVersion"].(string); v != "" {
@@ -1003,7 +979,7 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 	if xhttp == nil {
 		return nil
 	}
-	xhttp = subscriptioncompat.EffectiveXHTTP(xhttp)
+	xhttp = effectiveXHTTP(xhttp)
 	opts := map[string]any{}
 
 	// Direct fields: path, mode
@@ -1137,12 +1113,12 @@ func buildXhttpClashOpts(xhttp map[string]any) map[string]any {
 	}
 
 	if down, ok := xhttp["downloadSettings"].(map[string]any); ok && len(down) > 0 {
-		connection := subscriptioncompat.MihomoConnection(down)
+		connection := mihomoConnection(down)
 		transport, _ := down["xhttpSettings"].(map[string]any)
 		if transport == nil {
 			transport, _ = down["splithttpSettings"].(map[string]any)
 		}
-		transport = subscriptioncompat.EffectiveXHTTP(transport)
+		transport = effectiveXHTTP(transport)
 		downOpts := buildXhttpClashOpts(transport)
 		for _, key := range []string{"path", "host", "headers", "reuse-settings"} {
 			if v, exists := downOpts[key]; exists {

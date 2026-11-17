@@ -63,34 +63,3 @@ func TestExternalCipherIsDomainSeparatedAndRejectsCorruption(t *testing.T) {
 		t.Fatalf("wrong-key decrypt=%v", err)
 	}
 }
-
-func TestXHTTPProfileRejectsMistypedPublicConnectionFields(t *testing.T) {
-	base := map[string]any{"network": "xhttp", "security": "none", "xhttpSettings": map[string]any{"path": "/x/"}}
-	for name, change := range map[string]func(map[string]any){
-		"network":  func(v map[string]any) { v["network"] = true },
-		"security": func(v map[string]any) { v["security"] = false },
-		"port":     func(v map[string]any) { v["port"] = 443.5 },
-		"header": func(v map[string]any) {
-			v["xhttpSettings"].(map[string]any)["headers"] = map[string]any{"x-test": "bad\r\nInjected: yes"}
-		},
-		"boolean": func(v map[string]any) { v["xhttpSettings"].(map[string]any)["noGRPCHeader"] = "false" },
-		"range": func(v map[string]any) {
-			v["xhttpSettings"].(map[string]any)["xmux"] = map[string]any{"maxConcurrency": "8-4"}
-		},
-		"keepalive": func(v map[string]any) {
-			v["xhttpSettings"].(map[string]any)["xmux"] = map[string]any{"hKeepAlivePeriod": "1-2"}
-		},
-		"alpn": func(v map[string]any) {
-			v["security"] = "tls"
-			v["tlsSettings"] = map[string]any{"serverName": "cdn.test", "alpn": []any{"invalid"}}
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			v := cloneMap(base)
-			change(v)
-			if err := ValidateConnection(v, "/x/", false); !errors.Is(err, ErrInvalid) {
-				t.Fatalf("accepted %s: %v", name, err)
-			}
-		})
-	}
-}

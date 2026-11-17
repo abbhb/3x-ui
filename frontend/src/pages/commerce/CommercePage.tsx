@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
@@ -34,10 +34,9 @@ import {
   type Plan,
 } from '@/schemas/commerce';
 import { useLabel, PlanEditor, SettingsEditor } from './CommerceForms';
-import { SecretNotice, PageButtons } from './CommerceShared';
+import { AccountClientLink, SecretNotice, PageButtons } from './CommerceShared';
 import AccountDetail from './AccountDetail';
 import ExternalSources from '@/pages/subscriptions/ExternalSources';
-import SubscriptionRoutes from '@/pages/subscriptions/SubscriptionRoutes';
 import SubscriptionPolicy from '@/pages/subscriptions/SubscriptionPolicy';
 import { useSubscriptionLabel } from '@/pages/subscriptions/ExternalSources';
 import { money, date, bytes } from './commerceFormat';
@@ -47,7 +46,8 @@ export default function CommercePage() {
   const sl = useSubscriptionLabel();
   const { antdThemeConfig, isDark, isUltra } = useTheme();
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') || 'accounts';
+  const requestedTab = params.get('tab') || 'accounts';
+  const tab = requestedTab === 'routes' ? 'accounts' : requestedTab;
   const accountID = Number(params.get('account') || 0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -55,6 +55,14 @@ export default function CommercePage() {
   const [secret, setSecret] = useState('');
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (requestedTab === 'routes') {
+      const next = new URLSearchParams(params);
+      next.set('tab', 'accounts');
+      next.delete('route');
+      setParams(next, { replace: true });
+    }
+  }, [requestedTab, params, setParams]);
   const accounts = useQuery({
     queryKey: ['commerce', 'accounts', page, search],
     queryFn: () =>
@@ -158,18 +166,6 @@ export default function CommercePage() {
                         />
                       ),
                     },
-                    {
-                      key: 'routes',
-                      label: sl('routes'),
-                      children: (
-                        <SubscriptionRoutes
-                          selected={Number(params.get('route') || 0)}
-                          select={(id) =>
-                            setParams(id ? { tab: 'routes', route: String(id) } : { tab: 'routes' })
-                          }
-                        />
-                      ),
-                    },
                     { key: 'policy', label: sl('policy'), children: <SubscriptionPolicy /> },
                     {
                       key: 'accounts',
@@ -201,6 +197,12 @@ export default function CommercePage() {
                                   >
                                     {a.username}
                                   </Button>
+                                ),
+                              },
+                              {
+                                title: l('client'),
+                                render: (_, a: Account) => (
+                                  <AccountClientLink clientID={a.client_id} />
                                 ),
                               },
                               {

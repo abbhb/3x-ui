@@ -267,7 +267,7 @@ def main(argv=None):
     parser.add_argument("--traffic-policy", required=True, choices=["preserve-total-as-download"])
     parser.add_argument("--ipv6-allocation", action="append", default=[])
     parser.add_argument("--archive-unmanaged-disabled", action="store_true", help="retain disabled users without portal accounts or pending plans in the private legacy archive, reserving all identities")
-    parser.add_argument("--stage4", action="store_true", help="include external ciphertext, cascades, concrete XHTTP routes and policy")
+    parser.add_argument("--stage4", action="store_true", help="include external ciphertext, native Hosts, policy and archived route metadata")
     parser.add_argument("--clash-template")
     parser.add_argument("--tls-name-map")
     args = parser.parse_args(argv)

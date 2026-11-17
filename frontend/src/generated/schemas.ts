@@ -2533,33 +2533,6 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "EntryChoice": {
-    "properties": {
-      "id": {
-        "type": "integer"
-      },
-      "name": {
-        "type": "string"
-      },
-      "proxy_type": {
-        "type": "string"
-      },
-      "source_id": {
-        "type": "integer"
-      },
-      "source_name": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "proxy_type",
-      "source_id",
-      "source_name"
-    ],
-    "type": "object"
-  },
   "ExternalSelection": {
     "properties": {
       "mode": {
@@ -3233,41 +3206,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "useSniAsHost",
       "verifyPeerCertByName",
       "vlessRoute"
-    ],
-    "type": "object"
-  },
-  "HostInput": {
-    "properties": {
-      "cascade_mode": {
-        "type": "string"
-      },
-      "clear_entry": {
-        "type": "boolean"
-      },
-      "client_stream": {
-        "type": "string"
-      },
-      "entry_node_id": {
-        "nullable": true,
-        "type": "integer"
-      },
-      "entry_yaml": {
-        "type": "string"
-      },
-      "mihomo_only": {
-        "nullable": true,
-        "type": "boolean"
-      },
-      "revision": {
-        "format": "int64",
-        "type": "integer"
-      }
-    },
-    "required": [
-      "cascade_mode",
-      "clear_entry",
-      "client_stream",
-      "revision"
     ],
     "type": "object"
   },
@@ -6418,77 +6356,6 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "url"
-    ],
-    "type": "object"
-  },
-  "SubscriptionHost": {
-    "properties": {
-      "cascade_mode": {
-        "type": "string"
-      },
-      "client_stream": {
-        "type": "string"
-      },
-      "entry_configured": {
-        "type": "boolean"
-      },
-      "entry_node_id": {
-        "nullable": true,
-        "type": "integer"
-      },
-      "host_id": {
-        "type": "integer"
-      },
-      "mihomo_only": {
-        "type": "boolean"
-      },
-      "revision": {
-        "format": "int64",
-        "type": "integer"
-      }
-    },
-    "required": [
-      "cascade_mode",
-      "client_stream",
-      "entry_configured",
-      "host_id",
-      "mihomo_only",
-      "revision"
-    ],
-    "type": "object"
-  },
-  "SubscriptionHostView": {
-    "properties": {
-      "address": {
-        "type": "string"
-      },
-      "host_id": {
-        "type": "integer"
-      },
-      "inbound_id": {
-        "type": "integer"
-      },
-      "network": {
-        "type": "string"
-      },
-      "path": {
-        "type": "string"
-      },
-      "remark": {
-        "type": "string"
-      },
-      "settings": {
-        "$ref": "#/components/schemas/SubscriptionHost"
-      }
-    },
-    "required": [
-      "address",
-      "host_id",
-      "inbound_id",
-      "network",
-      "path",
-      "remark",
-      "settings"
     ],
     "type": "object"
   },

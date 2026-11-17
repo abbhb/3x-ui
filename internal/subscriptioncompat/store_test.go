@@ -20,6 +20,39 @@ func compatDB(t *testing.T) *Service {
 	return &Service{DB: database.GetDB()}
 }
 
+func TestRetiredCascadeReferencesDoNotPreventSourceRefreshOrDeletion(t *testing.T) {
+	s := compatDB(t)
+	source, err := s.CreateSource(nil, SourceInput{Name: "Retired entry", RefreshMinutes: 15})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.ImportSnapshot(source.ID, nil, []byte(`proxies: [{name: old, type: socks5, server: old.test, port: 1080}]`)); err != nil {
+		t.Fatal(err)
+	}
+	nodes, err := s.Nodes(source.ID, nil, 1)
+	if err != nil || len(nodes) != 1 {
+		t.Fatalf("source nodes: %+v %v", nodes, err)
+	}
+	ib := model.Inbound{Tag: "retired-reference", Protocol: model.VLESS, Port: 26456}
+	if err = s.DB.Create(&ib).Error; err != nil {
+		t.Fatal(err)
+	}
+	h := model.Host{InboundId: ib.Id, Address: "native.test"}
+	if err = s.DB.Create(&h).Error; err != nil {
+		t.Fatal(err)
+	}
+	archived := model.SubscriptionHost{HostID: h.Id, EntryNodeID: &nodes[0].ID, CascadeMode: "replace"}
+	if err = s.DB.Create(&archived).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.ImportSnapshot(source.ID, nil, []byte(`proxies: [{name: new, type: socks5, server: new.test, port: 1080}]`)); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.DeleteSource(source.ID, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExternalRefreshKeepsLastGoodAndSelectedIdentity(t *testing.T) {
 	s := compatDB(t)
 	source, err := s.CreateSource(nil, SourceInput{Name: "Airport", GroupName: "Airport", Enabled: true, RefreshMinutes: 15, URL: "https://synthetic.example.test/private?token=synthetic"})

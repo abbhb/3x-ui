@@ -22,8 +22,6 @@ var (
 	ErrConflict             = errors.New("subscription_configuration_conflict")
 	ErrNotFound             = errors.New("subscription_resource_not_found")
 	ErrBudget               = errors.New("external_projection_limit_exceeded")
-	ErrCascade              = errors.New("cascade_entry_unavailable")
-	ErrMihomoRequired       = errors.New("cascade_requires_mihomo")
 )
 
 func externalKey() ([]byte, error) {

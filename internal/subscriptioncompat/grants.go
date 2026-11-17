@@ -29,6 +29,8 @@ func HostSignatures(tx *gorm.DB, ids []int) (map[string]string, error) {
 		if err := tx.Where("id IN ?", part).Find(&hosts).Error; err != nil {
 			return nil, err
 		}
+		// Preserve stored plan identities across removal of commerce route overrides.
+		// The archived client stream contributes only to this historical signature.
 		var routes []model.SubscriptionHost
 		if err := tx.Where("host_id IN ?", part).Find(&routes).Error; err != nil {
 			return nil, err

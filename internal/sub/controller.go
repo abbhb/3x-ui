@@ -36,11 +36,7 @@ const (
 // client, never-existed id) and becomes 404. A real error becomes 500. No
 // body — VPN clients only look at the status.
 func writeSubError(c *gin.Context, err error) {
-	if errors.Is(err, subscriptioncompat.ErrMihomoRequired) {
-		c.String(http.StatusUnprocessableEntity, err.Error())
-		return
-	}
-	if errors.Is(err, subscriptioncompat.ErrCascade) || errors.Is(err, subscriptioncompat.ErrEncryptedUnavailable) || errors.Is(err, subscriptioncompat.ErrBudget) {
+	if errors.Is(err, subscriptioncompat.ErrEncryptedUnavailable) || errors.Is(err, subscriptioncompat.ErrBudget) {
 		c.String(http.StatusServiceUnavailable, "subscription_configuration_unavailable")
 		return
 	}

@@ -46,6 +46,7 @@ type ClientSlim struct {
 // fields treat 0 as "unset" on the lower bound and 0 (or negative) as
 // "unbounded" on the upper bound.
 type ClientPageParams struct {
+	ClientID int    `form:"clientId" binding:"omitempty,min=1"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"pageSize"`
 	Search   string `form:"search"`
@@ -248,6 +249,9 @@ func (q clientQuery) applyParams(tx *gorm.DB, params ClientPageParams, onlines [
 		tx = tx.Where(cond, args...)
 	}
 
+	if params.ClientID != 0 {
+		where("c.id = ?", params.ClientID)
+	}
 	if needle := strings.TrimSpace(params.Search); needle != "" {
 		cond, args := clientSearchCond(caseVariants(needle))
 		where(cond, args...)

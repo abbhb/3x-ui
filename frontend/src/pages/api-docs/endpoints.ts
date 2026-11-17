@@ -597,21 +597,10 @@ export const sections: readonly Section[] = [
   },
   {
     id: 'subscriptionCompatibility',
-    title: 'Subscription routes and policy',
+    title: 'Subscription grants and policy',
     description:
-      'Full panel administrators only. These operations change subscriptions, never listeners or user credentials. Cascades require Mihomo. Client-only XHTTP routes are omitted from formats that cannot express them.',
+      'Full panel administrators only. These operations change subscription grants and policy, never listeners or user credentials. Configure connections with native inbounds, Hosts, outbounds and routing.',
     endpoints: [
-      {
-        method: 'GET',
-        path: '/panel/api/commerce/subscriptions/cascade-entries',
-        summary: 'Search active public entry-node metadata without credentials',
-        responseSchema: 'EntryChoice',
-        responseSchemaArray: true,
-        params: [
-          { name: 'search', in: 'query', type: 'string', optional: true },
-          { name: 'selected_id', in: 'query', type: 'integer', optional: true },
-        ],
-      },
       {
         method: 'GET',
         path: '/panel/api/commerce/subscriptions/catalog',
@@ -631,28 +620,6 @@ export const sections: readonly Section[] = [
         summary: 'Save policy using its optimistic revision',
         responseSchema: 'SubscriptionPolicy',
         requestSchema: { $ref: '#/components/schemas/SubscriptionPolicy' },
-      },
-      {
-        method: 'GET',
-        path: '/panel/api/commerce/subscriptions/hosts',
-        summary: 'List concrete hosts and public XHTTP client routes',
-        responseSchema: 'SubscriptionHostView',
-        responseSchemaArray: true,
-      },
-      {
-        method: 'GET',
-        path: '/panel/api/commerce/subscriptions/hosts/:id',
-        summary: 'Read host cascade and public XHTTP settings',
-        responseSchema: 'SubscriptionHostView',
-        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Concrete native Host ID.' }],
-      },
-      {
-        method: 'PUT',
-        path: '/panel/api/commerce/subscriptions/hosts/:id',
-        summary: 'Save cascade and XHTTP route using its revision',
-        responseSchema: 'SubscriptionHost',
-        requestSchema: { $ref: '#/components/schemas/HostInput' },
-        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Concrete native Host ID.' }],
       },
     ],
   },
@@ -2168,6 +2135,13 @@ export const sections: readonly Section[] = [
         summary:
           'Filter, sort, and paginate clients on the server. Each item is a slim row (no uuid/password/auth/flow/security/reverse/tgId) so the clients page can ship 25-ish rows in a few KB instead of the full table. The response also includes a summary computed across the full DB row set so dashboard counters stay stable as the user paginates or filters: the *Count fields are exact, while the email arrays beside them stop at 200 entries so the payload does not grow with the panel. Page size capped at 200; fetch /get/:email to obtain the full per-client payload for an edit/info modal.',
         params: [
+          {
+            name: 'clientId',
+            in: 'query',
+            type: 'integer',
+            desc: 'Exact native client ID, used by account links. A nonexistent or deleted ID returns an empty list.',
+            optional: true,
+          },
           {
             name: 'page',
             in: 'query',
