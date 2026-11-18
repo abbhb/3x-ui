@@ -1819,7 +1819,7 @@ func TestSub_ClientHostRule_ScopedToInbound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetClash: %v", err)
 	}
-	if got := strings.Count(yaml, "host-a.cdn.com"); got != 1 {
+	if got := strings.Count(yaml, "server: host-a.cdn.com\n"); got != 1 {
 		t.Fatalf("clash host-a server appears %d times, want once:\n%s", got, yaml)
 	}
 	if strings.Contains(yaml, "host-a2.cdn.com") {
@@ -1906,7 +1906,7 @@ func TestSub_ClientHostRule_SurvivesGroupEdit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetClash: %v", err)
 	}
-	if got := strings.Count(yaml, "b.cdn.com"); got != 1 {
+	if got := strings.Count(yaml, "server: b.cdn.com\n"); got != 1 {
 		t.Fatalf("clash bound host appears %d times, want once:\n%s", got, yaml)
 	}
 	if !strings.Contains(yaml, "new.sni") {

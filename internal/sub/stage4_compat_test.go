@@ -64,6 +64,9 @@ func TestStage4ExternalOnlySubscriptionAndPrivateIsolation(t *testing.T) {
 	if err = yaml.Unmarshal([]byte(out), &document); err != nil {
 		t.Fatal(err)
 	}
+	if document["tun"] != nil || strings.Contains(out, "DOMAIN,shared.test,DIRECT") {
+		t.Fatal("external-only subscription altered endpoint routing")
+	}
 	if document["proxy-groups"] == nil {
 		t.Fatal("external-only subscription has no choices")
 	}
