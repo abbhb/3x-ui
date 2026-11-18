@@ -25,23 +25,30 @@ export function useSubscriptionLabel() {
   const { t } = useTranslation();
   return (key: string) => t(`pages.subscriptionCompat.${key}`);
 }
-export function useExternalRequest(token?: string) {
+export function useExternalRequest(token?: string, clientId?: number) {
   return <T,>(path: string, schema: z.ZodType<T>, body?: unknown, method?: string) =>
     token === undefined
-      ? commerceRequest(path, schema, body, method)
+      ? commerceRequest(
+          clientId ? `subscriptions/clients/${clientId}/${path}` : path,
+          schema,
+          body,
+          method,
+        )
       : portalRequest(path, schema, token, body, method);
 }
 export default function ExternalSources({
   token,
+  clientId,
   selected,
   select,
 }: {
   token?: string;
+  clientId?: number;
   selected?: number;
   select?: (id: number) => void;
 }) {
   const l = useSubscriptionLabel();
-  const request = useExternalRequest(token);
+  const request = useExternalRequest(token, clientId);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [localID, setLocalID] = useState(0);
@@ -56,7 +63,7 @@ export default function ExternalSources({
     else setLocalID(next);
   }
   const rows = useQuery({
-    queryKey: ['externalSources', token ?? 'admin', page, search],
+    queryKey: ['externalSources', token ?? clientId ?? 'admin', page, search],
     queryFn: () =>
       request(
         `external-subscriptions?page=${page}&search=${encodeURIComponent(search)}`,
@@ -65,7 +72,7 @@ export default function ExternalSources({
     enabled: id === 0,
   });
   const current = useQuery({
-    queryKey: ['externalSource', token ?? 'admin', id],
+    queryKey: ['externalSource', token ?? clientId ?? 'admin', id],
     queryFn: () => request(`external-subscriptions/${id}`, SourceSchema),
     enabled: id > 0,
   });
@@ -93,7 +100,7 @@ export default function ExternalSources({
       <Alert
         type="info"
         showIcon
-        title={l(token === undefined ? 'adminSourcesHelp' : 'privateSourcesHelp')}
+        title={l(token === undefined && !clientId ? 'adminSourcesHelp' : 'privateSourcesHelp')}
       />
       {(error || rows.error || current.error) && (
         <Alert
@@ -115,8 +122,9 @@ export default function ExternalSources({
       {id > 0 ? (
         current.data && (
           <SourceDetail
-            key={`${token ?? 'admin'}:${id}`}
+            key={`${token ?? clientId ?? 'admin'}:${id}`}
             token={token}
+            clientId={clientId}
             source={current.data}
             changed={() => current.refetch()}
             back={() => choose(0)}
@@ -157,7 +165,7 @@ export default function ExternalSources({
                 </Form.Item>
                 <Form.Item
                   name="enabled"
-                  label={l(token === undefined ? 'autoRefresh' : 'mixAndRefresh')}
+                  label={l(token === undefined && !clientId ? 'autoRefresh' : 'mixAndRefresh')}
                   valuePropName="checked"
                 >
                   <Switch />
@@ -225,16 +233,18 @@ export default function ExternalSources({
 function SourceDetail({
   source,
   token,
+  clientId,
   changed,
   back,
 }: {
   source: Source;
   token?: string;
+  clientId?: number;
   changed: () => Promise<unknown>;
   back: () => void;
 }) {
   const l = useSubscriptionLabel();
-  const request = useExternalRequest(token);
+  const request = useExternalRequest(token, clientId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -242,7 +252,7 @@ function SourceDetail({
   const [yaml, setYaml] = useState('');
   const [credentialForm] = Form.useForm();
   const nodes = useQuery({
-    queryKey: ['externalNodes', token ?? 'admin', source.id, page, source.updated_at],
+    queryKey: ['externalNodes', token ?? clientId ?? 'admin', source.id, page, source.updated_at],
     queryFn: () =>
       request(`external-subscriptions/${source.id}/nodes?page=${page}`, z.array(NodeSchema)),
   });

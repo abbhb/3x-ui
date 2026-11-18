@@ -130,8 +130,8 @@ func TestFetchSubscriptionLinksSharesStaleResultAfterRefreshFailure(t *testing.T
 
 	subscriptionCache.Lock()
 	subscriptionCache.m[staleURL] = subscriptionCacheEntry{
-		links:     stale,
-		fetchedAt: time.Now().Add(-subscriptionCacheTTL),
+		subscriptionContent: subscriptionContent{links: stale},
+		fetchedAt:           time.Now().Add(-subscriptionCacheTTL),
 	}
 	for i := range subscriptionCacheCapacity - 1 {
 		subscriptionCache.m["cached-"+strconv.Itoa(i)] = subscriptionCacheEntry{fetchedAt: time.Now()}
@@ -172,12 +172,12 @@ func TestDoFetchSubscriptionLinks_RejectsOversizedBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	links, err := doFetchSubscriptionLinks(srv.URL)
+	content, err := fetchSubscriptionContent(srv.URL)
 	if !errors.Is(err, errSubscriptionBodyTooLarge) {
 		t.Fatalf("err = %v, want errSubscriptionBodyTooLarge", err)
 	}
-	if links != nil {
-		t.Fatalf("links = %v, want nil", links)
+	if content.links != nil {
+		t.Fatalf("content.links = %v, want nil", content.links)
 	}
 }
 
@@ -193,12 +193,12 @@ func TestDoFetchSubscriptionLinks_AcceptsBodyAtLimit(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	links, err := doFetchSubscriptionLinks(srv.URL)
+	content, err := fetchSubscriptionContent(srv.URL)
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if len(links) != 1 || links[0] != link {
-		t.Fatalf("links = %v, want [%q]", links, link)
+	if len(content.links) != 1 || content.links[0] != link {
+		t.Fatalf("content.links = %v, want [%q]", content.links, link)
 	}
 }
 
@@ -302,8 +302,8 @@ func TestExpandEntryCacheHitWritesNothing(t *testing.T) {
 
 	subscriptionCache.Lock()
 	subscriptionCache.m[subURL] = subscriptionCacheEntry{
-		links:     []string{"vless://uuid@example.com:443#Node"},
-		fetchedAt: time.Now(),
+		subscriptionContent: subscriptionContent{links: []string{"vless://uuid@example.com:443#Node"}},
+		fetchedAt:           time.Now(),
 	}
 	subscriptionCache.Unlock()
 
@@ -381,8 +381,8 @@ func TestDoFetchSubscriptionLinksRefusesPrivateTargets(t *testing.T) {
 	}))
 	defer srv.Close()
 	viaName := strings.Replace(srv.URL, "127.0.0.1", "localhost", 1)
-	if links, err := doFetchSubscriptionLinks(viaName + "/admin"); err == nil || links != nil {
-		t.Fatalf("fetch of a loopback target = %v, %v; want it refused", links, err)
+	if content, err := fetchSubscriptionContent(viaName + "/admin"); err == nil || content.links != nil {
+		t.Fatalf("fetch of a loopback target = %v, %v; want it refused", content.links, err)
 	}
 	if hits.Load() != 0 {
 		t.Fatalf("the loopback target received %d request(s)", hits.Load())
@@ -426,8 +426,8 @@ func TestDoFetchSubscriptionLinksCapsTooManyLinks(t *testing.T) {
 		_, _ = w.Write([]byte(strings.Repeat("trojan://p@a:1\n", subscriptionMaxLinks+1)))
 	}))
 	defer srv.Close()
-	if links, err := doFetchSubscriptionLinks(srv.URL); err != nil || len(links) != subscriptionMaxLinks {
-		t.Fatalf("fetch = %d links, %v; want the first %d", len(links), err, subscriptionMaxLinks)
+	if content, err := fetchSubscriptionContent(srv.URL); err != nil || len(content.links) != subscriptionMaxLinks {
+		t.Fatalf("fetch = %d content.links, %v; want the first %d", len(content.links), err, subscriptionMaxLinks)
 	}
 }
 
@@ -438,8 +438,8 @@ func TestDoFetchSubscriptionLinksFetchesOperatorChosenPrivateAddress(t *testing.
 		_, _ = w.Write([]byte("vless://uuid@example.com:443#lan"))
 	}))
 	defer srv.Close()
-	if links, err := doFetchSubscriptionLinks(srv.URL + "/sub"); err != nil || len(links) != 1 {
-		t.Fatalf("fetch of an operator-chosen loopback URL = %v, %v; want its link", links, err)
+	if content, err := fetchSubscriptionContent(srv.URL + "/sub"); err != nil || len(content.links) != 1 {
+		t.Fatalf("fetch of an operator-chosen loopback URL = %v, %v; want its link", content.links, err)
 	}
 }
 
@@ -457,8 +457,8 @@ func TestDoFetchSubscriptionLinksUsesTheHostProxy(t *testing.T) {
 	subscriptionProxy = http.ProxyURL(proxyURL)
 	t.Cleanup(func() { subscriptionProxy = previous })
 
-	if links, err := doFetchSubscriptionLinks("http://provider.example/sub"); err != nil || len(links) != 1 {
-		t.Fatalf("proxied fetch = %v, %v; want the provider's link", links, err)
+	if content, err := fetchSubscriptionContent("http://provider.example/sub"); err != nil || len(content.links) != 1 {
+		t.Fatalf("proxied fetch = %v, %v; want the provider's link", content.links, err)
 	}
 	if proxied.Load() != 1 {
 		t.Fatalf("proxy saw %d requests, want 1", proxied.Load())

@@ -24,6 +24,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/sub"
 	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -378,7 +379,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	})
 
 	_, _ = s.cron.AddFunc("@every 1m", func() {
-		if err := (&subscriptioncompat.Service{DB: database.GetDB()}).Tick(s.ctx); err != nil {
+		if err := (&subscriptioncompat.Service{DB: database.GetDB(), ParseSource: sub.ParseSourceSnapshot}).Tick(s.ctx); err != nil {
 			logger.Warning("external subscription refresh is pending")
 		}
 	})

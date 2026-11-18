@@ -31,6 +31,7 @@ const (
 
 type ParsedNode struct {
 	Key, Name, Type string
+	ShareLink       string
 	Payload         map[string]any
 	Position        int
 }
@@ -184,6 +185,19 @@ func ParseSnapshot(raw []byte) (Snapshot, error) {
 	if !ok || len(nodes) > MaxSourceNodes {
 		return result, ErrInvalidSnapshot
 	}
+	return normalizeSnapshot(nodes, nil)
+}
+
+// ShareLinkSnapshot uses the same identities and payload limits as YAML.
+func ShareLinkSnapshot(nodes []any, links []string) (Snapshot, error) {
+	if len(links) != len(nodes) || len(nodes) > MaxSourceNodes {
+		return Snapshot{}, ErrInvalidSnapshot
+	}
+	return normalizeSnapshot(nodes, links)
+}
+
+func normalizeSnapshot(nodes []any, links []string) (Snapshot, error) {
+	var result Snapshot
 	counts := map[string]int{}
 	for pos, raw := range nodes {
 		node, err := normalizeNode(raw)
@@ -198,7 +212,11 @@ func ParseSnapshot(raw []byte) (Snapshot, error) {
 		tuple = append(tuple, n)
 		keyBytes, _ := canonicalJSON(tuple)
 		hash := sha256.Sum256(keyBytes)
-		result.Nodes = append(result.Nodes, ParsedNode{Key: hex.EncodeToString(hash[:]), Name: node["name"].(string), Type: node["type"].(string), Payload: node, Position: pos})
+		entry := ParsedNode{Key: hex.EncodeToString(hash[:]), Name: node["name"].(string), Type: node["type"].(string), Payload: node, Position: pos}
+		if links != nil {
+			entry.ShareLink = links[pos]
+		}
+		result.Nodes = append(result.Nodes, entry)
 	}
 	if len(result.Nodes) == 0 {
 		return Snapshot{}, ErrInvalidSnapshot

@@ -70,7 +70,7 @@ it('creates a private source, publishes YAML and clears both write-only inputs w
   await waitFor(() =>
     expect((screen.getByLabelText('New subscription URL') as HTMLInputElement).value).toBe(''),
   );
-  const yaml = screen.getByLabelText('Or paste YAML') as HTMLTextAreaElement;
+  const yaml = screen.getByLabelText('Or paste YAML or share links') as HTMLTextAreaElement;
   fireEvent.change(yaml, {
     target: { value: 'proxies: [{name: only-me, type: socks5, server: test, port: 1080}]' },
   });
@@ -108,4 +108,45 @@ it('submits the loaded policy revision and keeps edited rules visible when a con
   const call = vi.mocked(commerceRequest).mock.calls.find((args) => args[3] === 'PUT');
   expect(call?.[2]).toMatchObject({ revision: 7 });
   expect((rules as HTMLTextAreaElement).value).toContain('DOMAIN,example.test,Primary');
+});
+
+it('opens the client-scoped private source editor and labels inherited formats without changing native links', async () => {
+  const { default: ClientSubscriptionSources } =
+    await import('@/pages/subscriptions/ClientSubscriptionSources');
+  vi.mocked(commerceRequest).mockImplementation(async (path) => {
+    if (path === 'subscriptions/clients/17/external-inventory')
+      return {
+        linked: true,
+        plan: 'Basic',
+        direct: [],
+        sources: [
+          {
+            id: 9,
+            name: 'Selected airport',
+            private: false,
+            nodes: [
+              { id: 66, name: 'HY2', type: 'hysteria2', share_link: true },
+              { id: 67, name: 'SSH', type: 'ssh', share_link: false },
+            ],
+          },
+        ],
+      };
+    if (path === 'subscriptions/clients/17/external-subscriptions?page=1&search=') return [];
+    throw new Error('unexpected client scope');
+  });
+  renderWithProviders(<ClientSubscriptionSources clientId={17} />);
+  fireEvent.click(await screen.findByText('Selected airport (2)'));
+  expect(await screen.findByText('HY2')).toBeTruthy();
+  expect(screen.getByText('Mihomo · URI · Xray JSON')).toBeTruthy();
+  expect(screen.getByText('Mihomo')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'View public source' }).getAttribute('href')).toBe(
+    '/panel/commerce?tab=external&source=9',
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Manage private sources' }));
+  await screen.findByRole('button', { name: 'Add source' });
+  await waitFor(() =>
+    expect(vi.mocked(commerceRequest).mock.calls.map((call) => call[0])).toContain(
+      'subscriptions/clients/17/external-subscriptions?page=1&search=',
+    ),
+  );
 });

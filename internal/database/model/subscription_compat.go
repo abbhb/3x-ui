@@ -33,16 +33,17 @@ type SubscriptionSource struct {
 }
 
 type SubscriptionNode struct {
-	ID                int                 `json:"id" gorm:"primaryKey"`
-	SourceID          int                 `json:"source_id" gorm:"index;uniqueIndex:subscription_node_key,priority:1"`
-	Source            *SubscriptionSource `json:"-" gorm:"foreignKey:SourceID;constraint:OnDelete:CASCADE"`
-	ExternalKey       string              `json:"-" gorm:"uniqueIndex:subscription_node_key,priority:2"`
-	Name              string              `json:"name"`
-	ProxyType         string              `json:"proxy_type"`
-	PayloadCiphertext string              `json:"-"`
-	PlainBytes        int                 `json:"-"`
-	Position          int                 `json:"position"`
-	IsActive          bool                `json:"is_active"`
+	ID                  int                 `json:"id" gorm:"primaryKey"`
+	SourceID            int                 `json:"source_id" gorm:"index;uniqueIndex:subscription_node_key,priority:1"`
+	Source              *SubscriptionSource `json:"-" gorm:"foreignKey:SourceID;constraint:OnDelete:CASCADE"`
+	ExternalKey         string              `json:"-" gorm:"uniqueIndex:subscription_node_key,priority:2"`
+	Name                string              `json:"name"`
+	ProxyType           string              `json:"proxy_type"`
+	ShareLinkCiphertext string              `json:"-"`
+	PayloadCiphertext   string              `json:"-"`
+	PlainBytes          int                 `json:"-"`
+	Position            int                 `json:"position"`
+	IsActive            bool                `json:"is_active"`
 }
 
 // SubscriptionHost is retired commerce route metadata, retained only for migration

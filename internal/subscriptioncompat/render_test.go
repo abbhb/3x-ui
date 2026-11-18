@@ -67,7 +67,7 @@ func TestExternalNodesDoNotBroadenOtherPolicyGroups(t *testing.T) {
 	h := model.Host{InboundId: ib.Id, Remark: "A", Address: "landing.test"}
 	s.DB.Create(&h)
 	config := map[string]any{"proxies": []map[string]any{{"name": "A", "type": "socks5", "server": "a.test", "port": 1080, "_mgma-host-id": h.Id}, {"name": "B", "type": "socks5", "server": "b.test", "port": 1080}}, "proxy-groups": []map[string]any{{"name": "Only A", "type": "select", "proxies": []string{"A"}}, {"name": "Reject", "type": "select", "proxies": []string{"REJECT"}}, {"name": "Auto", "type": "select", "include-all-proxies": true, "filter": "^A"}}}
-	projection := Projection{HasExternal: true, Sources: []Overlay{{ID: 999, GroupName: "Airport", Nodes: []map[string]any{{"name": "Airport node", "type": "socks5", "server": "airport.test", "port": 1080}}}}}
+	projection := Projection{HasExternal: true, Sources: []Overlay{{ID: 999, GroupName: "Airport", Nodes: []ProjectedNode{{Proxy: map[string]any{"name": "Airport node", "type": "socks5", "server": "airport.test", "port": 1080}}}}}}
 	if err := s.Render(config, projection, false); err != nil {
 		t.Fatal(err)
 	}

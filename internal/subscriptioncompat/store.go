@@ -17,6 +17,7 @@ import (
 )
 
 type Service struct {
+	ParseSource       func([]byte) (Snapshot, error)
 	SuppressSecureDNS bool
 	DB                *gorm.DB
 	Fetch             func(context.Context, string) ([]byte, error)
@@ -386,7 +387,14 @@ func (s *Service) publish(tx *gorm.DB, row *model.SubscriptionSource, snapshot S
 		}
 		node := byKey[candidate.Key]
 		node.SourceID, node.ExternalKey, node.Name, node.ProxyType = row.ID, candidate.Key, candidate.Name, candidate.Type
-		node.PayloadCiphertext, node.PlainBytes, node.Position, node.IsActive = cipher, len(plain), candidate.Position, true
+		node.ShareLinkCiphertext = ""
+		if candidate.ShareLink != "" {
+			node.ShareLinkCiphertext, err = Encrypt("share-link", []byte(candidate.ShareLink))
+			if err != nil {
+				return err
+			}
+		}
+		node.PayloadCiphertext, node.PlainBytes, node.Position, node.IsActive = cipher, len(plain)+len(candidate.ShareLink), candidate.Position, true
 		if err := tx.Save(&node).Error; err != nil {
 			return err
 		}
@@ -416,12 +424,19 @@ func (s *Service) publish(tx *gorm.DB, row *model.SubscriptionSource, snapshot S
 	return tx.Save(row).Error
 }
 
+func (s *Service) parseSource(raw []byte) (Snapshot, error) {
+	if s.ParseSource != nil {
+		return s.ParseSource(raw)
+	}
+	return ParseSnapshot(raw)
+}
+
 func (s *Service) ImportSnapshot(id int, owner *int, raw []byte) (model.SubscriptionSource, error) {
 	var row model.SubscriptionSource
 	if _, err := sourceFor(s.DB, id, owner); err != nil {
 		return row, err
 	}
-	snapshot, err := ParseSnapshot(raw)
+	snapshot, err := s.parseSource(raw)
 	if err != nil {
 		return row, err
 	}
@@ -478,7 +493,7 @@ func (s *Service) Refresh(ctx context.Context, id int, owner *int) (model.Subscr
 	}
 	var snapshot Snapshot
 	if fetchErr == nil {
-		snapshot, fetchErr = ParseSnapshot(raw)
+		snapshot, fetchErr = s.parseSource(raw)
 	}
 	if fetchErr == nil {
 		err = s.DB.Transaction(func(tx *gorm.DB) error {

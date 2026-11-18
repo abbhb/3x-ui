@@ -9,6 +9,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/sub"
 	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
@@ -21,7 +22,28 @@ type SubscriptionCredentialInput struct {
 }
 
 func NewSubscriptionAdminController(commerce *gin.RouterGroup) {
-	newExternalSourceRoutes(commerce, true)
+	newExternalSourceRoutes(commerce, true, false)
+	clients := commerce.Group("/subscriptions/clients/:clientId")
+	clients.GET("/external-inventory", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("clientId"))
+		if err != nil || id <= 0 {
+			portalReply(c, nil, service.ErrPortalInvalid, true)
+			return
+		}
+		value, err := (&subscriptioncompat.Service{DB: database.GetDB()}).ClientSourcesFor(id, nil)
+		portalReply(c, value, err, true)
+	})
+	clients.Use(func(c *gin.Context) {
+		var account model.PortalAccount
+		id, err := strconv.Atoi(c.Param("clientId"))
+		if err != nil || id <= 0 || database.GetDB().Where("client_id = ?", id).First(&account).Error != nil {
+			portalReply(c, nil, subscriptioncompat.ErrNotFound, true)
+			c.Abort()
+			return
+		}
+		c.Set("portal_account", &account)
+	})
+	newExternalSourceRoutes(clients, true, true)
 	group := commerce.Group("/subscriptions")
 	group.GET("/catalog", func(c *gin.Context) {
 		value, err := (&subscriptioncompat.Service{DB: database.GetDB()}).HostCatalog()
@@ -42,16 +64,18 @@ func NewSubscriptionAdminController(commerce *gin.RouterGroup) {
 	})
 }
 
-func newExternalSourceRoutes(parent *gin.RouterGroup, admin bool) {
+func newExternalSourceRoutes(parent *gin.RouterGroup, admin, scoped bool) {
 	group := parent.Group("/external-subscriptions")
 	owner := func(c *gin.Context) *int {
-		if admin {
+		if !scoped {
 			return nil
 		}
 		a := c.MustGet("portal_account").(*model.PortalAccount)
 		return &a.ID
 	}
-	svc := func() *subscriptioncompat.Service { return &subscriptioncompat.Service{DB: database.GetDB()} }
+	svc := func() *subscriptioncompat.Service {
+		return &subscriptioncompat.Service{DB: database.GetDB(), ParseSource: sub.ParseSourceSnapshot}
+	}
 	group.Use(func(c *gin.Context) {
 		if !admin && c.Request.Method != http.MethodGet {
 			id := owner(c)

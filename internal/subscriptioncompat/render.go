@@ -15,13 +15,22 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
-type Overlay struct {
+type ProjectedNode struct {
 	ID        int
-	GroupName string
-	Nodes     []map[string]any
+	Proxy     map[string]any
+	ShareLink string
+}
+
+type Overlay struct {
+	ID         int
+	GroupName  string
+	SourceName string
+	Private    bool
+	Nodes      []ProjectedNode
 }
 type Projection struct {
 	Sources      []Overlay
+	PlanName     string
 	GroupMembers map[string][]string
 	Client       *model.ClientRecord
 	HasExternal  bool
@@ -69,6 +78,7 @@ func (s *Service) Projection(subID string) (Projection, error) {
 		}
 		selections = plan.ExternalSelections
 		result.GroupMembers = plan.GroupMembers
+		result.PlanName = plan.Name
 	}
 	var private []model.SubscriptionSource
 	if err = s.DB.Where("owner_account_id = ? AND enabled = ?", a.ID, true).Order("id").Limit(MaxPrivateSources + 1).Find(&private).Error; err != nil {
@@ -104,24 +114,35 @@ func (s *Service) Projection(subID string) (Projection, error) {
 		if len(nodes) > MaxSourceNodes {
 			return result, ErrBudget
 		}
-		overlay := Overlay{ID: source.ID, GroupName: source.GroupName}
+		overlay := Overlay{ID: source.ID, GroupName: source.GroupName, SourceName: source.Name, Private: source.OwnerAccountID != nil}
 		for _, node := range nodes {
 			payload, err := decryptedNode(node)
 			if err != nil {
 				return result, err
 			}
+			link := ""
+			linkBytes := 0
+			if node.ShareLinkCiphertext != "" {
+				uri, e := Decrypt("share-link", node.ShareLinkCiphertext)
+				if e != nil {
+					return result, e
+				}
+				link, linkBytes = string(uri), len(uri)
+			} else {
+				link = NodeShareLink(payload)
+			}
 			raw, _ := json.Marshal(payload)
 			if source.OwnerAccountID == nil {
 				publicCount++
-				publicBytes += len(raw)
+				publicBytes += len(raw) + linkBytes
 			} else {
 				privateCount++
-				privateBytes += len(raw)
+				privateBytes += len(raw) + linkBytes
 			}
 			if publicCount > MaxPlanNodes || publicBytes > MaxPlanBytes || privateCount > MaxPrivateNodes || privateBytes > MaxPrivateBytes {
 				return result, ErrBudget
 			}
-			overlay.Nodes = append(overlay.Nodes, payload)
+			overlay.Nodes = append(overlay.Nodes, ProjectedNode{ID: node.ID, Proxy: payload, ShareLink: link})
 		}
 		if len(overlay.Nodes) > 0 {
 			result.Sources = append(result.Sources, overlay)
@@ -253,7 +274,7 @@ func (s *Service) Render(config map[string]any, projection Projection, legacy bo
 		name := allocateName(overlay.GroupName, "source:"+strconv.Itoa(overlay.ID), used)
 		members := []string{}
 		for index, raw := range overlay.Nodes {
-			p := cloneMap(raw)
+			p := cloneMap(raw.Proxy)
 			if legacy && !legacyExternal(p) {
 				continue
 			}

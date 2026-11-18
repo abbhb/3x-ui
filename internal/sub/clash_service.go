@@ -143,6 +143,15 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 			if name == "" {
 				name = ext.Email
 			}
+			if len(el.Proxy) > 0 {
+				var proxy map[string]any
+				if err := json.Unmarshal(el.Proxy, &proxy); err != nil {
+					return "", "", err
+				}
+				proxy["name"] = name
+				proxies = append(proxies, proxy)
+				continue
+			}
 			if proxy := s.clashProxyFromExternal(el.Link, name); proxy != nil {
 				proxies = append(proxies, proxy)
 			}
