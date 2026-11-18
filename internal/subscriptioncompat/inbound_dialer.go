@@ -9,14 +9,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"gorm.io/gorm"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
 // Each credential belongs to its native inbound. Generic inbound edits and node
 // sync cannot overwrite the read-only model field. Only this service writes it.
-const dialerKind = "mihomo-inbound-dialer"
-const dialerLimit = 256 << 10
+const (
+	dialerKind  = "mihomo-inbound-dialer"
+	dialerLimit = 256 << 10
+)
 
 type InboundDialerView struct {
 	Revision string `json:"revision"`

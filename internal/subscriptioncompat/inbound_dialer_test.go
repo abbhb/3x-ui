@@ -62,7 +62,7 @@ func TestInboundDialerMigrationDoesNotRestoreRemovedCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "hop.yaml")
-	if err := os.WriteFile(path, []byte("landing: {name: HK, type: socks5, server: hk.test, port: 80}"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("landing: {name: HK, type: socks5, server: hk.test, port: 80}"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := MigrateInboundDialers(s.DB, path); err != nil {

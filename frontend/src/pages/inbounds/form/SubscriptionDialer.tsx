@@ -23,8 +23,6 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
 
   useEffect(() => {
     let active = true;
-    setView(undefined);
-    setFeedback(undefined);
     void HttpUtil.get<Dialer>(url)
       .then((msg) => {
         if (!active) return;
@@ -121,7 +119,15 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
           title={label(feedback)}
           action={
             (feedback === 'failed' || feedback === 'conflict') && (
-              <Button onClick={() => setAttempt((v) => v + 1)}>{label('reload')}</Button>
+              <Button
+                onClick={() => {
+                  setView(undefined);
+                  setFeedback(undefined);
+                  setAttempt((v) => v + 1);
+                }}
+              >
+                {label('reload')}
+              </Button>
             )
           }
         />

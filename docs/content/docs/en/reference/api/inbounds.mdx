@@ -111,6 +111,14 @@ _openapi:
         panel-to-panel by the node traffic sync job.
       url: '#receive-a-master-panels-aggregated-per-client-usage-keyed-by-the-masters-guid-stored-in-a-side-table-used-only-for-the-ui-display-overlay-and-local-quota-enforcement--never-folded-into-the-local-counters-that-masters-poll-so-delta-accounting-stays-intact-called-panel-to-panel-by-the-node-traffic-sync-job'
     - depth: 2
+      title: Read the endpoint and revision of the client-side Mihomo first hop on an
+        owned inbound.
+      url: '#read-the-endpoint-and-revision-of-the-client-side-mihomo-first-hop-on-an-owned-inbound'
+    - depth: 2
+      title: Save a standalone first hop for this inbound. Supply the observed
+        revision and either a YAML/JSON config string or remove=true.
+      url: '#save-a-standalone-first-hop-for-this-inbound-supply-the-observed-revision-and-either-a-yamljson-config-string-or-removetrue'
+    - depth: 2
       title: List the fallback rules attached to a master VLESS/Trojan TCP-TLS
         inbound. Each rule links one child inbound (the dest) to optional
         SNI/ALPN/path/dest/xver match criteria. When dest is empty the child
@@ -208,6 +216,12 @@ _openapi:
           counters that masters poll, so delta accounting stays intact. Called
           panel-to-panel by the node traffic sync job.
         id: receive-a-master-panels-aggregated-per-client-usage-keyed-by-the-masters-guid-stored-in-a-side-table-used-only-for-the-ui-display-overlay-and-local-quota-enforcement--never-folded-into-the-local-counters-that-masters-poll-so-delta-accounting-stays-intact-called-panel-to-panel-by-the-node-traffic-sync-job
+      - content: Read the endpoint and revision of the client-side Mihomo first hop on
+          an owned inbound.
+        id: read-the-endpoint-and-revision-of-the-client-side-mihomo-first-hop-on-an-owned-inbound
+      - content: Save a standalone first hop for this inbound. Supply the observed
+          revision and either a YAML/JSON config string or remove=true.
+        id: save-a-standalone-first-hop-for-this-inbound-supply-the-observed-revision-and-either-a-yamljson-config-string-or-removetrue
       - content: List the fallback rules attached to a master VLESS/Trojan TCP-TLS
           inbound. Each rule links one child inbound (the dest) to optional
           SNI/ALPN/path/dest/xver match criteria. When dest is empty the child
@@ -228,7 +242,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/amneziawgKernelReadiness","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/amneziawgKernelReadiness","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/subscriptionDialer","method":"get"},{"path":"/panel/api/inbounds/{id}/subscriptionDialer","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
     </>
   );
 }

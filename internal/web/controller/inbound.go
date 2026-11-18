@@ -2,12 +2,13 @@ package controller
 
 import (
 	"encoding/json"
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgkern"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
