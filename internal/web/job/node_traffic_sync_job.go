@@ -37,6 +37,7 @@ type inboundSample struct {
 }
 
 type NodeTrafficSyncJob struct {
+	polls          nodePollSchedule
 	nodeService    service.NodeService
 	inboundService service.InboundService
 	settingService service.SettingService
@@ -77,7 +78,7 @@ func (a *atomicBool) takeAndReset() bool {
 }
 
 func NewNodeTrafficSyncJob() *NodeTrafficSyncJob {
-	return &NodeTrafficSyncJob{}
+	return &NodeTrafficSyncJob{polls: newNodePollSchedule("XUI_NODE_TRAFFIC_INTERVALS")}
 }
 
 func (j *NodeTrafficSyncJob) Run() {
@@ -115,17 +116,20 @@ func (j *NodeTrafficSyncJob) Run() {
 	var wg sync.WaitGroup
 	var activeMu sync.Mutex
 	var activeEmails []string
+	tick := time.Now().Truncate(nodePollTick)
 	for _, n := range nodes {
-		if !n.Enable || n.Status != "online" {
+		if !n.Enable || n.Status != "online" || !j.polls.due(n.Id, tick) {
 			continue
 		}
+		// A slower node can land between every global client-IP tick.
+		syncIPs := doIpSync || j.polls.interval[n.Id] >= nodeClientIpSyncInterval
 		wg.Add(1)
 		sem <- struct{}{}
 		n := n
 		common.GoRecover("node-traffic-sync:"+n.Name, func() {
 			defer wg.Done()
 			defer func() { <-sem }()
-			if emails := j.syncOne(mgr, n, doIpSync); len(emails) > 0 {
+			if emails := j.syncOne(mgr, n, syncIPs); len(emails) > 0 {
 				activeMu.Lock()
 				activeEmails = append(activeEmails, emails...)
 				activeMu.Unlock()

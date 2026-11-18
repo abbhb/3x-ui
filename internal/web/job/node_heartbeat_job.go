@@ -27,6 +27,7 @@ const (
 )
 
 type NodeHeartbeatJob struct {
+	polls          nodePollSchedule
 	nodeService    service.NodeService
 	settingService service.SettingService
 	running        sync.Mutex
@@ -44,7 +45,7 @@ type nodeProbe struct {
 }
 
 func NewNodeHeartbeatJob() *NodeHeartbeatJob {
-	return &NodeHeartbeatJob{}
+	return &NodeHeartbeatJob{polls: newNodePollSchedule("XUI_NODE_HEARTBEAT_INTERVALS")}
 }
 
 func (j *NodeHeartbeatJob) Run() {
@@ -67,8 +68,9 @@ func (j *NodeHeartbeatJob) Run() {
 	var wg sync.WaitGroup
 	var probesMu sync.Mutex
 	var probes []nodeProbe
+	tick := time.Now().Truncate(nodePollTick)
 	for _, n := range nodes {
-		if !n.Enable {
+		if !n.Enable || !j.polls.due(n.Id, tick) {
 			continue
 		}
 		wg.Add(1)
