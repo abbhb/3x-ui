@@ -227,6 +227,7 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	if err := compat.Render(config, projection, legacy); err != nil {
 		return "", "", err
 	}
+	normalizeMihomoConfig(config)
 	finalYAML, err := marshalClashYAML(config)
 	if err != nil {
 		return "", "", err
