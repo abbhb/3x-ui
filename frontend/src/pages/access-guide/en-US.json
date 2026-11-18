@@ -1,0 +1,89 @@
+{
+  "flow": "How a connection reaches its destination",
+  "flowItems": {
+    "clients": "Uses the subscription",
+    "hosts": "Published endpoint",
+    "nodes": "Runs Xray",
+    "inbounds": "Accepts the connection",
+    "routing": "Matches a rule",
+    "outbounds": "Reaches the destination"
+  },
+  "scenarios": {
+    "first": "Set up a node",
+    "extend": "Add an entry to an existing core",
+    "issue": "Issue a subscription",
+    "portal": "Portal plan subscription"
+  },
+  "steps": {
+    "node": {
+      "title": "Connect the service that runs Xray",
+      "body": "For a local service, continue to the next step. For a remote server, install a compatible node panel and create an API token in its security settings. Add the node on the controller with its panel address, port, web base path and token. Test the connection, save and wait for the node to come online. Remote outbound and routing changes require a node-admin token.",
+      "link": "Open nodes"
+    },
+    "inbound": {
+      "title": "Create the first inbound",
+      "body": "Add an inbound, select the protocol and choose the node under Deploy to, or retain the local service. Set a remark, an available listening port and the transport and security settings expected by clients. Save, check that the inbound is enabled and verify the port is reachable.",
+      "link": "Open inbounds"
+    },
+    "forward": {
+      "title": "Check the forwarding path",
+      "body": "Select the same service under Outbounds and check the destination outbound. For default forwarding, verify the default outbound. For a dedicated path, match the inbound tag to the outbound in Routing, check rule order and save.",
+      "link": "View routing"
+    },
+    "host": {
+      "title": "Publish a reachable endpoint",
+      "body": "Add a subscription host, select the inbound and enter a domain or IP address reachable by users. Override the port if the public port differs from the listener. Verify DNS, forwarding and TLS settings.",
+      "link": "Open subscription hosts"
+    },
+    "enable": {
+      "title": "Enable the subscription service",
+      "body": "Open the subscription settings, enable the service and save. When publishing through a reverse proxy, set the reverse proxy URI to the public subscription base URL, including its path and trailing slash.",
+      "link": "Open subscription settings"
+    },
+    "client": {
+      "title": "Create the client and grant access",
+      "body": "Add a client with a unique identifier, select the permitted inbounds, set the quota and expiry, and check that a subscription ID has been generated before saving. Create a separate client for each user who needs independent credentials and quota.",
+      "link": "Open clients"
+    },
+    "deliver": {
+      "title": "Deliver and test the subscription",
+      "body": "Copy the subscription URL from the client’s QR code dialog. Import and refresh it in the client application. Check the entry name, address and port, connect through the new entry, then check the client’s traffic counters. For a portal account, follow Portal plan subscription to collect the link.",
+      "link": "View client QR codes"
+    },
+    "reuse": {
+      "title": "Locate the existing Xray service",
+      "body": "Verify the target node is online, or use the local service for a core on the controller. A panel-managed core can accept another inbound. A standalone Xray process first needs a compatible managing panel. Use that panel’s API address for the node connection.",
+      "link": "View nodes"
+    },
+    "listener": {
+      "title": "Add a listener for a new port or protocol",
+      "body": "Add an inbound on the same service with an available port and the desired protocol and transport. Keep existing listeners and their ports. To publish another public address for an existing listener, continue to the next step.",
+      "link": "Open inbounds"
+    },
+    "alias": {
+      "title": "Associate the public address with an inbound",
+      "body": "Add a subscription host. Select the new inbound for a new listener, or the original inbound for a domain alias or forwarded address. Enter the public address and port and verify they reach that listener.",
+      "link": "Add a subscription host"
+    },
+    "attach": {
+      "title": "Update an existing subscription",
+      "body": "Edit the existing client and add the new inbound alongside its current grants. For another address on the same inbound, check that the client or plan grants the new host. Keep the subscription ID and refresh the original URL. For independent credentials, select Issue a subscription.",
+      "link": "Edit the client"
+    },
+    "plan": {
+      "title": "Enable the portal and configure a plan",
+      "body": "Under Portal and commerce, enable the portal and check its public subscription URL. In Plans, grant the inbound and subscription hosts. Select all entries for the inbound to include future hosts automatically, or explicitly add new hosts to a selective plan.",
+      "link": "Configure plans"
+    },
+    "account": {
+      "title": "Activate the plan for an account",
+      "body": "Under Accounts, create an account with a gifted plan, or let a registered user purchase the plan. Check the active plan in the account details and open its linked client to verify the granted inbounds.",
+      "link": "Open accounts"
+    },
+    "portal": {
+      "title": "Collect the link in the portal",
+      "body": "Sign in to the customer portal, open Subscription link and generate a link. Import it in the client application, refresh and connect. Observe the expiry or single-use setting shown by the portal and request another link when needed.",
+      "link": "Open portal and commerce"
+    }
+  }
+}

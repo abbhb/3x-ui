@@ -110,6 +110,11 @@
     "saveQr": "QR'ı kaydet"
   },
   "menu": {
+    "access": "Erişim",
+    "management": "Yönetim",
+    "accessGuide": "Erişim kılavuzu",
+    "console": "Konsol",
+    "adminLogin": "Yönetici girişi",
     "theme": "Tema",
     "dashboard": "Genel Bakış",
     "inbounds": "Gelen Bağlantılar",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Merhaba",
-      "title": "Hoş Geldiniz",
       "loginAgain": "Oturum süreniz doldu, lütfen tekrar giriş yapın.",
       "toasts": {
         "invalidFormData": "Veri formatı geçersiz.",

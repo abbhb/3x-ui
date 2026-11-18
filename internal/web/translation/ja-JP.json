@@ -110,6 +110,11 @@
     "saveQr": "QR を保存"
   },
   "menu": {
+    "access": "接続",
+    "management": "管理",
+    "accessGuide": "接続ガイド",
+    "console": "コンソール",
+    "adminLogin": "管理者ログイン",
     "theme": "テーマ",
     "dashboard": "ダッシュボード",
     "inbounds": "インバウンド",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "こんにちは",
-      "title": "ようこそ",
       "loginAgain": "ログインセッションが切れました。再度ログインしてください。",
       "toasts": {
         "invalidFormData": "データ形式エラー",

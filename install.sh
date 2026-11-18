@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# /panel/ opens the admin UI on both older releases and portal-first builds.
+panel_browser_path() {
+    local base="${1#/}"
+    base="${base%/}"
+    printf '/%spanel/' "${base:+${base}/}"
+}
+
 red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
@@ -232,7 +239,7 @@ write_install_result() {
         printf 'XUI_PASSWORD=%q\n' "$p"
         printf 'XUI_PANEL_PORT=%q\n' "$port"
         printf 'XUI_WEB_BASE_PATH=%q\n' "$wbp"
-        printf 'XUI_ACCESS_URL=%q\n' "${scheme}://${url_host}:${port}/${wbp}"
+        printf 'XUI_ACCESS_URL=%q\n' "${scheme}://${url_host}:${port}$(panel_browser_path "${wbp}")"
         printf 'XUI_API_TOKEN=%q\n' "$token"
         printf 'XUI_DB_TYPE=%q\n' "$dbtype"
     } > "$result_file"; then
@@ -923,7 +930,7 @@ ssl_cert_issue() {
             echo -e "${green}Certificate File: $webCertFile${plain}"
             echo -e "${green}Private Key File: $webKeyFile${plain}"
             echo ""
-            echo -e "${green}Access URL: https://${domain}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL: https://${domain}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
             echo -e "${yellow}Panel will restart to apply SSL certificate...${plain}"
             systemctl restart x-ui 2> /dev/null || rc-service x-ui restart 2> /dev/null
         else
@@ -1128,7 +1135,7 @@ prompt_and_setup_ssl() {
                 echo -e "  If using an SSH key:"
                 echo -e "  ${yellow}ssh -i <sshkeypath> -L 2222:127.0.0.1:${panel_port} root@${server_ip}${plain}"
                 echo -e "  Then open in your browser:"
-                echo -e "  ${yellow}http://localhost:2222/${web_base_path}${plain}"
+                echo -e "  ${yellow}http://localhost:2222$(panel_browser_path "${web_base_path}")${plain}"
                 echo ""
                 echo -e "${yellow}Alternative: point a reverse proxy (nginx/Caddy) at 127.0.0.1:${panel_port} and let it terminate TLS.${plain}"
             else
@@ -1376,7 +1383,7 @@ EOF
             echo -e "${green}Port:        ${config_port}${plain}"
             echo -e "${green}WebBasePath: ${config_webBasePath}${plain}"
             echo -e "${green}Database:    ${db_label}${plain}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
+            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${config_port}$(panel_browser_path "${config_webBasePath}")${plain}"
             echo -e "${green}API Token:   ${config_apiToken}${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${yellow}⚠ IMPORTANT: Save these credentials securely!${plain}"
@@ -1437,10 +1444,10 @@ EOF
                 echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
-                echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}$(panel_browser_path "${config_webBasePath}")${plain}"
             else
                 # If a cert already exists, just show the access URL
-                echo -e "${green}Access URL: https://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}Access URL: https://${server_ip}:${existing_port}$(panel_browser_path "${config_webBasePath}")${plain}"
             fi
         fi
     else
@@ -1478,7 +1485,7 @@ EOF
             echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
         else
             echo -e "${green}SSL certificate already configured. No action needed.${plain}"
         fi

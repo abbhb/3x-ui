@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
     if (!entryIsIP) {
       const url = new URL(window.location.href);
-      url.pathname = `/${base}panel/settings`;
+      url.pathname = `/${base}admin/settings`;
       url.protocol = newProtocol;
       return url.toString();
     }
@@ -120,7 +120,7 @@ export default function SettingsPage() {
 
     const url = new URL(`${newProtocol}//${finalHost}`);
     if (finalPort) url.port = finalPort;
-    url.pathname = `/${base}panel/settings`;
+    url.pathname = `/${base}admin/settings`;
     return url.toString();
   }
 

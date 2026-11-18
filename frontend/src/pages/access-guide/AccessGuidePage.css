@@ -1,0 +1,107 @@
+.access-guide-layout {
+  min-height: 100dvh;
+}
+.access-guide {
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 48px) 56px;
+  color: var(--ant-color-text);
+}
+.access-guide h1 {
+  margin: 0 0 20px;
+  font-size: 28px;
+}
+.guide-flow {
+  margin: 0 0 20px;
+  padding: 22px;
+  border-radius: 12px;
+  border: 1px solid var(--ant-color-primary-border);
+  background: var(--ant-color-primary-bg);
+}
+.guide-flow figcaption {
+  font-size: 16px;
+  font-weight: 600;
+}
+.guide-flow ol {
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
+}
+.guide-flow li {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.guide-flow li > .anticon {
+  justify-self: start;
+  font-size: 21px;
+  color: var(--ant-color-primary-text);
+}
+.guide-flow small {
+  color: var(--ant-color-text-secondary);
+  font-size: 13px;
+}
+.guide-flow li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 0;
+  width: 7px;
+  height: 7px;
+  border-block-start: 1.5px solid var(--ant-color-primary-text);
+  border-inline-end: 1.5px solid var(--ant-color-primary-text);
+  transform: rotate(45deg);
+}
+.guide-steps {
+  margin: 0;
+  padding-inline-start: 28px;
+}
+.guide-steps li {
+  padding: 4px 0 18px 8px;
+}
+.guide-steps li + li {
+  border-top: 1px solid var(--ant-color-border-secondary);
+  padding-top: 18px;
+}
+.guide-steps li::marker {
+  font-weight: 600;
+  color: var(--ant-color-primary-text);
+}
+.guide-steps h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.guide-steps p {
+  margin: 6px 0;
+  line-height: 1.7;
+  max-width: 80ch;
+}
+.guide-steps a {
+  display: inline-block;
+  margin-inline-end: 16px;
+}
+@media (max-width: 768px) {
+  .access-guide {
+    padding-top: 56px;
+  }
+  .guide-flow ol {
+    grid-template-columns: 1fr;
+  }
+  .guide-flow li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .guide-flow li:not(:last-child)::after {
+    top: auto;
+    bottom: -9px;
+    inset-inline-start: 7px;
+    transform: rotate(135deg);
+  }
+}

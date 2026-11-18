@@ -26,6 +26,7 @@ func newSPAFallbackTestEngineWithBasePath(t *testing.T, basePath string) *gin.En
 
 	oldDistFS := distFS
 	SetDistFS(fstest.MapFS{
+		"dist/login.html": {Data: []byte(`<html><head></head><body>admin sign-in</body></html>`)},
 		"dist/index.html": {Data: []byte(`<!doctype html><html><head></head><body>spa shell</body></html>`)},
 	})
 	t.Cleanup(func() { SetDistFS(oldDistFS) })
@@ -41,6 +42,7 @@ func newSPAFallbackTestEngineWithBasePath(t *testing.T, basePath string) *gin.En
 		c.Next()
 	})
 
+	NewIndexController(engine.Group(basePath))
 	ctrl := NewXUIController(engine.Group(basePath))
 	engine.NoRoute(func(c *gin.Context) {
 		if ctrl.HandleNoRoutePanelSPA(c) {
@@ -51,48 +53,36 @@ func newSPAFallbackTestEngineWithBasePath(t *testing.T, basePath string) *gin.En
 	return engine
 }
 
-func TestPanelSPAFallbackServesRootBasePath(t *testing.T) {
-	engine := newSPAFallbackTestEngineWithBasePath(t, "/")
-	req := httptest.NewRequest(http.MethodGet, "/panel/hosts", nil)
-	req.Header.Set("Accept", "text/html")
-	req.Header.Set("X-Test-Login", "1")
-	w := httptest.NewRecorder()
-
-	engine.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
-	}
-	if !strings.Contains(w.Body.String(), "spa shell") {
-		t.Fatalf("body does not contain SPA shell: %s", w.Body.String())
-	}
-}
-
-func TestPanelSPAFallbackServesAuthenticatedClientRoutes(t *testing.T) {
-	engine := newSPAFallbackTestEngine(t)
-
-	for _, target := range []string{
-		"/admin-random/panel/hosts",
-		"/admin-random/panel/some/future/route",
-	} {
-		t.Run(target, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, target, nil)
-			req.Header.Set("Accept", "text/html")
-			req.Header.Set("X-Test-Login", "1")
+func TestAdminDocumentsAndLegacyBookmarks(t *testing.T) {
+	for _, base := range []string{"/", "/custom/prefix/"} {
+		engine := newSPAFallbackTestEngineWithBasePath(t, base)
+		for _, tc := range []struct {
+			path, location, body string
+			signedIn             bool
+		}{
+			{path: "", location: "portal/"},
+			{path: "", location: "portal/", signedIn: true},
+			{path: "admin", body: "admin sign-in"},
+			{path: "admin/", body: "spa shell", signedIn: true},
+			{path: "admin/access-guide", body: "admin sign-in"},
+			{path: "admin/access-guide", body: "spa shell", signedIn: true},
+			{path: "panel/clients?clientId=7", location: "admin/clients?clientId=7"},
+			{path: "panel/hosts", location: "admin/hosts", signedIn: true},
+		} {
+			req := httptest.NewRequest(http.MethodGet, base+tc.path, nil)
+			if tc.signedIn {
+				req.Header.Set("X-Test-Login", "1")
+			}
 			w := httptest.NewRecorder()
-
 			engine.ServeHTTP(w, req)
-
-			if w.Code != http.StatusOK {
-				t.Fatalf("status = %d, want 200; body=%s", w.Code, w.Body.String())
+			if tc.location != "" {
+				if w.Code != http.StatusTemporaryRedirect || w.Header().Get("Location") != base+tc.location {
+					t.Errorf("%s: got %d -> %q, want 307 -> %s", req.URL, w.Code, w.Header().Get("Location"), base+tc.location)
+				}
+			} else if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), tc.body) {
+				t.Errorf("%s: got %d %s, want %q", req.URL, w.Code, w.Body.String(), tc.body)
 			}
-			if ct := w.Header().Get("Content-Type"); !strings.Contains(ct, "text/html") {
-				t.Fatalf("Content-Type = %q, want text/html", ct)
-			}
-			if !strings.Contains(w.Body.String(), "spa shell") {
-				t.Fatalf("body does not contain SPA shell: %s", w.Body.String())
-			}
-		})
+		}
 	}
 }
 
@@ -109,8 +99,8 @@ func TestPanelSPAFallbackPreservesAuthSemantics(t *testing.T) {
 		if w.Code != http.StatusTemporaryRedirect {
 			t.Fatalf("status = %d, want 307", w.Code)
 		}
-		if loc := w.Header().Get("Location"); loc != "/admin-random/" {
-			t.Fatalf("Location = %q, want /admin-random/", loc)
+		if loc := w.Header().Get("Location"); loc != "/admin-random/admin/hosts" {
+			t.Fatalf("Location = %q, want /admin-random/admin/hosts", loc)
 		}
 	})
 

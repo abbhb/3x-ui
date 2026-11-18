@@ -85,7 +85,7 @@ func normalizeWebBasePath(basePath string) string {
 }
 
 func pwaHeadInjection(basePath, pageName string) []byte {
-	if pageName != "index.html" && pageName != "login.html" {
+	if pageName != "index.html" {
 		return nil
 	}
 
@@ -120,12 +120,14 @@ func serveDistPage(c *gin.Context, name string) {
 		"&", `&`,
 	)
 	escapedBase := jsEscape.Replace(basePath)
-	csrfToken, err := session.EnsureCSRFToken(c)
-	if err != nil {
-		logger.Warning("Unable to mint CSRF token for", name+":", err)
-		csrfToken = ""
+	var csrfMeta []byte
+	if name != "portal.html" {
+		csrfToken, err := session.EnsureCSRFToken(c)
+		if err != nil {
+			logger.Warning("Unable to mint CSRF token for", name+":", err)
+		}
+		csrfMeta = []byte(`<meta name="csrf-token" content="` + htmlpkg.EscapeString(csrfToken) + `">`)
 	}
-	csrfMeta := []byte(`<meta name="csrf-token" content="` + htmlpkg.EscapeString(csrfToken) + `">`)
 	basePathMeta := []byte(`<meta name="base-path" content="` + htmlpkg.EscapeString(basePath) + `">`)
 
 	nonceAttr := ""
@@ -133,7 +135,7 @@ func serveDistPage(c *gin.Context, name string) {
 		nonceAttr = ` nonce="` + htmlpkg.EscapeString(nonce) + `"`
 	}
 	script := `<script data-cfasync="false"` + nonceAttr + `>window.X_UI_BASE_PATH="` + escapedBase + `"`
-	if name != "login.html" {
+	if name == "index.html" {
 		escapedVer := jsEscape.Replace(config.GetPanelVersion())
 		script += `;window.X_UI_CUR_VER="` + escapedVer + `"`
 		script += `;window.X_UI_DB_TYPE="` + config.GetDBKind() + `"`

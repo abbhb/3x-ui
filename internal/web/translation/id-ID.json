@@ -110,6 +110,11 @@
     "saveQr": "Simpan QR"
   },
   "menu": {
+    "access": "Akses",
+    "management": "Manajemen",
+    "accessGuide": "Panduan akses",
+    "console": "Konsol",
+    "adminLogin": "Masuk sebagai administrator",
     "theme": "Tema",
     "dashboard": "Ikhtisar",
     "inbounds": "Inbound",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Halo",
-      "title": "Selamat Datang",
       "loginAgain": "Sesi Anda telah berakhir, harap masuk kembali",
       "toasts": {
         "invalidFormData": "Format data input tidak valid.",

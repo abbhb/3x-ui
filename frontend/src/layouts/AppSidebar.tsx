@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ComponentType, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Drawer, Layout, Menu, Tooltip } from 'antd';
@@ -7,6 +7,7 @@ import type { MenuProps } from 'antd';
 import {
   ApartmentOutlined,
   CloseOutlined,
+  ControlOutlined,
   CloudServerOutlined,
   ClusterOutlined,
   CodeOutlined,
@@ -188,21 +189,6 @@ export default function AppSidebar() {
   const currentTheme: 'light' | 'dark' = isDark ? 'dark' : 'light';
   const panelVersion = window.X_UI_CUR_VER || '';
 
-  const tabs = useMemo<{ key: string; icon: ComponentType; title: string }[]>(
-    () => [
-      ...PANEL_ROUTES.map((route) => ({
-        key: route.path,
-        icon: route.icon,
-        title: t(route.titleKey),
-      })),
-      { key: LOGOUT_KEY, icon: LogoutOutlined, title: t('logout') },
-    ],
-    [t],
-  );
-
-  const navItems = useMemo(() => tabs.filter((tab) => tab.key !== LOGOUT_KEY), [tabs]);
-  const utilItems = useMemo(() => tabs.filter((tab) => tab.key === LOGOUT_KEY), [tabs]);
-
   const settingsChildren = useMemo<NonNullable<MenuProps['items']>>(() => {
     const children: NonNullable<MenuProps['items']> = [
       {
@@ -285,42 +271,46 @@ export default function AppSidebar() {
         ? '/'
         : pathname;
 
-  const openSubmenu = settingsActive ? '/settings' : xrayActive ? '/xray' : null;
-  const [openKeys, setOpenKeys] = useState<string[]>(() => (openSubmenu ? [openSubmenu] : []));
-  if (openSubmenu && !openKeys.includes(openSubmenu)) {
-    setOpenKeys([...openKeys, openSubmenu]);
+  const group = PANEL_ROUTES.find((route) => route.path === (pathname || '/'))?.group;
+  const activeKeys = () => [
+    ...(group ? [group] : []),
+    ...(settingsActive || xrayActive ? [pathname] : []),
+  ];
+  const [openKeys, setOpenKeys] = useState<string[]>(activeKeys);
+  const [lastRoute, setLastRoute] = useState(pathname + hash);
+  if (lastRoute !== pathname + hash) {
+    setLastRoute(pathname + hash);
+    setOpenKeys(activeKeys());
   }
 
-  const toMenuItems = useCallback(
-    (items: typeof tabs): MenuProps['items'] =>
-      items.map((tab) => {
-        const Icon = tab.icon;
-        if (tab.key === '/settings') {
-          return {
-            key: tab.key,
-            icon: <Icon aria-hidden />,
-            label: tab.title,
-            children: settingsChildren,
-          };
-        }
-        if (tab.key === '/xray') {
-          return {
-            key: tab.key,
-            icon: <Icon aria-hidden />,
-            label: tab.title,
-            children: xrayChildren,
-          };
-        }
-        return { key: tab.key, icon: <Icon aria-hidden />, label: tab.title, title: '' };
-      }),
-    [settingsChildren, xrayChildren],
-  );
+  const navItems = (['access', 'management'] as const).map((section) => ({
+    key: section,
+    icon:
+      section === 'access' ? <ApartmentOutlined aria-hidden /> : <ControlOutlined aria-hidden />,
+    label: section === 'access' ? t('menu.access') : t('menu.management'),
+    children: PANEL_ROUTES.filter((route) => route.group === section).map((route) => ({
+      key: route.path,
+      icon: <route.icon aria-hidden />,
+      label: t(route.titleKey),
+      children:
+        route.path === '/settings'
+          ? settingsChildren
+          : route.path === '/xray'
+            ? xrayChildren
+            : undefined,
+    })),
+  }));
+  const utilItems = [{ key: LOGOUT_KEY, icon: <LogoutOutlined aria-hidden />, label: t('logout') }];
+  const onOpenChange = (keys: string[]) => {
+    const opened = keys.find((key) => !openKeys.includes(key));
+    setOpenKeys(opened === 'access' || opened === 'management' ? [opened] : keys);
+  };
 
   const openLink = useCallback(
     async (key: string) => {
       if (key === LOGOUT_KEY) {
         await HttpUtil.post('/logout');
-        window.location.href = window.X_UI_BASE_PATH || '/';
+        window.location.href = (window.X_UI_BASE_PATH || '/') + 'admin';
         return;
       }
       const selected = new URLSearchParams(search).get('nodeId');
@@ -374,7 +364,13 @@ export default function AppSidebar() {
       >
         <div className="sider-brand">
           <div className="brand-block">
-            <span className="brand-text">{railCollapsed ? '3X' : '3X-UI'}</span>
+            <span className="brand-text">
+              {railCollapsed ? (
+                <ControlOutlined aria-label={t('menu.console')} />
+              ) : (
+                t('menu.console')
+              )}
+            </span>
           </div>
           {!railCollapsed && (
             <div className="brand-actions">
@@ -428,10 +424,11 @@ export default function AppSidebar() {
           theme={currentTheme}
           mode="inline"
           selectedKeys={[selectedKey]}
+          inlineIndent={14}
           openKeys={railCollapsed ? undefined : openKeys}
-          onOpenChange={(keys) => setOpenKeys(keys as string[])}
+          onOpenChange={onOpenChange}
           className="sider-nav"
-          items={toMenuItems(navItems)}
+          items={navItems}
           onClick={onMenuClick}
         />
         <Menu
@@ -439,7 +436,7 @@ export default function AppSidebar() {
           mode="inline"
           selectedKeys={[selectedKey]}
           className="sider-utility"
-          items={toMenuItems(utilItems)}
+          items={utilItems}
           onClick={onMenuClick}
         />
         <div className="sider-footer">
@@ -462,7 +459,7 @@ export default function AppSidebar() {
       >
         <div className="drawer-header">
           <div className="brand-block">
-            <span className="drawer-brand">3X-UI</span>
+            <span className="drawer-brand">{t('menu.console')}</span>
           </div>
           <div className="drawer-header-actions">
             <DocsButton ariaLabel={t('menu.docs') || 'Documentation'} />
@@ -507,10 +504,11 @@ export default function AppSidebar() {
           theme={currentTheme}
           mode="inline"
           selectedKeys={[selectedKey]}
+          inlineIndent={14}
           openKeys={openKeys}
-          onOpenChange={(keys) => setOpenKeys(keys as string[])}
+          onOpenChange={onOpenChange}
           className="drawer-menu drawer-nav"
-          items={toMenuItems(navItems)}
+          items={navItems}
           onClick={(info) => {
             onMenuClick(info);
             setDrawerOpen(false);
@@ -521,7 +519,7 @@ export default function AppSidebar() {
           mode="inline"
           selectedKeys={[selectedKey]}
           className="drawer-menu drawer-utility"
-          items={toMenuItems(utilItems)}
+          items={utilItems}
           onClick={(info) => {
             onMenuClick(info);
             setDrawerOpen(false);

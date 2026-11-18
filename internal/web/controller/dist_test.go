@@ -55,7 +55,7 @@ func TestPWAHeadInjectionUsesRuntimeBasePath(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			head := string(pwaHeadInjection(test.basePath, "login.html"))
+			head := string(pwaHeadInjection(test.basePath, "index.html"))
 			if !strings.Contains(head, `href="`+test.wantPath+`"`) {
 				t.Fatalf("manifest URL = %q, want %q", head, test.wantPath)
 			}
@@ -66,8 +66,10 @@ func TestPWAHeadInjectionUsesRuntimeBasePath(t *testing.T) {
 	}
 }
 
-func TestPWAHeadInjectionSkipsSubscriptionPage(t *testing.T) {
-	if got := pwaHeadInjection("/panel-secret/", "subpage.html"); got != nil {
-		t.Fatalf("subpage injection = %q, want nil", got)
+func TestPWAHeadInjectionSkipsPublicPages(t *testing.T) {
+	for _, page := range []string{"login.html", "portal.html", "subpage.html"} {
+		if got := pwaHeadInjection("/panel-secret/", page); got != nil {
+			t.Fatalf("%s injection = %q, want nil", page, got)
+		}
 	}
 }

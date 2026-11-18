@@ -110,6 +110,11 @@
     "saveQr": "ذخیره QR"
   },
   "menu": {
+    "access": "دسترسی",
+    "management": "مدیریت",
+    "accessGuide": "راهنمای اتصال",
+    "console": "کنسول",
+    "adminLogin": "ورود مدیر",
     "theme": "تم",
     "dashboard": "نمای کلی",
     "inbounds": "ورودی‌ها",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "سلام",
-      "title": "خوش‌آمدید",
       "loginAgain": "مدت زمان استفاده به‌اتمام‌رسیده، لطفا دوباره وارد شوید",
       "toasts": {
         "invalidFormData": "اطلاعات به‌درستی وارد نشده‌است",

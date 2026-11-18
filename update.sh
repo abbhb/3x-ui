@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# /panel/ opens the admin UI on both older releases and portal-first builds.
+panel_browser_path() {
+    local base="${1#/}"
+    base="${base%/}"
+    printf '/%spanel/' "${base:+${base}/}"
+}
+
 red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
@@ -240,7 +247,7 @@ config_after_update() {
     echo -e "${green}═══════════════════════════════════════════${plain}"
     echo -e "${green}     Panel Access Information              ${plain}"
     echo -e "${green}═══════════════════════════════════════════${plain}"
-    echo -e "${green}Access URL: ${access_scheme}://${access_host}:${existing_port}/${existing_webBasePath}${plain}"
+    echo -e "${green}Access URL: ${access_scheme}://${access_host}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
     echo -e "${green}═══════════════════════════════════════════${plain}"
     if [[ -z "$existing_cert" ]]; then
         echo -e "${yellow}No SSL certificate is configured; the panel is served over HTTP.${plain}"

@@ -20,6 +20,7 @@ import {
   Typography,
 } from 'antd';
 import { z } from 'zod';
+import AuthLayout from '@/components/auth/AuthLayout';
 import { useTheme } from '@/hooks/useTheme';
 import {
   portalRequest,
@@ -153,10 +154,9 @@ export default function PortalPage() {
   const a = me.data;
   return (
     <ConfigProvider theme={antdThemeConfig}>
-      <main className="commerce-portal">
+      <div className="commerce-portal">
         {!token ? (
-          <div className="commerce-login">
-            <Typography.Title level={1}>{l('portalTitle')}</Typography.Title>
+          <AuthLayout title={l('portalTitle')}>
             {config.isPending ? (
               <Spin />
             ) : config.error ? (
@@ -169,14 +169,19 @@ export default function PortalPage() {
             ) : !config.data?.enabled ? (
               <Alert type="info" showIcon title={l('portalClosed')} />
             ) : (
-              <Card>
+              <>
                 {error && <Alert type="error" showIcon title={error} />}
                 <Tabs
                   items={['login', 'register'].map((kind) => ({
                     key: kind,
                     label: l(kind),
                     children: (
-                      <Form layout="vertical" onFinish={(v) => void auth(v, kind === 'register')}>
+                      <Form
+                        layout="vertical"
+                        className="login-form"
+                        size="large"
+                        onFinish={(v) => void auth(v, kind === 'register')}
+                      >
                         <Form.Item
                           label={l('username')}
                           name="username"
@@ -216,11 +221,11 @@ export default function PortalPage() {
                     ),
                   }))}
                 />
-              </Card>
+              </>
             )}
-          </div>
+          </AuthLayout>
         ) : (
-          <div className="commerce-page commerce-stack">
+          <main className="commerce-page commerce-stack">
             <header className="commerce-toolbar">
               <Typography.Title level={1}>{l('portalTitle')}</Typography.Title>
               <Space wrap>
@@ -453,9 +458,9 @@ export default function PortalPage() {
                 />
               </>
             )}
-          </div>
+          </main>
         )}
-      </main>
+      </div>
     </ConfigProvider>
   );
 }

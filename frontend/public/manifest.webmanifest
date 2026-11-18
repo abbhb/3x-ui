@@ -1,7 +1,8 @@
 {
-  "name": "3x-ui",
-  "short_name": "3x-ui",
-  "start_url": "./",
+  "name": "Administration",
+  "short_name": "Administration",
+  "id": "./",
+  "start_url": "./admin",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0f172a",

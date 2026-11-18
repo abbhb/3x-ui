@@ -110,6 +110,11 @@
     "saveQr": "保存二维码"
   },
   "menu": {
+    "access": "接入",
+    "management": "管理",
+    "accessGuide": "接入指引",
+    "console": "控制台",
+    "adminLogin": "管理员登录",
     "theme": "主题",
     "dashboard": "系统状态",
     "inbounds": "入站",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "你好",
-      "title": "欢迎",
       "loginAgain": "登录时效已过，请重新登录",
       "toasts": {
         "invalidFormData": "数据格式错误",

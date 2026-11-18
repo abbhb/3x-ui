@@ -110,6 +110,11 @@
     "saveQr": "Save QR"
   },
   "menu": {
+    "access": "Access",
+    "management": "Management",
+    "accessGuide": "Access guide",
+    "console": "Console",
+    "adminLogin": "Administrator sign-in",
     "theme": "Theme",
     "dashboard": "Overview",
     "inbounds": "Inbounds",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Hello",
-      "title": "Welcome",
       "loginAgain": "Your session has expired, please log in again",
       "toasts": {
         "invalidFormData": "The input data format is invalid.",

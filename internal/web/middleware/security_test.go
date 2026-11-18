@@ -98,6 +98,9 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	if got := headers.Get("X-Frame-Options"); got != "DENY" {
 		t.Fatalf("X-Frame-Options = %q", got)
 	}
+	if got := headers.Get("X-Robots-Tag"); got != "noindex, nofollow, noarchive" {
+		t.Fatalf("X-Robots-Tag = %q", got)
+	}
 	if got := headers.Get("Referrer-Policy"); got != "no-referrer" {
 		t.Fatalf("Referrer-Policy = %q", got)
 	}

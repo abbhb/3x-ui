@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# /panel/ opens the admin UI on both older releases and portal-first builds.
+panel_browser_path() {
+    local base="${1#/}"
+    base="${base%/}"
+    printf '/%spanel/' "${base:+${base}/}"
+}
+
 red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
@@ -466,9 +473,9 @@ check_config() {
         fi
 
         if [[ "$domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-            echo -e "${green}Access URL: https://${domain}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL: https://${domain}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
         else
-            echo -e "${green}Access URL: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL: https://${server_ip}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
         fi
         if [[ -n "$cert_sans" && $(echo "$cert_sans" | wc -l) -gt 1 ]]; then
             echo -e "${yellow}The certificate also covers:${plain} $(echo "$cert_sans" | grep -vx "$domain" | tr '\n' ' ')"
@@ -481,7 +488,7 @@ check_config() {
             stop 0 > /dev/null 2>&1
             ssl_cert_issue_for_ip
             if [[ $? -eq 0 ]]; then
-                echo -e "${green}Access URL: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+                echo -e "${green}Access URL: https://${server_ip}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
                 # ssl_cert_issue_for_ip already restarts the panel, but ensure it's running
                 start 0 > /dev/null 2>&1
             else
@@ -490,7 +497,7 @@ check_config() {
                 start 0 > /dev/null 2>&1
             fi
         else
-            echo -e "${yellow}Access URL: http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${yellow}Access URL: http://${server_ip}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
             echo -e "${yellow}For security, please configure SSL certificate using main menu option 20 (SSL Certificate Management)${plain}"
         fi
     fi
@@ -1742,7 +1749,7 @@ ssl_cert_issue_for_ip() {
             LOGI "  - Certificate File: $webCertFile"
             LOGI "  - Private Key File: $webKeyFile"
             LOGI "  - Validity: ~6 days (auto-renews via acme.sh cron)"
-            echo -e "${green}Access URL: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL: https://${server_ip}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
             LOGI "Panel will restart to apply SSL certificate..."
             restart
         else
@@ -1962,7 +1969,7 @@ ssl_cert_issue() {
             LOGI "Panel paths set for domain: $domain"
             LOGI "  - Certificate File: $webCertFile"
             LOGI "  - Private Key File: $webKeyFile"
-            echo -e "${green}Access URL: https://${domain}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL: https://${domain}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
             restart
         else
             LOGE "Error: Certificate or private key file not found for domain: $domain."
@@ -2111,7 +2118,7 @@ ssl_cert_issue_CF() {
                 LOGI "Panel paths set for domain: $CF_Domain"
                 LOGI "  - Certificate File: $webCertFile"
                 LOGI "  - Private Key File: $webKeyFile"
-                echo -e "${green}Access URL: https://${CF_Domain}:${existing_port}${existing_webBasePath}${plain}"
+                echo -e "${green}Access URL: https://${CF_Domain}:${existing_port}$(panel_browser_path "${existing_webBasePath}")${plain}"
                 restart
             else
                 LOGE "Error: Certificate or private key file not found for domain: $CF_Domain."
@@ -2667,7 +2674,7 @@ SSH_port_forwarding() {
         echo -e "\nIf using SSH key:"
         echo -e "${yellow}ssh -i <sshkeypath> -L 2222:${existing_listenIP}:${existing_port} root@${server_ip}${plain}"
         echo -e "\nAfter connecting, access the panel at:"
-        echo -e "${yellow}http://localhost:2222${existing_webBasePath}${plain}"
+        echo -e "${yellow}http://localhost:2222$(panel_browser_path "${existing_webBasePath}")${plain}"
     fi
 
     echo -e "\nChoose an option:"
@@ -2695,7 +2702,7 @@ SSH_port_forwarding() {
                 echo -e "\nIf using SSH key:"
                 echo -e "${yellow}ssh -i <sshkeypath> -L 2222:${config_listenIP}:${existing_port} root@${server_ip}${plain}"
                 echo -e "\nAfter connecting, access the panel at:"
-                echo -e "${yellow}http://localhost:2222${existing_webBasePath}${plain}"
+                echo -e "${yellow}http://localhost:2222$(panel_browser_path "${existing_webBasePath}")${plain}"
                 restart
             else
                 config_listenIP="${existing_listenIP}"

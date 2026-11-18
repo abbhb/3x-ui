@@ -110,6 +110,11 @@
     "saveQr": "Uložiť QR kód"
   },
   "menu": {
+    "access": "Pripojenie",
+    "management": "Správa",
+    "accessGuide": "Sprievodca pripojením",
+    "console": "Konzola",
+    "adminLogin": "Prihlásenie správcu",
     "theme": "Vzhľad",
     "dashboard": "Prehľad",
     "inbounds": "Vstupy",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Dobrý deň",
-      "title": "Vitajte",
       "loginAgain": "Platnosť prihlásenia vypršala. Prihláste sa znova.",
       "toasts": {
         "invalidFormData": "Zadané údaje majú neplatný formát.",
