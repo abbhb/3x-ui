@@ -55,6 +55,7 @@ import type {
 } from '@/hooks/useClients';
 import { useFail2banStatusQuery, getLimitIpNotice } from '@/api/queries/useFail2banStatusQuery';
 import ClientRenewalFields from './ClientRenewalFields';
+import ClientSubscriptionSources from '@/pages/subscriptions/ClientSubscriptionSources';
 import { ClientFormSchema, ClientCreateFormSchema, type ClientFormValues } from '@/schemas/client';
 import './ClientFormModal.css';
 
@@ -1547,6 +1548,9 @@ export default function ClientFormModal({
                   label: t('pages.clients.tabLinks'),
                   children: (
                     <>
+                      {isEdit && client?.id && (
+                        <ClientSubscriptionSources key={client.id} clientId={client.id} />
+                      )}
                       <Typography.Paragraph type="secondary" style={{ marginTop: 4 }}>
                         {t('pages.clients.linksHint')}
                       </Typography.Paragraph>

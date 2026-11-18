@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -169,7 +170,16 @@ func NewPortalController(g *gin.RouterGroup) {
 		c.Set("portal_account", account)
 	})
 	account := func(c *gin.Context) *model.PortalAccount { return c.MustGet("portal_account").(*model.PortalAccount) }
-	newExternalSourceRoutes(authed, false)
+	newExternalSourceRoutes(authed, false, true)
+	authed.GET("/external-inventory", func(c *gin.Context) {
+		a := account(c)
+		id := 0
+		if a.ClientID != nil {
+			id = *a.ClientID
+		}
+		value, err := (&subscriptioncompat.Service{DB: database.GetDB()}).ClientSourcesFor(id, &a.ID)
+		portalReply(c, value, err, false)
+	})
 	authed.GET("/me", func(c *gin.Context) { value, err := svc.Account(account(c).ID); portalReply(c, value, err, false) })
 	authed.GET("/plans", func(c *gin.Context) { value, err := svc.Plans(true); portalReply(c, value, err, false) })
 	authed.GET("/wallet/transactions", func(c *gin.Context) {

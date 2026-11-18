@@ -2,8 +2,8 @@
 title: Private external subscriptions
 description: URLs and node payloads are encrypted with the separate external
   key. Public sources retain LKG when automatic refresh is off; disabled private
-  sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners
-  come exclusively from the portal token.
+  sources stop mixing. Customer writes are bounded to 20 per ten minutes. The
+  scoped client routes resolve private ownership from the linked account.
 full: true
 _openapi:
   preload:
@@ -34,11 +34,14 @@ _openapi:
       title: Refresh atomically, preserving last good nodes on failure
       url: '#refresh-atomically-preserving-last-good-nodes-on-failure'
     - depth: 2
-      title: Publish a bounded YAML snapshot; only proxies are imported
-      url: '#publish-a-bounded-yaml-snapshot-only-proxies-are-imported'
+      title: Import nodes from YAML or a share-link list
+      url: '#import-nodes-from-yaml-or-a-share-link-list'
     - depth: 2
       title: List node selection metadata; never returns connection parameters
       url: '#list-node-selection-metadata-never-returns-connection-parameters'
+    - depth: 2
+      title: List my external assignments and supported formats
+      url: '#list-my-external-assignments-and-supported-formats'
   structuredData:
     headings:
       - content: List scoped sources without credentials
@@ -57,10 +60,12 @@ _openapi:
         id: remove-the-url-while-retaining-last-successful-nodes
       - content: Refresh atomically, preserving last good nodes on failure
         id: refresh-atomically-preserving-last-good-nodes-on-failure
-      - content: Publish a bounded YAML snapshot; only proxies are imported
-        id: publish-a-bounded-yaml-snapshot-only-proxies-are-imported
+      - content: Import nodes from YAML or a share-link list
+        id: import-nodes-from-yaml-or-a-share-link-list
       - content: List node selection metadata; never returns connection parameters
         id: list-node-selection-metadata-never-returns-connection-parameters
+      - content: List my external assignments and supported formats
+        id: list-my-external-assignments-and-supported-formats
     contents: []
 ---
 
@@ -71,7 +76,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/api/portal/external-subscriptions","method":"get"},{"path":"/api/portal/external-subscriptions","method":"post"},{"path":"/api/portal/external-subscriptions/{id}","method":"get"},{"path":"/api/portal/external-subscriptions/{id}","method":"delete"},{"path":"/api/portal/external-subscriptions/{id}","method":"put"},{"path":"/api/portal/external-subscriptions/{id}/credential","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/credential","method":"delete"},{"path":"/api/portal/external-subscriptions/{id}/refresh","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/snapshot","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/nodes","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/api/portal/external-subscriptions","method":"get"},{"path":"/api/portal/external-subscriptions","method":"post"},{"path":"/api/portal/external-subscriptions/{id}","method":"get"},{"path":"/api/portal/external-subscriptions/{id}","method":"delete"},{"path":"/api/portal/external-subscriptions/{id}","method":"put"},{"path":"/api/portal/external-subscriptions/{id}/credential","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/credential","method":"delete"},{"path":"/api/portal/external-subscriptions/{id}/refresh","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/snapshot","method":"post"},{"path":"/api/portal/external-subscriptions/{id}/nodes","method":"get"},{"path":"/api/portal/external-inventory","method":"get"}]} showTitle />
     </>
   );
 }

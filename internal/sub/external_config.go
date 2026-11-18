@@ -3,6 +3,7 @@ package sub
 import (
 	"encoding/base64"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/link"
 )
@@ -29,8 +31,9 @@ type externalLinkEntry struct {
 // expandedLink is a single share link contributed by an entry, with the display
 // name to use (empty → keep the link's own remark / fall back to the email).
 type expandedLink struct {
-	Link string
-	Name string
+	Proxy []byte
+	Link  string
+	Name  string
 }
 
 // getClientExternalLinksBySubId returns active rows with owner state attached.
@@ -83,6 +86,31 @@ func (s *SubService) getClientExternalLinksBySubId(subId string) ([]externalLink
 	return out, nil
 }
 
+// getExternalShareLinks resolves the same catalog grants as Clash and feeds
+// representable nodes through the native raw and Xray JSON renderers.
+func (s *SubService) getExternalShareLinks(subID string) ([]externalLinkEntry, error) {
+	entries, err := s.getClientExternalLinksBySubId(subID)
+	if err != nil {
+		return nil, err
+	}
+	projection, err := (&subscriptioncompat.Service{DB: database.GetDB()}).Projection(subID)
+	if err != nil {
+		return nil, err
+	}
+	for _, source := range projection.Sources {
+		for _, node := range source.Nodes {
+			if uri := node.ShareLink; uri != "" {
+				entries = append(entries, externalLinkEntry{
+					Kind: model.ExternalLinkKindLink, Value: uri,
+					Remark: "外部 · " + source.GroupName + " / " + node.Proxy["name"].(string),
+					Email:  projection.Client.Email, Enable: true, Active: true,
+				})
+			}
+		}
+	}
+	return entries, nil
+}
+
 // expandEntry turns one entry into the concrete share links it contributes.
 // Names are never blank, so Clash/JSON do not fall back to the client email.
 func expandEntry(e externalLinkEntry) []expandedLink {
@@ -91,9 +119,13 @@ func expandEntry(e externalLinkEntry) []expandedLink {
 		if res.fetched {
 			recordExternalSubscriptionFetch(e.Value, res.err)
 		}
-		out := make([]expandedLink, 0, len(res.links))
+		out := make([]expandedLink, 0, len(res.links)+len(res.nodes))
 		for _, l := range res.links {
 			out = append(out, expandedLink{Link: l, Name: prefixedLinkName(linkDisplayName(l), e.NamePrefix, e.Email)})
+		}
+		for _, node := range res.nodes {
+			node.Name = prefixedLinkName(node.Name, e.NamePrefix, e.Email)
+			out = append(out, node)
 		}
 		return out
 	}
@@ -157,7 +189,7 @@ func prefixedLinkName(displayName, prefix, fallback string) string {
 // JSON `ps`; every other scheme carries it in the URL #fragment.
 func applyRemarkToLink(rawLink, remark string) string {
 	rawLink = strings.TrimSpace(rawLink)
-	if remark == "" {
+	if remark == "" || rawLink == "" {
 		return rawLink
 	}
 	if strings.HasPrefix(rawLink, "vmess://") {
@@ -222,4 +254,41 @@ func parseExternalLink(rawLink string) map[string]any {
 		return nil
 	}
 	return map[string]any(res.Outbound)
+}
+
+// ParseSourceSnapshot accepts the same share links as a native client plus
+// the bounded YAML snapshot format. Keep original links for raw and JSON
+// alongside their normalized Mihomo representation.
+func ParseSourceSnapshot(raw []byte) (subscriptioncompat.Snapshot, error) {
+	if len(raw) > subscriptioncompat.MaxSourceBytes {
+		return subscriptioncompat.Snapshot{}, subscriptioncompat.ErrInvalidSnapshot
+	}
+	text := strings.TrimSpace(string(raw))
+	if decoded, ok := tryDecodeBase64Body(text); ok {
+		text = decoded
+	}
+	var candidates []any
+	var links []string
+	clash := &SubClashService{}
+	for line := range strings.SplitSeq(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		scheme, _, ok := strings.Cut(line, "://")
+		if !ok || !slices.Contains(serverShareLinkSchemes, scheme) {
+			return subscriptioncompat.ParseSnapshot(raw)
+		}
+		if len(candidates) >= subscriptioncompat.MaxSourceNodes || len(line) > 256<<10 {
+			return subscriptioncompat.Snapshot{}, subscriptioncompat.ErrInvalidSnapshot
+		}
+		name := linkDisplayName(line)
+		proxy := clash.clashProxyFromExternal(line, name)
+		if proxy != nil && name == "" {
+			proxy["name"] = proxy["server"]
+		}
+		candidates = append(candidates, proxy)
+		links = append(links, line)
+	}
+	return subscriptioncompat.ShareLinkSnapshot(candidates, links)
 }

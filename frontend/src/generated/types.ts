@@ -558,6 +558,27 @@ export interface ClientSlim {
   updatedAt: number;
 }
 
+export interface ClientSource {
+  id: number;
+  name: string;
+  nodes: ClientSourceNode[];
+  private: boolean;
+}
+
+export interface ClientSourceNode {
+  id: number;
+  name: string;
+  share_link: boolean;
+  type: string;
+}
+
+export interface ClientSources {
+  direct: DirectSource[];
+  linked: boolean;
+  plan: string;
+  sources: ClientSource[];
+}
+
 export interface ClientTraffic {
   down: number;
   email: string;
@@ -589,6 +610,11 @@ export interface ClientsSummary {
   online: string[];
   onlineCount: number;
   total: number;
+}
+
+export interface DirectSource {
+  kind: string;
+  remark: string;
 }
 
 export interface ExternalSelection {

@@ -2356,6 +2356,85 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ClientSource": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/ClientSourceNode"
+        },
+        "type": "array"
+      },
+      "private": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "nodes",
+      "private"
+    ],
+    "type": "object"
+  },
+  "ClientSourceNode": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "string"
+      },
+      "share_link": {
+        "type": "boolean"
+      },
+      "type": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "share_link",
+      "type"
+    ],
+    "type": "object"
+  },
+  "ClientSources": {
+    "description": "ClientSources is safe for both the panel and the subscription owner. The\nmanagement API never exposes provider URLs, node payloads or client secrets.",
+    "properties": {
+      "direct": {
+        "items": {
+          "$ref": "#/components/schemas/DirectSource"
+        },
+        "type": "array"
+      },
+      "linked": {
+        "type": "boolean"
+      },
+      "plan": {
+        "type": "string"
+      },
+      "sources": {
+        "items": {
+          "$ref": "#/components/schemas/ClientSource"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "direct",
+      "linked",
+      "plan",
+      "sources"
+    ],
+    "type": "object"
+  },
   "ClientTraffic": {
     "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
     "properties": {
@@ -2530,6 +2609,21 @@ export const SCHEMAS: Record<string, unknown> = {
       "online",
       "onlineCount",
       "total"
+    ],
+    "type": "object"
+  },
+  "DirectSource": {
+    "properties": {
+      "kind": {
+        "type": "string"
+      },
+      "remark": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "remark"
     ],
     "type": "object"
   },

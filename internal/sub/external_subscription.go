@@ -1,8 +1,10 @@
 package sub
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -71,14 +74,19 @@ func operatorChosePrivateHost(u *url.URL) bool {
 	return ip != nil && netsafe.IsBlockedIP(ip)
 }
 
+type subscriptionContent struct {
+	links []string
+	nodes []expandedLink
+}
+
 type subscriptionCacheEntry struct {
-	links     []string
+	subscriptionContent
 	fetchedAt time.Time
 }
 
 type subscriptionFetch struct {
-	done  chan struct{}
-	links []string
+	done chan struct{}
+	subscriptionContent
 }
 
 var subscriptionCache = struct {
@@ -93,7 +101,7 @@ var subscriptionCache = struct {
 // subscriptionFetchResult reports whether this caller performed the network
 // fetch, so only it records status and cache hits stay read-only.
 type subscriptionFetchResult struct {
-	links   []string
+	subscriptionContent
 	fetched bool
 	err     error
 }
@@ -112,12 +120,12 @@ func fetchSubscriptionLinks(rawURL string) subscriptionFetchResult {
 	cached, ok := subscriptionCache.m[rawURL]
 	if ok && time.Since(cached.fetchedAt) < subscriptionCacheTTL {
 		subscriptionCache.Unlock()
-		return subscriptionFetchResult{links: cached.links}
+		return subscriptionFetchResult{subscriptionContent: cached.subscriptionContent}
 	}
 	if fetch, waiting := subscriptionCache.inflight[rawURL]; waiting {
 		subscriptionCache.Unlock()
 		<-fetch.done
-		return subscriptionFetchResult{links: fetch.links}
+		return subscriptionFetchResult{subscriptionContent: fetch.subscriptionContent}
 	}
 	fetch := &subscriptionFetch{done: make(chan struct{})}
 	subscriptionCache.inflight[rawURL] = fetch
@@ -129,20 +137,20 @@ func fetchSubscriptionLinks(rawURL string) subscriptionFetchResult {
 		subscriptionCache.Unlock()
 	}()
 
-	links, err := doFetchSubscriptionLinks(rawURL)
+	content, err := fetchSubscriptionContent(rawURL)
 	if err != nil {
 		if ok {
-			fetch.links = cached.links
+			fetch.subscriptionContent = cached.subscriptionContent
 		}
-		return subscriptionFetchResult{links: fetch.links, fetched: true, err: err}
+		return subscriptionFetchResult{subscriptionContent: fetch.subscriptionContent, fetched: true, err: err}
 	}
 
 	subscriptionCache.Lock()
-	subscriptionCache.m[rawURL] = subscriptionCacheEntry{links: links, fetchedAt: time.Now()}
+	subscriptionCache.m[rawURL] = subscriptionCacheEntry{subscriptionContent: content, fetchedAt: time.Now()}
 	trimSubscriptionCacheLocked(rawURL)
 	subscriptionCache.Unlock()
-	fetch.links = links
-	return subscriptionFetchResult{links: links, fetched: true}
+	fetch.subscriptionContent = content
+	return subscriptionFetchResult{subscriptionContent: content, fetched: true}
 }
 
 func trimSubscriptionCacheLocked(keep string) {
@@ -187,10 +195,10 @@ func recordExternalSubscriptionFetch(rawURL string, fetchErr error) {
 	}
 }
 
-func doFetchSubscriptionLinks(rawURL string) ([]string, error) {
+func fetchSubscriptionContent(rawURL string) (subscriptionContent, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
 	if err != nil {
-		return nil, service.WithoutRequestURL(err)
+		return subscriptionContent{}, service.WithoutRequestURL(err)
 	}
 	// A provider on the operator's own network is fetched; the hops a public provider picks by
 	// redirecting stay held to public addresses.
@@ -203,25 +211,57 @@ func doFetchSubscriptionLinks(rawURL string) ([]string, error) {
 	}
 	resp, err := subscriptionClientFor(req).Do(req)
 	if err != nil {
-		return nil, service.WithoutRequestURL(err)
+		return subscriptionContent{}, service.WithoutRequestURL(err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, errBadStatus
+		return subscriptionContent{}, errBadStatus
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, subscriptionMaxBytes+1))
 	if err != nil {
-		return nil, err
+		return subscriptionContent{}, err
 	}
 	if len(body) > subscriptionMaxBytes {
-		return nil, errSubscriptionBodyTooLarge
+		return subscriptionContent{}, errSubscriptionBodyTooLarge
+	}
+	if bytes.Contains(body, []byte("proxies")) && looksLikeYAML(body) {
+		snapshot, err := subscriptioncompat.ParseSnapshot(body)
+		if err != nil {
+			return subscriptionContent{}, err
+		}
+		nodes := make([]expandedLink, 0, len(snapshot.Nodes))
+		for _, n := range snapshot.Nodes {
+			// These keys are trusted bookkeeping for local inbounds only.
+			delete(n.Payload, "_mgma-inbound-id")
+			delete(n.Payload, "_mgma-host-id")
+			payload, err := json.Marshal(n.Payload)
+			if err != nil {
+				return subscriptionContent{}, err
+			}
+			nodes = append(nodes, expandedLink{Link: subscriptioncompat.NodeShareLink(n.Payload), Name: n.Name, Proxy: payload})
+		}
+		return subscriptionContent{nodes: nodes}, nil
 	}
 	links := decodeSubscriptionBody(body)
 	if len(links) > subscriptionMaxLinks {
 		logger.Warningf("sub: an external subscription lists %d share links; serving the first %d", len(links), subscriptionMaxLinks)
 		links = links[:subscriptionMaxLinks]
 	}
-	return links, nil
+	return subscriptionContent{links: links}, nil
+}
+
+// A YAML document can contain individual URIs inside rules or comments. Only
+// its top-level proxies are eligible for a native subscription.
+func looksLikeYAML(raw []byte) bool {
+	for line := range strings.SplitSeq(string(raw), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		scheme, _, _ := strings.Cut(line, "://")
+		return !slices.Contains(serverShareLinkSchemes, strings.ToLower(scheme))
+	}
+	return false
 }
 
 var (

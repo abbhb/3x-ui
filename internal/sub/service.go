@@ -567,7 +567,7 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	if err != nil {
 		return nil, nil, 0, traffic, err
 	}
-	externalLinks, err := s.getClientExternalLinksBySubId(subId)
+	externalLinks, err := s.getExternalShareLinks(subId)
 	if err != nil {
 		return nil, nil, 0, traffic, err
 	}

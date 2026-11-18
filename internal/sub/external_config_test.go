@@ -104,8 +104,8 @@ func TestExpandEntrySubscriptionAppliesNamePrefix(t *testing.T) {
 	const subURL = "https://provider.example/sub-prefix"
 	subscriptionCache.Lock()
 	subscriptionCache.m[subURL] = subscriptionCacheEntry{
-		links:     []string{"trojan://pw@b.com:8443#HK-01"},
-		fetchedAt: time.Now(),
+		subscriptionContent: subscriptionContent{links: []string{"trojan://pw@b.com:8443#HK-01"}},
+		fetchedAt:           time.Now(),
 	}
 	subscriptionCache.Unlock()
 	t.Cleanup(func() {

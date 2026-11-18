@@ -37,7 +37,8 @@ import {
   type Account,
 } from '@/schemas/commerce';
 import MGMAControls from '@/pages/commerce/MGMAControls';
-import ExternalSources, { useSubscriptionLabel } from '@/pages/subscriptions/ExternalSources';
+import { useSubscriptionLabel } from '@/pages/subscriptions/ExternalSources';
+import ClientSubscriptionSources from '@/pages/subscriptions/ClientSubscriptionSources';
 import { money, date, bytes } from '@/pages/commerce/commerceFormat';
 import '@/pages/commerce/Commerce.css';
 
@@ -300,7 +301,7 @@ export default function PortalPage() {
                     {
                       key: 'external',
                       label: sl('mySources'),
-                      children: <ExternalSources token={token} />,
+                      children: <ClientSubscriptionSources key={token} token={token} />,
                     },
                     {
                       key: 'plans',

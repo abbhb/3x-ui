@@ -21,7 +21,7 @@ func main() {
 
 func run(root, outDir string) error {
 	requests := []packageRequest{
-		{Path: resolveRel(root, "internal/subscriptioncompat"), StructAllow: setOf("SourceInput", "HostChoice")},
+		{Path: resolveRel(root, "internal/subscriptioncompat"), StructAllow: setOf("SourceInput", "HostChoice", "ClientSources", "ClientSource", "ClientSourceNode", "DirectSource")},
 		{
 			Path: resolveRel(root, "internal/database/model"),
 			StructAllow: setOf(

@@ -601,6 +601,50 @@ export const EXAMPLES: Record<string, unknown> = {
     "traffic": null,
     "updatedAt": 1735100000000
   },
+  "ClientSource": {
+    "id": 0,
+    "name": "",
+    "nodes": [
+      {
+        "id": 0,
+        "name": "",
+        "share_link": false,
+        "type": ""
+      }
+    ],
+    "private": false
+  },
+  "ClientSourceNode": {
+    "id": 0,
+    "name": "",
+    "share_link": false,
+    "type": ""
+  },
+  "ClientSources": {
+    "direct": [
+      {
+        "kind": "",
+        "remark": ""
+      }
+    ],
+    "linked": false,
+    "plan": "",
+    "sources": [
+      {
+        "id": 0,
+        "name": "",
+        "nodes": [
+          {
+            "id": 0,
+            "name": "",
+            "share_link": false,
+            "type": ""
+          }
+        ],
+        "private": false
+      }
+    ]
+  },
   "ClientTraffic": {
     "down": 2097152,
     "email": "user1",
@@ -635,6 +679,10 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "onlineCount": 1,
     "total": 2000
+  },
+  "DirectSource": {
+    "kind": "",
+    "remark": ""
   },
   "ExternalSelection": {
     "mode": "",

@@ -201,7 +201,7 @@ export const sections: readonly Section[] = [
     id: 'externalSubscriptions',
     title: 'External subscription administration',
     description:
-      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token.',
+      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. The scoped client routes resolve private ownership from the linked account.',
     endpoints: [
       {
         method: 'GET',
@@ -321,7 +321,7 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/commerce/external-subscriptions/:id/snapshot',
-        summary: 'Publish a bounded YAML snapshot; only proxies are imported',
+        summary: 'Import nodes from YAML or a share-link list',
         requestSchema: { $ref: '#/components/schemas/SubscriptionSnapshotInput' },
         responseSchema: 'SubscriptionSource',
         params: [
@@ -361,7 +361,7 @@ export const sections: readonly Section[] = [
     id: 'privateExternal',
     title: 'Private external subscriptions',
     description:
-      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners come exclusively from the portal token.',
+      'URLs and node payloads are encrypted with the separate external key. Public sources retain LKG when automatic refresh is off; disabled private sources stop mixing. Customer writes are bounded to 20 per ten minutes. The scoped client routes resolve private ownership from the linked account.',
     endpoints: [
       {
         method: 'GET',
@@ -542,7 +542,7 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/api/portal/external-subscriptions/:id/snapshot',
-        summary: 'Publish a bounded YAML snapshot; only proxies are imported',
+        summary: 'Import nodes from YAML or a share-link list',
         requestSchema: { $ref: '#/components/schemas/SubscriptionSnapshotInput' },
         responses: {
           '200': {
@@ -4034,6 +4034,98 @@ export const sections: readonly Section[] = [
     ],
   },
 ];
+
+// The client editor reuses all private-source operations under a full-admin
+// session. Source ownership is derived from the client/account association.
+const externalAdmin = sections.find((section) => section.id === 'externalSubscriptions')!;
+const clientSourceRoutes: Pick<Endpoint, 'method' | 'path'>[] = [
+  {
+    method: 'GET',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions',
+  },
+  {
+    method: 'POST',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions',
+  },
+  {
+    method: 'GET',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id',
+  },
+  {
+    method: 'PUT',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id',
+  },
+  {
+    method: 'DELETE',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id',
+  },
+  {
+    method: 'POST',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id/credential',
+  },
+  {
+    method: 'DELETE',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id/credential',
+  },
+  {
+    method: 'POST',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id/refresh',
+  },
+  {
+    method: 'POST',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id/snapshot',
+  },
+  {
+    method: 'GET',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-subscriptions/:id/nodes',
+  },
+];
+externalAdmin.endpoints.push(
+  ...clientSourceRoutes.map((route) => {
+    const catalogPath = route.path.replace('/subscriptions/clients/:clientId', '');
+    const endpoint = externalAdmin.endpoints.find(
+      (e) => e.method === route.method && e.path === catalogPath,
+    )!;
+    return {
+      ...endpoint,
+      ...route,
+      summary:
+        endpoint.method === 'POST' && catalogPath.endsWith('/external-subscriptions')
+          ? 'Create a private source for the linked client'
+          : endpoint.summary + ' for the linked client',
+      params: [
+        {
+          name: 'clientId',
+          in: 'path' as const,
+          type: 'integer' as const,
+          desc: 'Native client ID.',
+        },
+        ...(endpoint.params ?? []),
+      ],
+    };
+  }),
+  {
+    method: 'GET',
+    path: '/panel/api/commerce/subscriptions/clients/:clientId/external-inventory',
+    summary: 'List the external assignments of a client',
+    responseSchema: 'ClientSources',
+    params: [{ name: 'clientId', in: 'path', type: 'integer' }],
+  },
+);
+sections
+  .find((section) => section.id === 'privateExternal')!
+  .endpoints.push({
+    method: 'GET',
+    path: '/api/portal/external-inventory',
+    summary: 'List my external assignments and supported formats',
+    security: [{ portalBearer: [] }],
+    responses: {
+      '200': {
+        description: 'Credential-free assignments',
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/ClientSources' } } },
+      },
+    },
+  });
 
 // Scope the same native endpoints; no duplicate remote configuration contract.
 for (const section of sections) {

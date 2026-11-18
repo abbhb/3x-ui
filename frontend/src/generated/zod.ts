@@ -591,6 +591,30 @@ export const ClientSlimSchema = z.object({
 });
 export type ClientSlim = z.infer<typeof ClientSlimSchema>;
 
+export const ClientSourceSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  nodes: z.array(z.lazy(() => ClientSourceNodeSchema)),
+  private: z.boolean(),
+});
+export type ClientSource = z.infer<typeof ClientSourceSchema>;
+
+export const ClientSourceNodeSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  share_link: z.boolean(),
+  type: z.string(),
+});
+export type ClientSourceNode = z.infer<typeof ClientSourceNodeSchema>;
+
+export const ClientSourcesSchema = z.object({
+  direct: z.array(z.lazy(() => DirectSourceSchema)),
+  linked: z.boolean(),
+  plan: z.string(),
+  sources: z.array(z.lazy(() => ClientSourceSchema)),
+});
+export type ClientSources = z.infer<typeof ClientSourcesSchema>;
+
 export const ClientTrafficSchema = z.object({
   down: z.number().int(),
   email: z.string(),
@@ -625,6 +649,12 @@ export const ClientsSummarySchema = z.object({
   total: z.number().int(),
 });
 export type ClientsSummary = z.infer<typeof ClientsSummarySchema>;
+
+export const DirectSourceSchema = z.object({
+  kind: z.string(),
+  remark: z.string(),
+});
+export type DirectSource = z.infer<typeof DirectSourceSchema>;
 
 export const ExternalSelectionSchema = z.object({
   mode: z.string(),

@@ -2,8 +2,8 @@
 title: External subscription administration
 description: URLs and node payloads are encrypted with the separate external
   key. Public sources retain LKG when automatic refresh is off; disabled private
-  sources stop mixing. Customer writes are bounded to 20 per ten minutes. Owners
-  come exclusively from the portal token.
+  sources stop mixing. Customer writes are bounded to 20 per ten minutes. The
+  scoped client routes resolve private ownership from the linked account.
 full: true
 _openapi:
   preload:
@@ -34,11 +34,48 @@ _openapi:
       title: Refresh atomically, preserving last good nodes on failure
       url: '#refresh-atomically-preserving-last-good-nodes-on-failure'
     - depth: 2
-      title: Publish a bounded YAML snapshot; only proxies are imported
-      url: '#publish-a-bounded-yaml-snapshot-only-proxies-are-imported'
+      title: Import nodes from YAML or a share-link list
+      url: '#import-nodes-from-yaml-or-a-share-link-list'
     - depth: 2
       title: List node selection metadata; never returns connection parameters
       url: '#list-node-selection-metadata-never-returns-connection-parameters'
+    - depth: 2
+      title: List scoped sources without credentials for the linked client
+      url: '#list-scoped-sources-without-credentials-for-the-linked-client'
+    - depth: 2
+      title: Create a private source for the linked client
+      url: '#create-a-private-source-for-the-linked-client'
+    - depth: 2
+      title: Read scoped source metadata for the linked client
+      url: '#read-scoped-source-metadata-for-the-linked-client'
+    - depth: 2
+      title: Delete an unreferenced source for the linked client
+      url: '#delete-an-unreferenced-source-for-the-linked-client'
+    - depth: 2
+      title: Change source name and automatic refresh; group and owner are immutable
+        for the linked client
+      url: '#change-source-name-and-automatic-refresh-group-and-owner-are-immutable-for-the-linked-client'
+    - depth: 2
+      title: Replace the write-only public HTTPS URL for the linked client
+      url: '#replace-the-write-only-public-https-url-for-the-linked-client'
+    - depth: 2
+      title: Remove the URL while retaining last successful nodes for the linked
+        client
+      url: '#remove-the-url-while-retaining-last-successful-nodes-for-the-linked-client'
+    - depth: 2
+      title: Refresh atomically, preserving last good nodes on failure for the linked
+        client
+      url: '#refresh-atomically-preserving-last-good-nodes-on-failure-for-the-linked-client'
+    - depth: 2
+      title: Import nodes from YAML or a share-link list for the linked client
+      url: '#import-nodes-from-yaml-or-a-share-link-list-for-the-linked-client'
+    - depth: 2
+      title: List node selection metadata; never returns connection parameters for the
+        linked client
+      url: '#list-node-selection-metadata-never-returns-connection-parameters-for-the-linked-client'
+    - depth: 2
+      title: List the external assignments of a client
+      url: '#list-the-external-assignments-of-a-client'
   structuredData:
     headings:
       - content: List scoped sources without credentials
@@ -57,10 +94,36 @@ _openapi:
         id: remove-the-url-while-retaining-last-successful-nodes
       - content: Refresh atomically, preserving last good nodes on failure
         id: refresh-atomically-preserving-last-good-nodes-on-failure
-      - content: Publish a bounded YAML snapshot; only proxies are imported
-        id: publish-a-bounded-yaml-snapshot-only-proxies-are-imported
+      - content: Import nodes from YAML or a share-link list
+        id: import-nodes-from-yaml-or-a-share-link-list
       - content: List node selection metadata; never returns connection parameters
         id: list-node-selection-metadata-never-returns-connection-parameters
+      - content: List scoped sources without credentials for the linked client
+        id: list-scoped-sources-without-credentials-for-the-linked-client
+      - content: Create a private source for the linked client
+        id: create-a-private-source-for-the-linked-client
+      - content: Read scoped source metadata for the linked client
+        id: read-scoped-source-metadata-for-the-linked-client
+      - content: Delete an unreferenced source for the linked client
+        id: delete-an-unreferenced-source-for-the-linked-client
+      - content: Change source name and automatic refresh; group and owner are immutable
+          for the linked client
+        id: change-source-name-and-automatic-refresh-group-and-owner-are-immutable-for-the-linked-client
+      - content: Replace the write-only public HTTPS URL for the linked client
+        id: replace-the-write-only-public-https-url-for-the-linked-client
+      - content: Remove the URL while retaining last successful nodes for the linked
+          client
+        id: remove-the-url-while-retaining-last-successful-nodes-for-the-linked-client
+      - content: Refresh atomically, preserving last good nodes on failure for the
+          linked client
+        id: refresh-atomically-preserving-last-good-nodes-on-failure-for-the-linked-client
+      - content: Import nodes from YAML or a share-link list for the linked client
+        id: import-nodes-from-yaml-or-a-share-link-list-for-the-linked-client
+      - content: List node selection metadata; never returns connection parameters for
+          the linked client
+        id: list-node-selection-metadata-never-returns-connection-parameters-for-the-linked-client
+      - content: List the external assignments of a client
+        id: list-the-external-assignments-of-a-client
     contents: []
 ---
 
@@ -71,7 +134,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/commerce/external-subscriptions","method":"get"},{"path":"/panel/api/commerce/external-subscriptions","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"get"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"delete"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"put"},{"path":"/panel/api/commerce/external-subscriptions/{id}/credential","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/credential","method":"delete"},{"path":"/panel/api/commerce/external-subscriptions/{id}/refresh","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/snapshot","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/nodes","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/commerce/external-subscriptions","method":"get"},{"path":"/panel/api/commerce/external-subscriptions","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"get"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"delete"},{"path":"/panel/api/commerce/external-subscriptions/{id}","method":"put"},{"path":"/panel/api/commerce/external-subscriptions/{id}/credential","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/credential","method":"delete"},{"path":"/panel/api/commerce/external-subscriptions/{id}/refresh","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/snapshot","method":"post"},{"path":"/panel/api/commerce/external-subscriptions/{id}/nodes","method":"get"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions","method":"get"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions","method":"post"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}","method":"get"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}","method":"delete"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}","method":"put"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}/credential","method":"post"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}/credential","method":"delete"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}/refresh","method":"post"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}/snapshot","method":"post"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-subscriptions/{id}/nodes","method":"get"},{"path":"/panel/api/commerce/subscriptions/clients/{clientId}/external-inventory","method":"get"}]} showTitle />
     </>
   );
 }
