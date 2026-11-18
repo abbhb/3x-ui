@@ -10,6 +10,7 @@ import {
   PolicySchema,
   PolicyNamesSchema,
 } from '@/schemas/subscriptionCompat';
+import { planGroupMembers } from '@/pages/commerce/planEntryGrants';
 import { useSubscriptionLabel } from './ExternalSources';
 
 export default function PlanSubscriptionFields({ inboundIDs }: { inboundIDs: number[] }) {
@@ -162,9 +163,10 @@ function GroupMembers({
     groups = [];
   }
   const members = value || {};
+  const visibleMembers = planGroupMembers(members, inboundIDs);
   return (
     <Space orientation="vertical" className="commerce-full">
-      {Object.entries(members).map(([name, selected]) => (
+      {Object.entries(visibleMembers).map(([name, selected]) => (
         <div key={name}>
           <Typography.Text>{name}</Typography.Text>
           <Space wrap>
