@@ -6,49 +6,41 @@ function hostKey(id: number, signature: string) {
   return `host:${id}:${signature}`;
 }
 
-type EntryOption = { value: string; label: string; inboundID: number; host?: HostChoice };
+type Grant = { inboundID: number; host?: HostChoice };
+export type Entry = HostChoice & { key: string };
+export type InboundEntries = {
+  id: number;
+  name: string;
+  allKey: string;
+  bindingKey?: string;
+  entries: Entry[];
+};
 
 export function planEntryCatalog(
   plan: Plan | null,
   hosts: HostChoice[],
   inbounds: InboundOption[],
-  label: (key: string) => string,
 ) {
-  const supported = new Map(
-    inbounds
-      .filter((ib) => ib.enable && ['vless', 'hysteria'].includes(ib.protocol || ''))
-      .map((ib) => [ib.id, ib]),
-  );
-  const inboundName = (id: number) => {
-    const ib = supported.get(id);
-    return `${ib?.remark || ib?.tag || label('inbound')} (#${id})`;
-  };
-  const hostByID = new Map(hosts.map((h) => [h.host_id, h]));
+  const groups = new Map<number, InboundEntries>();
+  const byValue = new Map<string, Grant>();
+  for (const ib of inbounds) {
+    if (!ib.enable || !['vless', 'hysteria'].includes(ib.protocol || '')) continue;
+    const allKey = `all:${ib.id}`;
+    groups.set(ib.id, { id: ib.id, name: ib.remark || ib.tag || `#${ib.id}`, allKey, entries: [] });
+    byValue.set(allKey, { inboundID: ib.id });
+  }
   const savedHosts = new Set(plan?.host_ids);
-  const hostsToOffer = hosts.filter(
-    (h) => supported.has(h.inbound_id) && (!h.disabled || savedHosts.has(h.host_id)),
-  );
-  const explicit: EntryOption[] = hostsToOffer.map((h) => ({
-    value: hostKey(h.host_id, h.signature),
-    label: [
-      h.name,
-      h.address !== h.name && h.address,
-      `#${h.host_id}`,
-      inboundName(h.inbound_id),
-      h.disabled && label('disabled'),
-    ]
-      .filter(Boolean)
-      .join(' · '),
-    inboundID: h.inbound_id,
-    host: h,
-  }));
-  const follow = Array.from(supported.keys(), (id) => ({
-    value: `all:${id}`,
-    label: `${label('autoHosts')} · ${inboundName(id)}`,
-    inboundID: id,
-  }));
+  const hostByID = new Map(hosts.map((h) => [h.host_id, h]));
+  for (const host of hosts) {
+    const group = groups.get(host.inbound_id);
+    if (!group) continue;
+    const key = hostKey(host.host_id, host.signature);
+    group.entries.push({ ...host, key });
+    if (!host.disabled || savedHosts.has(host.host_id))
+      byValue.set(key, { inboundID: group.id, host });
+  }
 
-  // Older plans can bind a client to an inbound without publishing any of its hosts.
+  // Preserve old bindings that attached the client without publishing an entry.
   const covered = new Set(plan?.auto_host_inbound_ids);
   const initial = Array.from(savedHosts, (id) => {
     const h = hostByID.get(id);
@@ -57,28 +49,23 @@ export function planEntryCatalog(
     return hostKey(id, inSavedScope ? plan?.host_signatures?.[String(id)] || h.signature : '');
   });
   initial.push(...(plan?.auto_host_inbound_ids || []).map((id) => `all:${id}`));
-  const bindings = (plan?.inbound_ids || [])
-    .filter((id) => !covered.has(id))
-    .map((id) => ({
-      value: `binding:${id}`,
-      label: `${label('bindingOnly')} · ${inboundName(id)}`,
-      inboundID: id,
-    }));
-  initial.push(...bindings.map((o) => o.value));
-  const options = [
-    { label: label('explicitEntries'), options: explicit },
-    { label: label('autoHostsHelp'), options: follow },
-    { label: label('bindingOnly'), options: bindings.filter((o) => supported.has(o.inboundID)) },
-  ].filter((group) => group.options.length);
-  const byValue = new Map(
-    options.flatMap((group) => group.options).map((o: EntryOption) => [o.value, o]),
-  );
-  return { initial, options, byValue };
+  for (const id of plan?.inbound_ids || []) {
+    if (covered.has(id)) continue;
+    const key = `binding:${id}`;
+    initial.push(key);
+    const group = groups.get(id);
+    if (group) {
+      group.bindingKey = key;
+      byValue.set(key, { inboundID: id });
+    }
+  }
+  return { initial, groups: [...groups.values()], byValue };
 }
+export type EntryCatalog = ReturnType<typeof planEntryCatalog>;
 
 export function resolvePlanEntries(
   keys: string[],
-  byValue: Map<string, EntryOption>,
+  byValue: Map<string, Grant>,
   originalIDs: number[] = [],
 ) {
   const inboundIDs = new Set<number>();
