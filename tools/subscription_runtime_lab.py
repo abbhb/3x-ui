@@ -105,8 +105,8 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         if keep: cls.root.mkdir(mode=0o700)
         cls.up_port, cls.down_port = [free_port() for _ in range(2)]
         env = dict(os.environ, XUI_TEST_SUBSCRIPTION_OUTPUT=str(cls.root), XUI_TEST_XHTTP_UP_PORT=str(cls.up_port), XUI_TEST_XHTTP_DOWN_PORT=str(cls.down_port))
-        result = subprocess.run(['go', 'test', './internal/sub', '-run', '^TestStage4(AtomicImportProducesAuthorizedMihomoAndOldCredentials|RuntimeFixtures)$', '-count=1', '-v'], env=env, capture_output=True, text=True, timeout=180)
-        if result.returncode or result.stdout.count('--- PASS:') != 2:
+        result = subprocess.run(['go', 'test', './internal/sub', '-run', '^(TestStage4(AtomicImportProducesAuthorizedMihomoAndOldCredentials|RuntimeFixtures)|TestMihomoExternalXHTTPImportProducesValidIntegerScalars)$', '-count=1', '-v'], env=env, capture_output=True, text=True, timeout=180)
+        if result.returncode or result.stdout.count('--- PASS:') != 3:
             if cls.workspace: cls.workspace.cleanup()
             raise AssertionError('Native runtime fixture generation failed:\n' + result.stdout + result.stderr)
 
@@ -191,6 +191,14 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         logs='IPv6 download relay connections: '+str(down.connections)+'\n'+(self.root/'xray.log').read_text(errors='replace')+(self.root/'xhttp-client/core.log').read_text(errors='replace')
         self.assertEqual(result, (200, b'native-subscription-runtime-confirmed'),logs)
         self.assertGreater(down.connections, 0, 'independent IPv6 download connection was ignored')
+
+    def test_external_xhttp_import_passes_mihomo_without_deprecated_options(self):
+        root = self.root / 'external-import-check'; root.mkdir()
+        path = root / 'config.json'
+        path.write_bytes((self.root / 'external-xhttp-import.json').read_bytes())
+        check = subprocess.run([BINARY['mihomo'], '-t', '-d', str(root), '-f', str(path)], capture_output=True, text=True, timeout=30)
+        self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+        self.assertNotIn('global-client-fingerprint', check.stdout + check.stderr)
 
     def test_full_import_passes_mihomo_and_fake_ip_exceptions_work(self):
         document = json.loads((self.root / 'full-import.json').read_text())
