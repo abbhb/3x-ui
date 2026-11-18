@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import {
   ApiOutlined,
+  ReadOutlined,
   ClusterOutlined,
   CloudServerOutlined,
   CrownOutlined,
@@ -16,6 +17,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons';
 
+const AccessGuidePage = lazy(() => import('@/pages/access-guide/AccessGuidePage'));
 const IndexPage = lazy(() => import('@/pages/index/IndexPage'));
 const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
@@ -30,6 +32,7 @@ const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
 const SponsorsPage = lazy(() => import('@/pages/sponsors/SponsorsPage'));
 
 export interface PanelRoute {
+  group: 'access' | 'management';
   path: string;
   titleKey: string;
   icon: ComponentType;
@@ -39,25 +42,111 @@ export interface PanelRoute {
 // The router, the sidebar, the page titles and the command palette all read this list, so a
 // page cannot go missing from one of them.
 export const PANEL_ROUTES: PanelRoute[] = [
-  { path: '/', titleKey: 'menu.dashboard', icon: DashboardOutlined, component: IndexPage },
-  { path: '/inbounds', titleKey: 'menu.inbounds', icon: ImportOutlined, component: InboundsPage },
-  { path: '/clients', titleKey: 'menu.clients', icon: TeamOutlined, component: ClientsPage },
-  { path: '/commerce', titleKey: 'menu.commerce', icon: TagsOutlined, component: CommercePage },
-  { path: '/groups', titleKey: 'menu.groups', icon: TagsOutlined, component: GroupsPage },
-  { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
   {
+    group: 'access',
+    path: '/access-guide',
+    titleKey: 'menu.accessGuide',
+    icon: ReadOutlined,
+    component: AccessGuidePage,
+  },
+  {
+    group: 'access',
+    path: '/clients',
+    titleKey: 'menu.clients',
+    icon: TeamOutlined,
+    component: ClientsPage,
+  },
+  {
+    group: 'access',
+    path: '/hosts',
+    titleKey: 'menu.hosts',
+    icon: GlobalOutlined,
+    component: HostsPage,
+  },
+  {
+    group: 'access',
+    path: '/nodes',
+    titleKey: 'menu.nodes',
+    icon: ClusterOutlined,
+    component: NodesPage,
+  },
+  {
+    group: 'access',
+    path: '/inbounds',
+    titleKey: 'menu.inbounds',
+    icon: ImportOutlined,
+    component: InboundsPage,
+  },
+  {
+    group: 'access',
+    path: '/routing',
+    titleKey: 'menu.routing',
+    icon: SwapOutlined,
+    component: XrayPage,
+  },
+  {
+    group: 'access',
+    path: '/outbound',
+    titleKey: 'menu.outbounds',
+    icon: ExportOutlined,
+    component: XrayPage,
+  },
+  {
+    group: 'management',
+    path: '/',
+    titleKey: 'menu.dashboard',
+    icon: DashboardOutlined,
+    component: IndexPage,
+  },
+  {
+    group: 'management',
     path: '/service-hosts',
     titleKey: 'menu.serviceHosts',
     icon: CloudServerOutlined,
     component: ServiceHostsPage,
   },
-  { path: '/hosts', titleKey: 'menu.hosts', icon: GlobalOutlined, component: HostsPage },
-  { path: '/outbound', titleKey: 'menu.outbounds', icon: ExportOutlined, component: XrayPage },
-  { path: '/routing', titleKey: 'menu.routing', icon: SwapOutlined, component: XrayPage },
-  { path: '/settings', titleKey: 'menu.settings', icon: SettingOutlined, component: SettingsPage },
-  { path: '/xray', titleKey: 'menu.xray', icon: ToolOutlined, component: XrayPage },
-  { path: '/api-docs', titleKey: 'menu.apiDocs', icon: ApiOutlined, component: ApiDocsPage },
-  { path: '/sponsors', titleKey: 'menu.sponsors', icon: CrownOutlined, component: SponsorsPage },
+  {
+    group: 'management',
+    path: '/groups',
+    titleKey: 'menu.groups',
+    icon: TagsOutlined,
+    component: GroupsPage,
+  },
+  {
+    group: 'management',
+    path: '/commerce',
+    titleKey: 'menu.commerce',
+    icon: TagsOutlined,
+    component: CommercePage,
+  },
+  {
+    group: 'management',
+    path: '/settings',
+    titleKey: 'menu.settings',
+    icon: SettingOutlined,
+    component: SettingsPage,
+  },
+  {
+    group: 'management',
+    path: '/xray',
+    titleKey: 'menu.xray',
+    icon: ToolOutlined,
+    component: XrayPage,
+  },
+  {
+    group: 'management',
+    path: '/api-docs',
+    titleKey: 'menu.apiDocs',
+    icon: ApiOutlined,
+    component: ApiDocsPage,
+  },
+  {
+    group: 'management',
+    path: '/sponsors',
+    titleKey: 'menu.sponsors',
+    icon: CrownOutlined,
+    component: SponsorsPage,
+  },
 ];
 
 export const PANEL_ROUTE_PATHS = PANEL_ROUTES.map((route) => route.path);

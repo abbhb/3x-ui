@@ -42,7 +42,10 @@ func NewIndexController(g *gin.RouterGroup) *IndexController {
 
 // initRouter sets up the routes for index, login, logout, and two-factor authentication.
 func (a *IndexController) initRouter(g *gin.RouterGroup) {
-	g.GET("/", a.index)
+	g.GET("/", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		c.Redirect(http.StatusTemporaryRedirect, c.GetString("base_path")+"portal/")
+	})
 	g.GET("/csrf-token", a.csrfToken)
 	g.GET("/sponsors", a.sponsors)
 	g.GET("/sponsors/logo/:name", a.sponsorLogo)
@@ -53,7 +56,7 @@ func (a *IndexController) initRouter(g *gin.RouterGroup) {
 	g.POST("/getTwoFactorEnable", middleware.CSRFMiddleware(getRemoteIp), a.getTwoFactorEnable)
 }
 
-// sponsors is public so the login page can render its slot; failures stay silent.
+// sponsors returns the feed used by the dashboard and sponsors page.
 func (a *IndexController) sponsors(c *gin.Context) {
 	list, err := a.panelService.GetSponsors()
 	if err != nil {
@@ -73,16 +76,6 @@ func (a *IndexController) sponsorLogo(c *gin.Context) {
 	}
 	c.Header("Cache-Control", "public, max-age=3600")
 	c.Data(http.StatusOK, contentType, data)
-}
-
-// index handles the root route, redirecting logged-in users to the panel or showing the login page.
-func (a *IndexController) index(c *gin.Context) {
-	if session.IsLogin(c) {
-		c.Header("Cache-Control", "no-store")
-		c.Redirect(http.StatusTemporaryRedirect, c.GetString("base_path")+"panel/")
-		return
-	}
-	serveDistPage(c, "login.html")
 }
 
 // login handles user authentication and session creation.

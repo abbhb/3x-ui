@@ -62,6 +62,7 @@ interface PaletteItem {
 // does rather than by its title.
 export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/': ['overview', 'dashboard', 'cpu', 'ram', 'memory', 'traffic', 'speed'],
+  '/access-guide': ['guide', 'setup', 'subscription', '接入', '指引', '订阅'],
   '/inbounds': [
     'inbounds',
     'ports',
@@ -759,7 +760,6 @@ export default function CommandPalette() {
                 {t('close')}
               </span>
             </div>
-            <span>3x-ui Command Palette</span>
           </div>
         </div>
       </div>

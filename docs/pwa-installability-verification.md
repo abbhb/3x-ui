@@ -1,6 +1,6 @@
 # PWA installability verification
 
-This change adds a network-only PWA surface to the login and panel pages. It
+This change adds a network-only PWA surface to the authenticated panel pages. It
 does not cache panel data, API responses, credentials, or WebSocket traffic.
 
 ## Local checks
@@ -32,7 +32,7 @@ The built binary must serve these paths beneath the configured `webBasePath`:
 - `icons/3x-ui-192.png`
 - `icons/3x-ui-512.png`
 
-The login and panel HTML must contain a manifest link and registration script
+The authenticated admin HTML must contain a manifest link and registration script
 whose URLs begin with the same runtime base path. The manifest must contain
 `display: "standalone"`, relative `start_url` and `scope`, and all six icon
 entries.
@@ -47,7 +47,7 @@ a child process, the restart can briefly interrupt VPN connections.
 After the restart, verify:
 
 1. `x-ui` is active and its child Xray process is running.
-2. The existing panel URL serves HTML with the PWA manifest link.
+2. After sign-in, the admin URL serves HTML with the PWA manifest link. The manifest starts the app at the admin entry.
 3. The manifest, registration script, worker, and all six icons return `200`.
 4. Login, authenticated API requests, panel navigation, logout, and the panel
    WebSocket all work.

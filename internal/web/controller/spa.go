@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 
@@ -24,62 +25,69 @@ func NewXUIController(g *gin.RouterGroup) *XUIController {
 	return a
 }
 
-// initRouter sets up the main panel routes and initializes sub-controllers.
-//
-// The HTML routes all hand the same single-page-app shell (index.html) to the
-// browser; React Router takes over and renders the correct page from the URL.
-// The /panel/api, /panel/setting, /panel/xray sub-routers register POST/JSON
-// endpoints on different paths and stay untouched by the shell handler.
+// Admin documents have their own namespace. Legacy /panel document links
+// redirect there while existing panel API and CSRF paths keep their contracts.
 func (a *XUIController) initRouter(g *gin.RouterGroup) {
+	g.GET("/admin", a.adminPage)
+	g.GET("/admin/*page", a.adminPage)
+
 	g = g.Group("/panel")
-	g.Use(a.checkLogin)
 	g.Use(middleware.CSRFMiddleware(getRemoteIp))
 
-	g.GET("/", a.panelSPA)
-	g.GET("/inbounds", a.panelSPA)
-	g.GET("/clients", a.panelSPA)
-	g.GET("/groups", a.panelSPA)
-	g.GET("/nodes", a.panelSPA)
-	g.GET("/settings", a.panelSPA)
-	g.GET("/xray", a.panelSPA)
-	g.GET("/outbound", a.panelSPA)
-	g.GET("/routing", a.panelSPA)
-	g.GET("/api-docs", a.panelSPA)
+	g.GET("/", a.legacyPanelPage)
+	g.GET("/inbounds", a.legacyPanelPage)
+	g.GET("/clients", a.legacyPanelPage)
+	g.GET("/groups", a.legacyPanelPage)
+	g.GET("/nodes", a.legacyPanelPage)
+	g.GET("/settings", a.legacyPanelPage)
+	g.GET("/xray", a.legacyPanelPage)
+	g.GET("/outbound", a.legacyPanelPage)
+	g.GET("/routing", a.legacyPanelPage)
+	g.GET("/api-docs", a.legacyPanelPage)
 
 	// SPA pages built by Vite don't have a server-rendered <meta name="csrf-token">,
 	// so they fetch the session token via this endpoint at startup and replay it
 	// on subsequent unsafe requests.
-	g.GET("/csrf-token", a.csrfToken)
+	g.GET("/csrf-token", a.checkLogin, a.csrfToken)
 }
 
-// panelSPA serves the React SPA shell. Every GET under /panel/ that isn't an
-// API endpoint returns the same index.html — React Router reads the URL and
-// mounts the matching page on the client.
-func (a *XUIController) panelSPA(c *gin.Context) {
+// Serve the login form at the requested admin URL so signing in can resume a deep link.
+func (a *XUIController) adminPage(c *gin.Context) {
+	page := c.Param("page")
+	if isStaticAssetPath(page) || !acceptsHTML(c.GetHeader("Accept")) {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	if !session.IsLogin(c) {
+		if isAjax(c) {
+			pureJsonMsg(c, http.StatusUnauthorized, false, I18nWeb(c, "pages.login.loginAgain"))
+			return
+		}
+		serveDistPage(c, "login.html")
+		return
+	}
 	serveDistPage(c, "index.html")
 }
 
-// HandleNoRoutePanelSPA serves the React shell for client-side routes that were
-// not explicitly registered in Gin. It intentionally runs from engine.NoRoute
-// instead of a /panel/*path wildcard so explicit JSON/API routes keep their
-// normal routing semantics.
+func (a *XUIController) legacyPanelPage(c *gin.Context) {
+	if isAjax(c) && !session.IsLogin(c) {
+		pureJsonMsg(c, http.StatusUnauthorized, false, I18nWeb(c, "pages.login.loginAgain"))
+		return
+	}
+	base := normalizeWebBasePath(c.GetString("base_path"))
+	suffix := strings.TrimPrefix(c.Request.URL.Path, base+"panel")
+	target := url.URL{Path: base + "admin" + suffix, RawQuery: c.Request.URL.RawQuery}
+	c.Header("Cache-Control", "no-store")
+	c.Redirect(http.StatusTemporaryRedirect, target.RequestURI())
+}
+
+// Redirect unregistered legacy document routes without swallowing API or asset misses.
 func (a *XUIController) HandleNoRoutePanelSPA(c *gin.Context) bool {
 	if !isPanelSPAFallbackRequest(c) {
 		return false
 	}
 
-	if !session.IsLogin(c) {
-		if isAjax(c) {
-			pureJsonMsg(c, http.StatusUnauthorized, false, I18nWeb(c, "pages.login.loginAgain"))
-		} else {
-			c.Header("Cache-Control", "no-store")
-			c.Redirect(http.StatusTemporaryRedirect, c.GetString("base_path"))
-		}
-		c.Abort()
-		return true
-	}
-
-	a.panelSPA(c)
+	a.legacyPanelPage(c)
 	return true
 }
 

@@ -89,13 +89,13 @@ function rocketLoaderOptOutPlugin() {
   };
 }
 
-function bypassMigratedRoute(req) {
+async function bypassMigratedRoute(req) {
   if (req.method !== 'GET') return undefined;
   const url = req.url.split('?')[0];
   const basePath = refreshBasePath();
 
-  if (url === basePath) return '/login.html';
-
+  // Let Go redirect the site root and legacy panel bookmarks. For admin HTML,
+  // select the hot-reloaded entry using the same session as the backend.
   if (url.startsWith(basePath)) {
     const stripped = url.slice(basePath.length);
     for (const prefix of PANEL_API_PREFIXES) {
@@ -106,8 +106,13 @@ function bypassMigratedRoute(req) {
       }
     }
     if (stripped === 'portal' || stripped === 'portal/' || stripped.startsWith('portal/')) return '/portal.html';
-    if (stripped === 'panel' || stripped === 'panel/' || stripped.startsWith('panel/')) {
-      return '/index.html';
+    if (stripped === 'admin' || stripped.startsWith('admin/')) {
+      const check = await fetch(BACKEND_TARGET + basePath + 'panel/csrf-token', {
+        headers: { Cookie: req.headers.cookie || '', 'X-Requested-With': 'XMLHttpRequest' },
+        redirect: 'manual',
+      });
+      await check.body?.cancel();
+      return check.ok ? '/index.html' : '/login.html';
     }
   }
   return undefined;
@@ -288,7 +293,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '^/(?:[^/]+/)?(login|logout|getTwoFactorEnable|csrf-token|sponsors|panel|server)(?:/|$)': makeBackendProxy(BACKEND_TARGET),
+      '^/(?:[^/]+/)?(login|logout|getTwoFactorEnable|csrf-token|sponsors|admin|panel|portal|api/portal|server)(?:/|$)': makeBackendProxy(BACKEND_TARGET),
       '^/$': makeBackendProxy(BACKEND_TARGET),
       '^/[^/]+/$': makeBackendProxy(BACKEND_TARGET),
       '^/(?:[^/]+/)?ws$': {

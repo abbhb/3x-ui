@@ -130,7 +130,7 @@ chmod() { :; }
 _install_xui_service_unit() { printf 'unit\n' >> "$TEST_SETTINGS_DIR/lifecycle"; }
 setup_fail2ban() { printf 'fail2ban\n' >> "$TEST_SETTINGS_DIR/lifecycle"; }
 `
-	driver += scriptFunction(t, script, "gen_random_string") + scriptFunction(t, script, function)
+	driver += scriptFunction(t, script, "panel_browser_path") + scriptFunction(t, script, "gen_random_string") + scriptFunction(t, script, function)
 	if script == "install.sh" {
 		for _, helper := range []string{"is_port_in_use", "normalize_panel_port", "select_panel_port"} {
 			driver += scriptFunction(t, script, helper)

@@ -264,7 +264,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 72px 16px;
 }
 
 .login-loading {
@@ -320,35 +320,18 @@
   }
 }
 
-.brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.brand-name {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+.auth-title {
+  margin: 0;
   color: var(--color-text);
-  background: linear-gradient(135deg, var(--color-accent), #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.login-app.is-dark .brand-name {
-  background: linear-gradient(135deg, #60a5fa, #1d4ed8);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 28px;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .brand-accent {
   display: block;
   width: 40px;
+  margin: 12px auto 28px;
   height: 3px;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--color-accent), #ec4899);
@@ -356,40 +339,6 @@
 
 .login-app.is-dark .brand-accent {
   background: linear-gradient(90deg, #60a5fa, #1d4ed8);
-}
-
-.welcome {
-  text-align: center;
-  color: var(--color-text);
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.2;
-  min-height: 42px;
-  margin: 12px 0 28px;
-  letter-spacing: 0.3px;
-}
-
-.welcome b {
-  display: inline-block;
-  font-weight: inherit;
-  animation: headline-in 280ms ease both;
-}
-
-@keyframes headline-in {
-  0% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .welcome b {
-    animation: none;
-  }
 }
 
 .login-form .ant-form-item-label > label {
@@ -410,8 +359,4 @@
 
 .submit-row {
   margin-bottom: 0;
-}
-
-.login-sponsor {
-  margin-top: 20px;
 }

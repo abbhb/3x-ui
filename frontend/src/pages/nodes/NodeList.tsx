@@ -55,7 +55,7 @@ interface NodeRow extends NodeRecord {
 
 function hostDetailHref(nodeId: number): string {
   const base = (window.X_UI_BASE_PATH || '/').replace(/\/+$/, '');
-  return `${base}/panel/service-hosts?node=${nodeId}`;
+  return `${base}/admin/service-hosts?node=${nodeId}`;
 }
 
 function badgeStatus(status?: string): BadgeProps['status'] {

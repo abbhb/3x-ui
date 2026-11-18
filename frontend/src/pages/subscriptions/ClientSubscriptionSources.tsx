@@ -27,7 +27,7 @@ export default function ClientSubscriptionSources(
       <>
         {clientId && !source.private && (
           <Button
-            href={`${window.X_UI_BASE_PATH || '/'}panel/commerce?tab=external&source=${source.id}`}
+            href={`${window.X_UI_BASE_PATH || '/'}admin/commerce?tab=external&source=${source.id}`}
             target="_blank"
             rel="noopener noreferrer"
           >

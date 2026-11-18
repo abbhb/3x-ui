@@ -96,8 +96,8 @@ it('links accounts to exact clients, resets remembered filters, supports a secon
   );
   renderWithProviders(
     <MemoryRouter
-      basename="/custom/panel"
-      initialEntries={['/custom/panel/commerce?tab=routes&route=10001']}
+      basename="/custom/admin"
+      initialEntries={['/custom/admin/commerce?tab=routes&route=10001']}
     >
       <Navigation />
       <Routes>
@@ -110,7 +110,7 @@ it('links accounts to exact clients, resets remembered filters, supports a secon
   expect(screen.queryByRole('tab', { name: /cascades|XHTTP/i })).toBeNull();
   expect(screen.getByTestId('location').textContent).toBe('/commerce?tab=accounts');
   expect(screen.getByRole('link', { name: 'View client' }).getAttribute('href')).toBe(
-    '/custom/panel/clients?clientId=7',
+    '/custom/admin/clients?clientId=7',
   );
   fireEvent.click(screen.getByRole('button', { name: account.username }));
   fireEvent.click(await screen.findByRole('link', { name: 'View client' }));

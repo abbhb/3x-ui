@@ -41,11 +41,6 @@
   background: var(--ant-color-bg-layout);
   color: var(--ant-color-text);
 }
-.commerce-login {
-  max-width: 440px;
-  padding: 48px 16px;
-  margin: auto;
-}
 .commerce-page .ant-btn {
   min-height: 40px;
 }

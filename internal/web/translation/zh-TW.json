@@ -110,6 +110,11 @@
     "saveQr": "儲存 QR 碼"
   },
   "menu": {
+    "access": "接入",
+    "management": "管理",
+    "accessGuide": "接入指引",
+    "console": "控制台",
+    "adminLogin": "管理員登入",
     "theme": "主題",
     "dashboard": "系統狀態",
     "inbounds": "入站",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "你好",
-      "title": "歡迎",
       "loginAgain": "登入時效已過，請重新登入",
       "toasts": {
         "invalidFormData": "資料格式錯誤",

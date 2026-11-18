@@ -110,6 +110,11 @@
     "saveQr": "Lưu QR"
   },
   "menu": {
+    "access": "Kết nối",
+    "management": "Quản lý",
+    "accessGuide": "Hướng dẫn kết nối",
+    "console": "Bảng điều khiển",
+    "adminLogin": "Đăng nhập quản trị",
     "theme": "Chủ đề",
     "dashboard": "Trạng thái hệ thống",
     "inbounds": "Inbound",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Xin chào",
-      "title": "Chào mừng",
       "loginAgain": "Thời hạn đăng nhập đã hết. Vui lòng đăng nhập lại.",
       "toasts": {
         "invalidFormData": "Dạng dữ liệu nhập không hợp lệ.",

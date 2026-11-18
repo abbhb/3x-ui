@@ -140,7 +140,7 @@ it('opens the client-scoped private source editor and labels inherited formats w
   expect(screen.getByText('Mihomo · URI · Xray JSON')).toBeTruthy();
   expect(screen.getByText('Mihomo')).toBeTruthy();
   expect(screen.getByRole('link', { name: 'View public source' }).getAttribute('href')).toBe(
-    '/panel/commerce?tab=external&source=9',
+    '/admin/commerce?tab=external&source=9',
   );
   fireEvent.click(screen.getByRole('button', { name: 'Manage private sources' }));
   await screen.findByRole('button', { name: 'Add source' });

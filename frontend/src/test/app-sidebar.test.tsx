@@ -14,9 +14,9 @@ afterEach(() => {
 });
 
 // rc-menu registers its items in a microtask after render; settle it inside act().
-async function renderSidebar() {
+async function renderSidebar(path = '/') {
   const view = renderWithProviders(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AppSidebar />
     </MemoryRouter>,
   );
@@ -73,4 +73,19 @@ test('labels the palette shortcut with the modifier the platform actually uses',
   const view = await renderSidebar();
   const chip = view.container.querySelector('.sidebar-command-kbd');
   expect(chip?.textContent).toBe('CtrlK');
+});
+
+test('opens the active group on a deep link and lets the operator fold it or switch groups', async () => {
+  localStorage.setItem('sidebar-pinned', 'true');
+  await renderSidebar('/clients?clientId=7');
+  const access = screen.getByRole('menuitem', { name: 'Access' });
+  const management = screen.getByRole('menuitem', { name: 'Management' });
+  expect(access.getAttribute('aria-expanded')).toBe('true');
+  expect(management.getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(access);
+  expect(access.getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(access);
+  fireEvent.click(management);
+  expect(access.getAttribute('aria-expanded')).toBe('false');
+  expect(management.getAttribute('aria-expanded')).toBe('true');
 });

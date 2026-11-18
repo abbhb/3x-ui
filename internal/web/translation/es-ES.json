@@ -110,6 +110,11 @@
     "saveQr": "Guardar QR"
   },
   "menu": {
+    "access": "Acceso",
+    "management": "Administración",
+    "accessGuide": "Guía de acceso",
+    "console": "Consola",
+    "adminLogin": "Acceso de administrador",
     "theme": "Tema",
     "dashboard": "Estado del Sistema",
     "inbounds": "Entradas",
@@ -134,8 +139,6 @@
   },
   "pages": {
     "login": {
-      "hello": "Hola",
-      "title": "Bienvenido",
       "loginAgain": "El límite de tiempo de inicio de sesión ha expirado. Por favor, inicia sesión nuevamente.",
       "toasts": {
         "invalidFormData": "El formato de los datos de entrada es inválido.",
