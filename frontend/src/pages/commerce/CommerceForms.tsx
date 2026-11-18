@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { HostChoiceSchema } from '@/generated/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,38 +9,34 @@ import PlanSubscriptionFields from '@/pages/subscriptions/PlanSubscriptionFields
 import { commerceRequest as request, emptyResponse } from '@/api/commerce';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { PlanSchema, type Plan, type Settings, type SettingsViewSchema } from '@/schemas/commerce';
+import { planEntryCatalog, planGroupMembers, resolvePlanEntries } from './planEntryGrants';
 export const useLabel = () => {
   const { t } = useTranslation();
-  return (key: string) => t(`pages.commerce.${key}`);
+  return useCallback((key: string) => t(`pages.commerce.${key}`), [t]);
 };
 export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => void }) {
   const l = useLabel();
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { data: inbounds = [] } = useInboundOptions();
+  const inbounds = useInboundOptions();
   const hosts = useQuery({
     queryKey: ['commerce', 'hostOptions'],
-    queryFn: async () => {
-      const rows = await request('subscriptions/catalog', z.array(HostChoiceSchema));
-      return rows.map((h) => ({
-        id: h.host_id,
-        inboundId: h.inbound_id,
-        remark: h.name,
-        address: h.address,
-        isDisabled: h.disabled,
-        signature: h.signature,
-      }));
-    },
+    queryFn: () => request('subscriptions/catalog', z.array(HostChoiceSchema)),
   });
+  const catalog = useMemo(
+    () => planEntryCatalog(plan, hosts.data || [], inbounds.data || [], l),
+    [plan, hosts.data, inbounds.data, l],
+  );
   const [form] = Form.useForm();
-  const inboundIDs: number[] = Form.useWatch('inbound_ids', form) || [];
-  const autoInboundIDs: number[] = Form.useWatch('auto_host_inbound_ids', form) || [];
-  if (!hosts.data)
+  const entries: string[] = Form.useWatch('entries', form) ?? catalog.initial;
+  const grantsFor = (keys: string[]) =>
+    resolvePlanEntries(keys, catalog.byValue, plan?.inbound_ids);
+  if (!hosts.data || !inbounds.data)
     return (
       <Card>
         <Alert
-          type={hosts.error ? 'error' : 'info'}
-          title={hosts.error ? l('failed') : l('hostRules')}
+          type={hosts.error || inbounds.error ? 'error' : 'info'}
+          title={hosts.error || inbounds.error ? l('failed') : l('hostRules')}
         />
       </Card>
     );
@@ -65,14 +61,7 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
           plan
             ? {
                 ...plan,
-                host_ids: plan.host_ids.filter(
-                  (id) =>
-                    !plan.host_signatures?.[String(id)] ||
-                    hosts.data?.some(
-                      (h) => h.id === id && h.signature === plan.host_signatures?.[String(id)],
-                    ),
-                ),
-                auto_host_inbound_ids: plan.auto_host_inbound_ids || [],
+                entries: catalog.initial,
                 external_selections: plan.external_selections || [],
                 group_members: plan.group_members || {},
               }
@@ -81,10 +70,8 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
                 price_minor: 0,
                 duration_days: 30,
                 data_limit: 0,
-                inbound_ids: [],
-                host_ids: [],
+                entries: [],
                 external_selections: [],
-                auto_host_inbound_ids: [],
                 group_members: {},
                 is_visible: false,
               }
@@ -94,28 +81,19 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
           setBusy(true);
           setError(false);
           try {
-            const chosen: number[] = v.host_ids || [];
-            const fresh = await request('subscriptions/catalog', z.array(HostChoiceSchema));
-            if (
-              chosen.some(
-                (id) =>
-                  hosts.data?.find((h) => h.id === id)?.signature !==
-                  fresh.find((h) => h.host_id === id)?.signature,
-              )
-            )
-              throw new Error('Route changed');
-            const signatures = Object.fromEntries(
-              chosen.map((id) => [
-                String(id),
-                fresh.find((h) => h.host_id === id)?.signature || '',
-              ]),
-            );
+            const { entries: selected, ...fields } = v;
+            if (selected.some((key: string) => !catalog.byValue.has(key))) {
+              form.setFields([{ name: 'entries', errors: [l('entryUnavailable')] }]);
+              return;
+            }
+            const grants = grantsFor(selected);
             await request(
               plan ? `plans/${plan.id}` : 'plans',
               PlanSchema,
               {
-                ...v,
-                host_signatures: signatures,
+                ...fields,
+                ...grants,
+                group_members: planGroupMembers(fields.group_members, grants.inbound_ids),
                 description: v.description || '',
                 currency: 'CNY',
               },
@@ -124,6 +102,7 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
             close();
           } catch {
             setError(true);
+            void hosts.refetch();
           } finally {
             setBusy(false);
           }
@@ -154,59 +133,40 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
             className="commerce-full"
           />
         </Form.Item>
-        <Form.Item name="inbound_ids" label={l('inbounds')} rules={[]}>
-          <Select
-            mode="multiple"
-            tagRender={selectTagRender}
-            options={inbounds
-              .filter((i) => ['vless', 'hysteria'].includes(i.protocol || ''))
-              .map((i) => ({
-                value: i.id,
-                label: `${i.id} · ${i.remark || i.tag} · ${i.protocol}`,
-              }))}
-            onChange={(ids: number[]) =>
-              form.setFieldValue(
-                'host_ids',
-                (form.getFieldValue('host_ids') || []).filter((id: number) =>
-                  hosts.data?.some((h) => h.id === id && ids.includes(h.inboundId)),
-                ),
-              )
-            }
-          />
-        </Form.Item>
         <Form.Item
-          name="host_ids"
+          name="entries"
           label={l('hostRules')}
+          extra={l('strictGrantHelp')}
+          dependencies={['external_selections']}
           rules={[
             {
-              validator: (_, value) =>
-                inboundIDs.some((id) => !autoInboundIDs.includes(id)) && !value?.length
-                  ? Promise.reject(new Error(l('strictGrantHelp')))
-                  : Promise.resolve(),
+              validator: (_, keys: string[] = []) => {
+                if (keys.some((key) => !catalog.byValue.has(key)))
+                  return Promise.reject(new Error(l('entryUnavailable')));
+                const grants = grantsFor(keys);
+                if (
+                  !grants.host_ids.length &&
+                  !grants.auto_host_inbound_ids.length &&
+                  (keys.length || !form.getFieldValue('external_selections')?.length)
+                )
+                  return Promise.reject(new Error(l('entryRequired')));
+                return Promise.resolve();
+              },
             },
           ]}
-          extra={l('strictGrantHelp')}
         >
           <Select
             mode="multiple"
             tagRender={selectTagRender}
-            loading={hosts.isPending}
-            options={(hosts.data || [])
-              .filter((h) => inboundIDs.includes(h.inboundId))
-              .map((h) => ({
-                value: h.id,
-                label: `#${h.id} · ${h.remark || h.address} · ${l('inbound')} ${h.inboundId}`,
-              }))}
+            showSearch={{ optionFilterProp: 'label' }}
+            labelRender={({ value }) =>
+              catalog.byValue.get(String(value))?.label ??
+              `${l('entryUnavailableLabel')} #${String(value).split(':')[1]}`
+            }
+            options={catalog.options}
           />
         </Form.Item>
-        <Form.Item name="auto_host_inbound_ids" label={l('autoHosts')} extra={l('autoHostsHelp')}>
-          <Select
-            mode="multiple"
-            tagRender={selectTagRender}
-            options={inboundIDs.map((id) => ({ value: id, label: `${l('inbound')} #${id}` }))}
-          />
-        </Form.Item>
-        <PlanSubscriptionFields inboundIDs={inboundIDs} />
+        <PlanSubscriptionFields inboundIDs={grantsFor(entries).inbound_ids} />
         <Form.Item name="is_visible" label={l('visible')} valuePropName="checked">
           <Switch />
         </Form.Item>
