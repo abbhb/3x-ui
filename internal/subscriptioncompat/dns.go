@@ -58,6 +58,14 @@ func SecureDNS(doc map[string]any, primary, subscriptionURL string) {
 	}
 	doc["dns"] = map[string]any{"enable": true, "listen": "127.0.0.1:1053", "ipv6": false, "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16", "fake-ip-filter-mode": "blacklist", "fake-ip-filter": exceptions, "use-hosts": true, "prefer-h3": false, "respect-rules": true, "default-nameserver": bootstrap, "proxy-server-nameserver": bootstrap, "nameserver": []string{"https://1.1.1.1/dns-query#" + outbound, "https://8.8.8.8/dns-query#" + outbound}, "nameserver-policy": policy, "direct-nameserver": []string{}, "direct-nameserver-follow-policy": true, "fallback": []string{}}
 	doc["clash-for-android"] = map[string]any{"append-system-dns": false}
-	doc["tun"] = map[string]any{"auto-route": true, "auto-detect-interface": true, "strict-route": true, "dns-hijack": []string{"any:53", "tcp://any:53"}, "inet6-address": []string{"fdfe:dcba:9876::1/126"}}
+	tun := map[string]any{"auto-route": true, "auto-detect-interface": true, "strict-route": true, "dns-hijack": []string{"any:53", "tcp://any:53"}, "inet6-address": []string{"fdfe:dcba:9876::1/126"}}
+	// Retain host exclusions supplied by the panel routing template.
+	previous, _ := doc["tun"].(map[string]any)
+	for _, key := range []string{"route-exclude-address", "inet4-route-exclude-address", "inet6-route-exclude-address"} {
+		if value, exists := previous[key]; exists {
+			tun[key] = value
+		}
+	}
+	doc["tun"] = tun
 	doc["ipv6"] = true
 }

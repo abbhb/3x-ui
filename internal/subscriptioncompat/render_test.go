@@ -41,7 +41,11 @@ func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
 func TestSecureDNSRejectsDirectAndCyclesAndKeepsBootstrapSeparate(t *testing.T) {
 	for _, members := range [][]string{{"DIRECT"}, {"unknown"}, {"PROXY"}, {"node"}} {
 		config := map[string]any{"proxies": []map[string]any{{"name": "node", "type": "socks5", "server": "synthetic.test"}}, "proxy-groups": []map[string]any{{"name": "PROXY", "proxies": members}}}
+		config["tun"] = map[string]any{"route-exclude-address": []string{"192.0.2.10/32"}}
 		SecureDNS(config, "PROXY", "https://panel.example.test/sub/")
+		if got := config["tun"].(map[string]any)["route-exclude-address"]; string(mustJSON(got)) != `["192.0.2.10/32"]` {
+			t.Fatalf("secure DNS lost template exclusions: %v", got)
+		}
 		dns := config["dns"].(map[string]any)
 		names := dns["nameserver"].([]string)
 		expected := "#REJECT"

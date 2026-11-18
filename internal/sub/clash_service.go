@@ -127,6 +127,8 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 			proxies = append(proxies, render()...)
 		}
 	}
+	// Keep the client-facing native entries separate from third-party links and grants.
+	nativeProxies := proxies
 	for _, ext := range externalLinks {
 		if ext.Enable {
 			hasEnabledClient = true
@@ -186,6 +188,7 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 		}
 		if mode == infoNodeExpired || mode == infoNodeDepleted {
 			proxies = []map[string]any{dummyProxy}
+			nativeProxies = nil
 		} else {
 			proxies = append([]map[string]any{dummyProxy}, proxies...)
 		}
@@ -235,6 +238,9 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 
 	if err := compat.Render(config, projection, legacy); err != nil {
 		return "", "", err
+	}
+	if !legacy && !s.shadowrocket {
+		applyNativeEndpointBypass(config, nativeProxies)
 	}
 	normalizeMihomoConfig(config)
 	finalYAML, err := marshalClashYAML(config)

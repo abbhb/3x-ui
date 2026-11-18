@@ -91,6 +91,10 @@ Mihomo 参数；原生 raw / JSON / Clash 输出按各自支持范围生成。
 
 ## 规则、组成员和 DNS
 
+Mihomo 订阅会按账号下发的自建入口添加直连规则。IPv4 和 IPv6 入口分别以单地址 `/32` 和 `/128` 加入 `tun.route-exclude-address`。域名入口按完整域名匹配 `DIRECT`，由客户端解析。上传和下载分离的 XHTTP 使用各自的连接地址。第三方节点、TLS SNI 和 HTTP Host 都不会生成排除项。
+
+Clash Verge 的本地 TUN 设置可以覆盖订阅中的排除表。此时，在规则模式下，进入 Mihomo 的自建入口流量仍可匹配订阅开头的 `DIRECT` 规则。用户可在运行时配置中分别查看 `tun.route-exclude-address` 和 `rules`。
+
 规则 / 策略组使用面板拥有的模板，来源刷新不能覆盖。模板用
 `__MGMA_LOCAL_NODES__` 表示当前授权本地节点，用 `MGMA · External` 表示当前授权的外部来源。
 保留规则顺序、最终 `MATCH,target`、合法目标引用、组顺序与套餐组成员；校验循环、未知目标和 provider 引用。
