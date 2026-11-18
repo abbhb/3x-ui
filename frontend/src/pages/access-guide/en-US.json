@@ -72,7 +72,7 @@
     },
     "plan": {
       "title": "Enable the portal and configure a plan",
-      "body": "Under Portal and commerce, enable the portal and check its public subscription URL. In Plans, grant the inbound and subscription hosts. Select all entries for the inbound to include future hosts automatically, or explicitly add new hosts to a selective plan.",
+      "body": "Under Portal and commerce, enable the portal and check its public subscription URL. In Plans, search for subscription entries by name or address. Choose individual entries for fixed access, or select All entries for an inbound to include its current and future entries.",
       "link": "Configure plans"
     },
     "account": {
