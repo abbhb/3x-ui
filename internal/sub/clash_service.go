@@ -239,11 +239,12 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	if err := compat.Render(config, projection, legacy); err != nil {
 		return "", "", err
 	}
-	var dialers map[string]any
+	dialers := make(map[string]string)
 	if !legacy && !s.shadowrocket {
-		dialers, err = loadMihomoInboundDialers()
-		if err != nil {
-			return "", "", err
+		for _, inbound := range inbounds {
+			if inbound.MihomoDialer != "" {
+				dialers[inbound.Tag] = inbound.MihomoDialer
+			}
 		}
 	}
 	hops, err := applyMihomoInboundDialers(config, dialers)

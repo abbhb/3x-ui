@@ -13754,6 +13754,86 @@
         }
       }
     },
+    "/panel/api/inbounds/{id}/subscriptionDialer": {
+      "get": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Read the endpoint and revision of the client-side Mihomo first hop on an owned inbound.",
+        "operationId": "get_panel_api_inbounds_id_subscriptionDialer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Inbound ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Save a standalone first hop for this inbound. Supply the observed revision and either a YAML/JSON config string or remove=true.",
+        "operationId": "post_panel_api_inbounds_id_subscriptionDialer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Inbound ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/inbounds/{id}/fallbacks": {
       "get": {
         "tags": [

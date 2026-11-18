@@ -96,6 +96,7 @@ import { RealityForm, TlsForm } from './security';
 import { useSecurityActions } from './useSecurityActions';
 import { useInboundFallbacks } from './useInboundFallbacks';
 import FallbacksCard from './FallbacksCard';
+import SubscriptionDialer from './SubscriptionDialer';
 import SniffingTab from './SniffingTab';
 
 import type { DBInbound } from '@/models/dbinbound';
@@ -1220,6 +1221,7 @@ export default function InboundFormModal({
         open={open}
         title={title}
         okText={okText}
+        okButtonProps={activeTab === 'dialer' ? { style: { display: 'none' } } : undefined}
         cancelText={t('close')}
         confirmLoading={saving}
         mask={{ closable: false }}
@@ -1303,6 +1305,32 @@ export default function InboundFormModal({
                         label: t('pages.inbounds.sniffingTab'),
                         children: sniffingTab,
                         forceRender: true,
+                      },
+                    ]
+                  : []),
+                ...(mode === 'edit' &&
+                dbInbound?.id &&
+                [
+                  'vmess',
+                  'vless',
+                  'trojan',
+                  'shadowsocks',
+                  'wireguard',
+                  'amneziawg',
+                  'tuic',
+                  'hysteria',
+                ].includes(protocol)
+                  ? [
+                      {
+                        key: 'dialer',
+                        label: t('pages.inbounds.dialer.tab'),
+                        children: (
+                          <SubscriptionDialer
+                            key={dbInbound.id}
+                            id={dbInbound.id}
+                            landing={dbInbound.tag || dbInbound.remark}
+                          />
+                        ),
                       },
                     ]
                   : []),

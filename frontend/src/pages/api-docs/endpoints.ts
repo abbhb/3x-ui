@@ -1516,6 +1516,20 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/inbounds/:id/subscriptionDialer',
+        summary:
+          'Read the endpoint and revision of the client-side Mihomo first hop on an owned inbound.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/inbounds/:id/subscriptionDialer',
+        summary:
+          'Save a standalone first hop for this inbound. Supply the observed revision and either a YAML/JSON config string or remove=true.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
+      },
+      {
+        method: 'GET',
         path: '/panel/api/inbounds/:id/fallbacks',
         summary:
           "List the fallback rules attached to a master VLESS/Trojan TCP-TLS inbound. Each rule links one child inbound (the dest) to optional SNI/ALPN/path/dest/xver match criteria. When dest is empty the child inbound's listen+port is used.",

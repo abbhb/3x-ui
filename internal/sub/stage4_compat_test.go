@@ -129,7 +129,10 @@ func TestMihomoStandaloneHopFollowsOnlyAuthorizedNativeLanding(t *testing.T) {
 	if err := os.WriteFile(path, source, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("XUI_MIHOMO_INBOUND_DIALERS_FILE", path)
+	t.Setenv("XUI_EXTERNAL_SUBSCRIPTION_ENCRYPTION_KEY", strings.Repeat("t", 32))
+	if err := subscriptioncompat.MigrateInboundDialers(database.GetDB(), path); err != nil {
+		t.Fatal(err)
+	}
 	svc := NewSubClashService(false, "", false, NewSubService(""))
 	out, _, err := svc.GetClash("s-hop", "panel.example.test")
 	if err != nil {
@@ -161,13 +164,23 @@ func TestStandaloneDialerRejectsReferencesAndUntrustedTags(t *testing.T) {
 	untrusted := map[string]any{"name": "MGMA-HOP · US", inboundDialerMarker: "US"}
 	profile := map[string]any{"proxies": []map[string]any{entry, untrusted}}
 	hop := map[string]any{"name": "upstream", "type": "socks5", "server": "hop.test", "port": 1080}
-	dialers := map[string]any{"US": hop}
+	t.Setenv("XUI_EXTERNAL_SUBSCRIPTION_ENCRYPTION_KEY", strings.Repeat("t", 32))
+	seal := func() string {
+		raw, _ := json.Marshal(hop)
+		v, err := subscriptioncompat.Encrypt("mihomo-inbound-dialer", raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	dialers := map[string]string{"US": seal()}
 	hops, err := applyMihomoInboundDialers(profile, dialers)
 	if err != nil || len(hops) != 1 || entry["dialer-proxy"] != "MGMA-HOP · US_" || untrusted["dialer-proxy"] != nil {
 		t.Fatalf("failed to isolate native inbound hop: %v", err)
 	}
 	entry[inboundDialerMarker] = nativeInboundTag("US")
 	hop["dialer-proxy"] = "external"
+	dialers["US"] = seal()
 	if _, err := applyMihomoInboundDialers(profile, dialers); err == nil {
 		t.Fatal("accepted a non-standalone hop")
 	}

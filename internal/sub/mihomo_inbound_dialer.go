@@ -1,11 +1,6 @@
 package sub
 
 import (
-	"errors"
-	"fmt"
-	"io"
-	"os"
-
 	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 )
 
@@ -14,26 +9,9 @@ type nativeInboundTag string
 
 const inboundDialerMarker = "_3xui-mihomo-inbound"
 
-func loadMihomoInboundDialers() (map[string]any, error) {
-	path := os.Getenv("XUI_MIHOMO_INBOUND_DIALERS_FILE")
-	if path == "" {
-		return nil, nil
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open Mihomo inbound dialers: %w", err)
-	}
-	defer f.Close()
-	raw, err := io.ReadAll(io.LimitReader(f, subscriptioncompat.MaxSourceBytes+1))
-	if err != nil {
-		return nil, err
-	}
-	return subscriptioncompat.DecodeDocument(raw)
-}
-
 // Add hops after plan, group and name projection. A hop is delivered only if the
 // final profile still contains its native landing, and is never added to a selector.
-func applyMihomoInboundDialers(config map[string]any, dialers map[string]any) ([]map[string]any, error) {
+func applyMihomoInboundDialers(config map[string]any, dialers map[string]string) ([]map[string]any, error) {
 	proxies, _ := config["proxies"].([]map[string]any)
 	groups, _ := config["proxy-groups"].([]map[string]any)
 	used := map[string]bool{}
@@ -57,9 +35,9 @@ func applyMihomoInboundDialers(config map[string]any, dialers map[string]any) ([
 		}
 		name, exists := names[tag]
 		if !exists {
-			hop, err := subscriptioncompat.NormalizeStandaloneProxy(raw)
+			hop, err := subscriptioncompat.OpenInboundDialer(raw)
 			if err != nil {
-				return nil, errors.New("invalid standalone Mihomo inbound dialer")
+				return nil, err
 			}
 			name = "MGMA-HOP · " + string(tag)
 			for used[name] {
