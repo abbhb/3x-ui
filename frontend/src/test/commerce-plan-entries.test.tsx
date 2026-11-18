@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { commerceRequest } from '@/api/commerce';
 import { PlanEditor } from '@/pages/commerce/CommerceForms';
@@ -65,16 +65,15 @@ beforeEach(() => {
 
 async function openPlan(value: Plan | null) {
   renderWithProviders(<PlanEditor plan={value} close={vi.fn()} />);
-  return screen.findByRole('combobox', { name: 'Subscription entries' });
+  return screen.findByRole('button', { name: 'Choose entries' });
 }
-
-async function choose(input: HTMLElement, search: string, option: RegExp) {
-  fireEvent.mouseDown(input);
-  fireEvent.change(input, { target: { value: search } });
-  const row = await screen.findByText(option, { selector: '.ant-select-item-option-content' });
-  fireEvent.click(row);
+async function edit(trigger: HTMLElement) {
+  fireEvent.click(trigger);
+  return within(await screen.findByRole('dialog'));
 }
-
+function search(dialog: ReturnType<typeof within>, value: string) {
+  fireEvent.change(dialog.getByRole('textbox', { name: /Search entry/ }), { target: { value } });
+}
 async function save(path: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() =>
@@ -83,14 +82,20 @@ async function save(path: string) {
   return vi.mocked(commerceRequest).mock.calls.find(([p]) => p === path)?.[2];
 }
 
-it('creates a plan by searching entries across inbounds and derives distinct parent bindings', async () => {
-  const input = await openPlan(null);
+it('searches across inbounds by entry name or address and only commits a confirmed selection', async () => {
+  const trigger = await openPlan(null);
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Monthly' } });
-  fireEvent.mouseDown(input);
-  expect(screen.queryByText(/Stopped ·|Unsupported host ·|Offline host ·/)).toBeNull();
-  await choose(input, 'host-12.example', /^City relay ·/);
-  await choose(input, 'City direct', /^City direct ·/);
-  await choose(input, 'Island', /^Island ·/);
+  const dialog = await edit(trigger);
+  expect(dialog.queryByRole('button', { name: /Offline|Unsupported/ })).toBeNull();
+  search(dialog, 'host-12.example');
+  fireEvent.click(dialog.getByRole('checkbox', { name: /City relay/ }));
+  search(dialog, 'City direct');
+  fireEvent.click(dialog.getByRole('checkbox', { name: /City direct/ }));
+  search(dialog, 'Island');
+  fireEvent.click(dialog.getByRole('checkbox', { name: /Island/ }));
+  fireEvent.click(dialog.getByRole('button', { name: 'Confirm' }));
+  await screen.findByText('Included active entries · 3');
+  expect(vi.mocked(commerceRequest).mock.calls.some(([p]) => p === 'plans')).toBe(false);
   const body = await save('plans');
   expect(body).toMatchObject({
     inbound_ids: [1, 2],
@@ -101,39 +106,72 @@ it('creates a plan by searching entries across inbounds and derives distinct par
   expect(body).not.toHaveProperty('entries');
 });
 
-it('preserves saved binding order, disabled entries, automatic grants and an inbound-only binding', async () => {
-  await openPlan({ ...plan, inbound_ids: [2, 1, 3], host_ids: [31], auto_host_inbound_ids: [2] });
-  expect(screen.getByRole('button', { name: /Remove All entries · East/ })).toBeTruthy();
-  expect(screen.getByRole('button', { name: /Remove Existing binding only · West/ })).toBeTruthy();
+it('shows inherited, overlapping and disabled grants and discards cancelled edits', async () => {
+  const trigger = await openPlan({
+    ...plan,
+    inbound_ids: [2, 1, 3],
+    host_ids: [11, 31],
+    auto_host_inbound_ids: [1],
+  });
+  const dialog = await edit(trigger);
+  expect(dialog.getByText('Included by inbound')).toBeTruthy();
+  expect(dialog.getByText('Inbound + individual')).toBeTruthy();
+  expect((dialog.getByRole('checkbox', { name: /City relay/ }) as HTMLInputElement).checked).toBe(
+    true,
+  );
+  expect((dialog.getByRole('checkbox', { name: /City relay/ }) as HTMLInputElement).disabled).toBe(
+    true,
+  );
+  fireEvent.click(dialog.getByRole('checkbox', { name: 'Include all entries on this inbound' }));
+  expect((dialog.getByRole('checkbox', { name: /City direct/ }) as HTMLInputElement).checked).toBe(
+    true,
+  );
+  expect((dialog.getByRole('checkbox', { name: /City relay/ }) as HTMLInputElement).checked).toBe(
+    false,
+  );
+  fireEvent.click(dialog.getByRole('button', { name: /^East/ }));
+  expect(
+    (dialog.getByRole('checkbox', { name: 'Existing binding only' }) as HTMLInputElement).checked,
+  ).toBe(true);
+  fireEvent.click(dialog.getByRole('button', { name: /^North/ }));
+  expect(dialog.getByRole('checkbox', { name: /Stopped.*Disabled/ })).toBeTruthy();
+  fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
   expect(await save('plans/9')).toMatchObject({
     inbound_ids: [2, 1, 3],
-    host_ids: [31],
-    host_signatures: { 31: 'sig-31' },
-    auto_host_inbound_ids: [2],
+    host_ids: [11, 31],
+    host_signatures: { 11: 'sig-11', 31: 'sig-31' },
+    auto_host_inbound_ids: [1],
   });
 });
 
-it('narrows a whole inbound to one entry and removes obsolete group members when its last grant is removed', async () => {
-  const input = await openPlan({
-    ...plan,
-    inbound_ids: [2, 1],
-    host_ids: [11],
-    auto_host_inbound_ids: [2],
-    group_members: { Default: ['inbound:1', 'inbound:2'] },
-  });
-  await choose(input, 'Island', /^Island ·/);
-  fireEvent.click(screen.getByRole('button', { name: /Remove All entries · East/ }));
-  fireEvent.click(screen.getByRole('button', { name: /Remove City direct/ }));
+it('narrows an inbound grant to a single entry and prunes obsolete group members', async () => {
+  const dialog = await edit(
+    await openPlan({
+      ...plan,
+      inbound_ids: [2, 1],
+      host_ids: [21],
+      auto_host_inbound_ids: [1],
+      group_members: { Default: ['inbound:1', 'inbound:2'] },
+    }),
+  );
+  fireEvent.click(dialog.getByRole('checkbox', { name: /Island/ }));
+  fireEvent.click(dialog.getByRole('button', { name: /^West/ }));
+  fireEvent.click(dialog.getByRole('checkbox', { name: 'Include all entries on this inbound' }));
+  fireEvent.click(dialog.getByRole('checkbox', { name: /City direct/ }));
+  fireEvent.click(dialog.getByRole('checkbox', { name: 'Included only' }));
+  expect(dialog.queryByText('City relay')).toBeNull();
+  expect(dialog.queryByRole('button', { name: /^East/ })).toBeNull();
+  fireEvent.click(dialog.getByRole('button', { name: 'Confirm' }));
   expect(await save('plans/9')).toMatchObject({
-    inbound_ids: [2],
-    host_ids: [21],
+    inbound_ids: [1],
+    host_ids: [11],
     auto_host_inbound_ids: [],
-    group_members: { Default: ['inbound:2'] },
+    group_members: { Default: ['inbound:1'] },
   });
 });
 
-it('requires explicit reselection when an entry signature has changed', async () => {
-  const input = await openPlan({
+it('requires explicit reselection of an entry whose signature changed', async () => {
+  const trigger = await openPlan({
     ...plan,
     inbound_ids: [1],
     host_ids: [11],
@@ -142,8 +180,10 @@ it('requires explicit reselection when an entry signature has changed', async ()
   fireEvent.click(screen.getByRole('button', { name: 'Save' }));
   await screen.findByText(/Remove the unavailable grant/);
   expect(vi.mocked(commerceRequest).mock.calls.some(([p]) => p === 'plans/9')).toBe(false);
-  fireEvent.click(screen.getByRole('button', { name: /Remove Unavailable grant #11/ }));
-  await choose(input, 'City direct', /^City direct ·/);
+  const dialog = await edit(trigger);
+  fireEvent.click(dialog.getByRole('button', { name: /Remove · Unavailable grant #11/ }));
+  fireEvent.click(dialog.getByRole('checkbox', { name: /City direct/ }));
+  fireEvent.click(dialog.getByRole('button', { name: 'Confirm' }));
   expect(await save('plans/9')).toMatchObject({
     inbound_ids: [1],
     host_signatures: { 11: 'sig-11' },
@@ -151,8 +191,7 @@ it('requires explicit reselection when an entry signature has changed', async ()
 });
 
 it('saves an external-only plan without granting a local entry', async () => {
-  const selections = [{ source_id: 6, mode: 'all' as const, node_ids: [] }];
-  await openPlan({ ...plan, external_selections: selections });
+  await openPlan({ ...plan, external_selections: [{ source_id: 6, mode: 'all', node_ids: [] }] });
   expect(await save('plans/9')).toMatchObject({
     inbound_ids: [],
     host_ids: [],
@@ -161,19 +200,23 @@ it('saves an external-only plan without granting a local entry', async () => {
   });
 });
 
-it('adds a future-entry grant explicitly and keeps a group through a temporary empty selection', async () => {
-  const input = await openPlan({
-    ...plan,
-    inbound_ids: [1],
-    host_ids: [11],
-    group_members: { Default: ['inbound:1'] },
-  });
-  fireEvent.click(screen.getByRole('button', { name: /Remove City direct/ }));
-  await choose(input, 'West', /^All entries · West/);
+it('follows all entries on an inbound from filtered results and counts each active entry once', async () => {
+  const dialog = await edit(
+    await openPlan({
+      ...plan,
+      inbound_ids: [1],
+      host_ids: [11],
+      group_members: { Default: ['inbound:1'] },
+    }),
+  );
+  search(dialog, 'host-12.example');
+  fireEvent.click(dialog.getByRole('checkbox', { name: 'Include all entries on this inbound' }));
+  expect(dialog.getByText('2 of 2 active entries included')).toBeTruthy();
+  fireEvent.click(dialog.getByRole('button', { name: 'Confirm' }));
+  await screen.findByText('Included active entries · 2');
   expect(await save('plans/9')).toMatchObject({
     inbound_ids: [1],
-    host_ids: [],
-    host_signatures: {},
+    host_ids: [11],
     auto_host_inbound_ids: [1],
     group_members: { Default: ['inbound:1'] },
   });

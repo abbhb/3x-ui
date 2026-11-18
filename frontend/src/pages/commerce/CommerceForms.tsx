@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
 import { z } from 'zod';
-import { selectTagRender } from '@/components/form/SelectTag';
+import { PlanEntryPicker } from './PlanEntryPicker';
 import PlanSubscriptionFields from '@/pages/subscriptions/PlanSubscriptionFields';
 import { commerceRequest as request, emptyResponse } from '@/api/commerce';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
@@ -24,8 +24,8 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
     queryFn: () => request('subscriptions/catalog', z.array(HostChoiceSchema)),
   });
   const catalog = useMemo(
-    () => planEntryCatalog(plan, hosts.data || [], inbounds.data || [], l),
-    [plan, hosts.data, inbounds.data, l],
+    () => planEntryCatalog(plan, hosts.data || [], inbounds.data || []),
+    [plan, hosts.data, inbounds.data],
   );
   const [form] = Form.useForm();
   const entries: string[] = Form.useWatch('entries', form) ?? catalog.initial;
@@ -136,7 +136,6 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
         <Form.Item
           name="entries"
           label={l('hostRules')}
-          extra={l('strictGrantHelp')}
           dependencies={['external_selections']}
           rules={[
             {
@@ -155,16 +154,7 @@ export function PlanEditor({ plan, close }: { plan: Plan | null; close: () => vo
             },
           ]}
         >
-          <Select
-            mode="multiple"
-            tagRender={selectTagRender}
-            showSearch={{ optionFilterProp: 'label' }}
-            labelRender={({ value }) =>
-              catalog.byValue.get(String(value))?.label ??
-              `${l('entryUnavailableLabel')} #${String(value).split(':')[1]}`
-            }
-            options={catalog.options}
-          />
+          <PlanEntryPicker catalog={catalog} />
         </Form.Item>
         <PlanSubscriptionFields inboundIDs={grantsFor(entries).inbound_ids} />
         <Form.Item name="is_visible" label={l('visible')} valuePropName="checked">
