@@ -16,7 +16,7 @@ func decryptedNode(node model.SubscriptionNode) (map[string]any, error) {
 	if json.Unmarshal(raw, &value) != nil {
 		return nil, ErrEncryptedUnavailable
 	}
-	payload, err := normalizeNode(value)
+	payload, err := NormalizeStandaloneProxy(value)
 	if err != nil {
 		return nil, ErrEncryptedUnavailable
 	}

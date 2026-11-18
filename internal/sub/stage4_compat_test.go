@@ -1,6 +1,10 @@
 package sub
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -111,5 +115,60 @@ func TestXHTTPIPv6AuthoritiesPreservePaddingURLs(t *testing.T) {
 	down := got["download-settings"].(map[string]any)
 	if down["host"] != "[::1]" || down["server"] != "::1" || down["servername"] != "::1" {
 		t.Fatalf("IPv6 download authority = %#v", down)
+	}
+}
+
+func TestMihomoStandaloneHopFollowsOnlyAuthorizedNativeLanding(t *testing.T) {
+	initSubDB(t)
+	inbound := seedSubInbound(t, "s-hop", "landing", 44501, 1, wsTLSStream)
+	path := filepath.Join(t.TempDir(), "dialers.json")
+	source, err := json.Marshal(map[string]any{inbound.Tag: map[string]any{"name": "synthetic hop", "type": "socks5", "server": "hop.example.test", "port": 1080}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, source, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("XUI_MIHOMO_INBOUND_DIALERS_FILE", path)
+	svc := NewSubClashService(false, "", false, NewSubService(""))
+	out, _, err := svc.GetClash("s-hop", "panel.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Proxies []map[string]any `yaml:"proxies"`
+		Groups  []map[string]any `yaml:"proxy-groups"`
+	}
+	if err := yaml.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Proxies) != 2 || doc.Proxies[0]["dialer-proxy"] != doc.Proxies[1]["name"] || doc.Proxies[1]["server"] != "hop.example.test" || strings.Contains(out, inboundDialerMarker) {
+		t.Fatal("standalone dialer missing or dangling")
+	}
+	for _, group := range doc.Groups {
+		if strings.Contains(fmt.Sprint(group["proxies"]), doc.Proxies[1]["name"].(string)) {
+			t.Fatal("standalone hop exposed as a group member")
+		}
+	}
+	other, _, err := svc.GetClash("no-such-client", "panel.example.test")
+	if err != nil || strings.Contains(other, "hop.example.test") {
+		t.Fatal("unrelated subscriber received a hop")
+	}
+}
+
+func TestStandaloneDialerRejectsReferencesAndUntrustedTags(t *testing.T) {
+	entry := map[string]any{"name": "landing", inboundDialerMarker: nativeInboundTag("US")}
+	untrusted := map[string]any{"name": "MGMA-HOP · US", inboundDialerMarker: "US"}
+	profile := map[string]any{"proxies": []map[string]any{entry, untrusted}}
+	hop := map[string]any{"name": "upstream", "type": "socks5", "server": "hop.test", "port": 1080}
+	dialers := map[string]any{"US": hop}
+	hops, err := applyMihomoInboundDialers(profile, dialers)
+	if err != nil || len(hops) != 1 || entry["dialer-proxy"] != "MGMA-HOP · US_" || untrusted["dialer-proxy"] != nil {
+		t.Fatalf("failed to isolate native inbound hop: %v", err)
+	}
+	entry[inboundDialerMarker] = nativeInboundTag("US")
+	hop["dialer-proxy"] = "external"
+	if _, err := applyMihomoInboundDialers(profile, dialers); err == nil {
+		t.Fatal("accepted a non-standalone hop")
 	}
 }
