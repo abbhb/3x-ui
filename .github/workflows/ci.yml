@@ -11,15 +11,12 @@ on:
       - "Makefile"
       - "install.sh"
       - "deploy/test/installer-panel-port.sh"
-      - "tools/marzban_export.py"
-      - "tools/marzban_portal_export.py"
-      - "tools/marzban_subscription_export.py"
-      - "tools/legacy_usage_handoff.py"
       - "tools/subscription_runtime_lab.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
-      - "internal/web/service/testdata/marzban_stage1_clients.json"
+      - "internal/web/service/testdata/**"
+      - "internal/sub/testdata/**"
       - ".github/workflows/ci.yml"
   push:
     branches:
@@ -33,15 +30,12 @@ on:
       - "Makefile"
       - "install.sh"
       - "deploy/test/installer-panel-port.sh"
-      - "tools/marzban_export.py"
-      - "tools/marzban_portal_export.py"
-      - "tools/marzban_subscription_export.py"
-      - "tools/legacy_usage_handoff.py"
       - "tools/subscription_runtime_lab.py"
       - "tools/tests/**"
       - "tools/egress/**"
       - "tools/connection_observer/**"
-      - "internal/web/service/testdata/marzban_stage1_clients.json"
+      - "internal/web/service/testdata/**"
+      - "internal/sub/testdata/**"
       - ".github/workflows/ci.yml"
 
 permissions:
@@ -83,7 +77,7 @@ jobs:
           go test -c -o "$RUNNER_TEMP/native-ipv6.test" ./internal/web/service
           sudo python3 tools/egress/native_runtime_lab.py --xray "$RUNNER_TEMP/xray-observer" --service-test "$RUNNER_TEMP/native-ipv6.test" --node "$(command -v node)"
 
-  marzban-export:
+  host-tools:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -93,9 +87,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Offline template test dependencies
-        run: python -m pip install 'Jinja2>=3.1.6,<4' 'PyYAML>=6.0.2,<7'
-      - name: Offline Marzban migration contracts
+      - name: Host tooling unit tests
         run: python -W error::ResourceWarning -m unittest discover -s tools/tests -v
 
   go-test:
@@ -155,8 +147,8 @@ jobs:
       - name: PostgreSQL portal transaction isolation and commit rollback
         run: |
           set -o pipefail
-          go test ./internal/web/service -run '^TestPortalPostgres(Transactions|OfflineImport)$' -count=1 -v | tee /tmp/postgres-portal.log
-          test "$(grep -c -- '^--- PASS' /tmp/postgres-portal.log || true)" -eq 2
+          go test ./internal/web/service -run '^TestPortalPostgresTransactions$' -count=1 -v | tee /tmp/postgres-portal.log
+          test "$(grep -c -- '^--- PASS' /tmp/postgres-portal.log || true)" -eq 1
 
       - name: PostgreSQL subscription snapshot budget serialization
         run: |

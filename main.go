@@ -677,11 +677,6 @@ func main() {
 		migrateDb()
 	case "encrypt-tokens":
 		encryptNodeTokens()
-	case "import-portal":
-		if err := service.RunPortalImportCLI(os.Args[2:]); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 	case "migrate-db":
 		if err := migrateDbCmd.Parse(os.Args[2:]); err != nil {
 			fmt.Println(err)
@@ -784,7 +779,6 @@ Commands:
     migrate        migrate from other/old x-ui
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
-    import-portal  atomically import a frozen customer bundle (--bundle DIR --offline)
     setting        set settings
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for

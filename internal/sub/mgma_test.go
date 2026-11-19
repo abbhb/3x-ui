@@ -3,13 +3,9 @@ package sub
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -296,47 +292,9 @@ func TestMGMASharedSubIDCannotBypassManagedIdentity(t *testing.T) {
 }
 
 func TestMGMAImportedSourceCredentialsAndLegacyPaths(t *testing.T) {
-	seedSubDB(t)
-	const pepper = "synthetic-mgma-pepper-at-least-thirty-two-bytes"
+	seedPersistedSubscriptions(t)
 	const legacyKey = "synthetic-legacy-key-at-least-thirty-two-bytes"
-	t.Setenv("XUI_MGMA_TOKEN_PEPPER", pepper)
-	t.Setenv("XUI_MARZBAN_SUBSCRIPTION_KEY", legacyKey)
-	for _, ib := range []model.Inbound{
-		{Id: 101, Tag: "import-vision", Enable: true, Port: 26101, Protocol: model.VLESS, Settings: `{"clients":[]}`, StreamSettings: `{"network":"tcp","security":"reality"}`},
-		{Id: 102, Tag: "import-xhttp", Enable: true, Port: 26102, Protocol: model.VLESS, Settings: `{"clients":[]}`, StreamSettings: `{"network":"xhttp","security":"tls"}`, DisableFlow: true},
-		{Id: 103, Tag: "import-hy2", Enable: true, Port: 26103, Protocol: model.Hysteria, Settings: `{"clients":[]}`, StreamSettings: `{"network":"hysteria","security":"tls"}`},
-	} {
-		if err := database.GetDB().Create(&ib).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	for i := 1; i <= 3; i++ {
-		if err := database.GetDB().Create(&model.Host{Id: 1000 + i, InboundId: 100 + i, Address: "198.51.100.8"}).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	blob, err := os.ReadFile("../web/service/testdata/marzban_stage3_portal.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	root := t.TempDir()
-	members := map[string][]byte{"portal.json": blob, "identities.json": []byte("[]"), "stage4-private.json": []byte("{}")}
-	checks := map[string]string{}
-	for name, data := range members {
-		if err := os.WriteFile(filepath.Join(root, name), data, 0o600); err != nil {
-			t.Fatal(err)
-		}
-		sum := sha256.Sum256(data)
-		checks[name] = hex.EncodeToString(sum[:])
-	}
-	manifest, _ := json.Marshal(map[string]any{"schema": "marzban-portal-to-3x-ui/v1", "ready_for_cutover": false, "files": checks, "client_count": 2, "account_count": 2})
-	if err := os.WriteFile(filepath.Join(root, "manifest.json"), manifest, 0o600); err != nil {
-		t.Fatal(err)
-	}
 	svc := &service.CommerceService{}
-	if _, err := svc.ImportPortalBundle(root, true, false, false); err != nil {
-		t.Fatal(err)
-	}
 	settings, _ := svc.Settings()
 	settings.Enabled = true
 	settings.PublicURL = "https://portal.example.test"

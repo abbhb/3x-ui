@@ -11,9 +11,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
-// The Python exporter asserts its output equals this shared synthetic fixture.
-// Exercise the real native importer, not a parallel migration implementation.
-func TestMarzbanStage1NativeImport(t *testing.T) {
+// Re-importing clients must preserve usage accrued since the initial import.
+func TestClientImportPreservesIdentityAndTraffic(t *testing.T) {
 	setupBulkDB(t)
 	db := database.GetDB()
 	for _, inbound := range []model.Inbound{
@@ -34,7 +33,7 @@ func TestMarzbanStage1NativeImport(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	raw, err := os.ReadFile("testdata/marzban_stage1_clients.json")
+	raw, err := os.ReadFile("testdata/client_import_identities.json")
 	if err != nil {
 		t.Fatal(err)
 	}

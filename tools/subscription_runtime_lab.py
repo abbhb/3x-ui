@@ -105,7 +105,7 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         if keep: cls.root.mkdir(mode=0o700)
         cls.up_port, cls.down_port = [free_port() for _ in range(2)]
         env = dict(os.environ, XUI_TEST_SUBSCRIPTION_OUTPUT=str(cls.root), XUI_TEST_XHTTP_UP_PORT=str(cls.up_port), XUI_TEST_XHTTP_DOWN_PORT=str(cls.down_port))
-        result = subprocess.run(['go', 'test', './internal/sub', '-run', '^(TestStage4(AtomicImportProducesAuthorizedMihomoAndOldCredentials|RuntimeFixtures)|TestMihomoExternalXHTTPImportProducesValidIntegerScalars)$', '-count=1', '-v'], env=env, capture_output=True, text=True, timeout=180)
+        result = subprocess.run(['go', 'test', './internal/sub', '-run', '^(TestPersistedSubscriptionsAndCredentials|TestStage4RuntimeFixtures|TestMihomoExternalXHTTPImportProducesValidIntegerScalars)$', '-count=1', '-v'], env=env, capture_output=True, text=True, timeout=180)
         if result.returncode or result.stdout.count('--- PASS:') != 3:
             if cls.workspace: cls.workspace.cleanup()
             raise AssertionError('Native runtime fixture generation failed:\n' + result.stdout + result.stderr)
@@ -200,8 +200,8 @@ class SubscriptionRuntimeTests(unittest.TestCase):
         self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
         self.assertNotIn('global-client-fingerprint', check.stdout + check.stderr)
 
-    def test_full_import_passes_mihomo_and_fake_ip_exceptions_work(self):
-        document = json.loads((self.root / 'full-import.json').read_text())
+    def test_existing_subscription_passes_mihomo_and_fake_ip_exceptions_work(self):
+        document = json.loads((self.root / 'persisted-subscription.json').read_text())
         root = self.root / 'full-check'; root.mkdir(); path = root / 'config.json'; path.write_text(json.dumps(document, ensure_ascii=False))
         check = subprocess.run([BINARY['mihomo'], '-t', '-d', str(root), '-f', str(path)], capture_output=True, text=True, timeout=30)
         self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
