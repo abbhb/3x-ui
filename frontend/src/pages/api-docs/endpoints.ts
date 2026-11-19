@@ -1525,6 +1525,8 @@ export const sections: readonly Section[] = [
             name: 'includeConfig',
             in: 'query',
             type: 'boolean',
+            optional: true,
+            defaultValue: false,
             desc: 'Set to true to include the saved proxy as editable JSON with its credentials. Defaults to false.',
           },
         ],
