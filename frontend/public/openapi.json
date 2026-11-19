@@ -13770,6 +13770,16 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "name": "includeConfig",
+            "in": "query",
+            "required": false,
+            "description": "Set to true to include the saved proxy as editable JSON with its credentials. Defaults to false.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
