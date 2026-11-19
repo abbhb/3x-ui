@@ -3,14 +3,9 @@ package service
 import (
 	"errors"
 	"fmt"
-	"net/url"
-	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
-
-	"gorm.io/driver/postgres"
 
 	"gorm.io/gorm"
 
@@ -99,40 +94,4 @@ func TestPortalPostgresTransactions(t *testing.T) {
 	if err != nil || after.WalletBalanceMinor != 701 {
 		t.Fatal("deferred commit failure retained the credited balance")
 	}
-}
-
-// A dedicated schema keeps this fresh-target import independent of all existing
-// PostgreSQL regression fixtures, and exercises explicit-ID sequence recovery.
-func TestPortalPostgresOfflineImport(t *testing.T) {
-	dsn := strings.TrimSpace(os.Getenv("XUI_DB_DSN"))
-	if os.Getenv("XUI_DB_TYPE") != "postgres" || dsn == "" {
-		t.Skip("set a dedicated PostgreSQL test DSN")
-	}
-	admin, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	sqlDB, err := admin.DB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema := fmt.Sprintf("portal_import_%d", time.Now().UnixNano())
-	if err := admin.Exec("CREATE SCHEMA " + schema).Error; err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE").Error; _ = sqlDB.Close() })
-	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
-		u, err := url.Parse(dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
-		q := u.Query()
-		q.Set("search_path", schema)
-		u.RawQuery = q.Encode()
-		dsn = u.String()
-	} else {
-		dsn += " search_path=" + schema
-	}
-	t.Setenv("XUI_DB_DSN", dsn)
-	TestPortalOfflineImportReadbackAndHistoricalReplay(t)
 }

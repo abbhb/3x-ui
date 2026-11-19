@@ -13,9 +13,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
-// Python checks its SQLite conversion against the same fixture. This test
-// imports that payload and exercises the real subscription host projection.
-func TestMarzbanStrictGrantsImportAndSubscription(t *testing.T) {
+// A client import must preserve the individual host grants in its subscription.
+func TestClientImportPreservesSubscriptionGrants(t *testing.T) {
 	seedSubDB(t)
 	db := database.GetDB()
 	for _, ib := range []model.Inbound{
@@ -37,7 +36,7 @@ func TestMarzbanStrictGrantsImportAndSubscription(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	data, err := os.ReadFile(filepath.Join("..", "web", "service", "testdata", "marzban_stage2_clients.json"))
+	data, err := os.ReadFile(filepath.Join("..", "web", "service", "testdata", "client_import_grants.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
