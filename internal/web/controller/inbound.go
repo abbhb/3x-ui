@@ -3,8 +3,12 @@ package controller
 import (
 	"encoding/json"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgkern"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -81,6 +85,8 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.GET("/options", a.getInboundOptions)
 	g.GET("/allLinks", a.getAllInboundLinks)
 	g.GET("/get/:id", a.getInbound)
+	g.GET("/:id/subscriptionDialer", a.subscriptionDialer)
+	g.POST("/:id/subscriptionDialer", a.subscriptionDialer)
 	g.GET("/:id/fallbacks", a.getFallbacks)
 	g.GET("/amneziawgKernelReadiness", a.getAmneziaWGKernelReadiness)
 
@@ -483,6 +489,38 @@ func resolveHost(c *gin.Context) string {
 		return h
 	}
 	return c.Request.Host
+}
+
+// subscriptionDialer manages the client-side first hop on an owned inbound.
+func (a *InboundController) subscriptionDialer(c *gin.Context) {
+	user := session.GetLoginUser(c)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 || user == nil {
+		jsonObj(c, nil, subscriptioncompat.ErrInvalid)
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	svc := subscriptioncompat.Service{DB: database.GetDB()}
+	var view subscriptioncompat.InboundDialerView
+	if c.Request.Method == http.MethodGet {
+		view, err = svc.InboundDialer(user.Id, id)
+	} else {
+		var input struct {
+			Revision string  `json:"revision"`
+			Config   *string `json:"config"`
+			Remove   bool    `json:"remove"`
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20)
+		if c.ShouldBindJSON(&input) != nil {
+			jsonObj(c, nil, subscriptioncompat.ErrInvalid)
+			return
+		}
+		view, err = svc.SetInboundDialer(user.Id, id, input.Revision, input.Config, input.Remove)
+		if err == nil {
+			service.InvalidateSubData()
+		}
+	}
+	jsonObj(c, view, err)
 }
 
 // getFallbacks returns the fallback rules attached to the master inbound.

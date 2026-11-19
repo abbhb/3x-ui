@@ -23,6 +23,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/sub"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnelmonitor"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/sys"
 	"github.com/mhsanaei/3x-ui/v3/internal/web"
@@ -113,6 +114,9 @@ func runWebServer() {
 	err := database.InitDB(config.GetDBPath())
 	if err != nil {
 		log.Fatalf("Error initializing database: %v", err)
+	}
+	if err := subscriptioncompat.MigrateInboundDialers(database.GetDB(), os.Getenv("XUI_MIHOMO_INBOUND_DIALERS_FILE")); err != nil {
+		log.Fatalf("Error importing standalone inbound dialers: %v", err)
 	}
 	// Created here, not in InitDB: a CLI call's output is often piped away, and
 	// this log is the one place an operator reads the first login from.

@@ -239,8 +239,20 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	if err := compat.Render(config, projection, legacy); err != nil {
 		return "", "", err
 	}
+	dialers := make(map[string]string)
 	if !legacy && !s.shadowrocket {
-		applyNativeEndpointBypass(config, nativeProxies)
+		for _, inbound := range inbounds {
+			if inbound.MihomoDialer != "" {
+				dialers[inbound.Tag] = inbound.MihomoDialer
+			}
+		}
+	}
+	hops, err := applyMihomoInboundDialers(config, dialers)
+	if err != nil {
+		return "", "", err
+	}
+	if !legacy && !s.shadowrocket {
+		applyNativeEndpointBypass(config, slices.Concat(nativeProxies, hops))
 	}
 	normalizeMihomoConfig(config)
 	finalYAML, err := marshalClashYAML(config)
@@ -460,6 +472,7 @@ func (s *SubClashService) getProxies(subReq *SubService, inbound *model.Inbound,
 		proxy := s.buildProxy(subReq, &workingInbound, client, workingStream, extPrxy)
 		if len(proxy) > 0 {
 			proxy["_mgma-inbound-id"] = inbound.Id
+			proxy[inboundDialerMarker] = nativeInboundTag(inbound.Tag)
 			// Host-only mihomo knob: ip-version is a top-level proxy field, set
 			// last so it cannot be clobbered. Absent for legacy externalProxy.
 			if v, _ := extPrxy["mihomoIpVersion"].(string); v != "" {

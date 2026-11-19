@@ -128,7 +128,8 @@ func DecodeDocument(raw []byte) (map[string]any, error) {
 	return doc, nil
 }
 
-func normalizeNode(v any) (map[string]any, error) {
+// NormalizeStandaloneProxy validates a self-contained proxy and normalizes its port.
+func NormalizeStandaloneProxy(v any) (map[string]any, error) {
 	node, ok := v.(map[string]any)
 	if !ok {
 		return nil, ErrInvalidSnapshot
@@ -200,7 +201,7 @@ func normalizeSnapshot(nodes []any, links []string) (Snapshot, error) {
 	var result Snapshot
 	counts := map[string]int{}
 	for pos, raw := range nodes {
-		node, err := normalizeNode(raw)
+		node, err := NormalizeStandaloneProxy(raw)
 		if err != nil {
 			result.Skipped++
 			continue
