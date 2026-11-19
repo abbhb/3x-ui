@@ -17,7 +17,7 @@ func TestInboundDialerEditIsolationAndRemoval(t *testing.T) {
 	if err := s.DB.Create(&inbound).Error; err != nil {
 		t.Fatal(err)
 	}
-	initial, err := s.InboundDialer(13, inbound.Id)
+	initial, err := s.InboundDialer(13, inbound.Id, false)
 	if err != nil || initial.Name != "" {
 		t.Fatalf("new inbound: %v", err)
 	}
@@ -45,11 +45,33 @@ func TestInboundDialerEditIsolationAndRemoval(t *testing.T) {
 	if b, _ := json.Marshal([]any{saved, inbound}); strings.Contains(string(b), "synthetic-private") || strings.Contains(string(b), inbound.MihomoDialer) {
 		t.Fatal("credential visible in inbound detail or editor summary")
 	}
+	if _, err := s.InboundDialer(14, inbound.Id, true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("another owner could read the editor: %v", err)
+	}
+	summary, err := s.InboundDialer(13, inbound.Id, false)
+	if err != nil || summary.Config != "" {
+		t.Fatal("summary included editor credentials or failed to load")
+	}
+	editor, err := s.InboundDialer(13, inbound.Id, true)
+	if err != nil || editor.Revision != saved.Revision {
+		t.Fatalf("open editor: %v", err)
+	}
+	edited := strings.Replace(editor.Config, `"port": 2501`, `"port": 2502`, 1)
+	updated, err := s.SetInboundDialer(13, inbound.Id, editor.Revision, &edited, false)
+	if err != nil || updated.Port != 2502 || updated.Config != "" {
+		t.Fatalf("edit existing configuration: %v", err)
+	}
+	reopened, err := s.InboundDialer(13, inbound.Id, true)
+	var node map[string]any
+	if err != nil || json.Unmarshal([]byte(reopened.Config), &node) != nil ||
+		node["password"] != "synthetic-private" || node["port"] != float64(2502) {
+		t.Fatal("reopened editor did not preserve the edited port and credentials")
+	}
 	bad := "- {name: a, type: socks5, server: hk.test, port: 20}\n- {name: b}"
-	if _, err := s.SetInboundDialer(13, inbound.Id, saved.Revision, &bad, false); err == nil {
+	if _, err := s.SetInboundDialer(13, inbound.Id, updated.Revision, &bad, false); err == nil {
 		t.Fatal("multiple hops accepted")
 	}
-	cleared, err := s.SetInboundDialer(13, inbound.Id, saved.Revision, nil, true)
+	cleared, err := s.SetInboundDialer(13, inbound.Id, updated.Revision, nil, true)
 	if err != nil || cleared.Name != "" {
 		t.Fatalf("clear: %v", err)
 	}
@@ -68,7 +90,7 @@ func TestInboundDialerMigrationDoesNotRestoreRemovedCredentials(t *testing.T) {
 	if err := MigrateInboundDialers(s.DB, path); err != nil {
 		t.Fatal(err)
 	}
-	view, err := s.InboundDialer(1, inbound.Id)
+	view, err := s.InboundDialer(1, inbound.Id, true)
 	if err != nil || view.Name != "HK" {
 		t.Fatalf("import: %v", err)
 	}
@@ -81,7 +103,7 @@ func TestInboundDialerMigrationDoesNotRestoreRemovedCredentials(t *testing.T) {
 	if err := MigrateInboundDialers(s.DB, path); err != nil {
 		t.Fatal(err)
 	}
-	if view, err = s.InboundDialer(1, inbound.Id); err != nil || view.Name != "" {
+	if view, err = s.InboundDialer(1, inbound.Id, true); err != nil || view.Name != "" || view.Config != "" {
 		t.Fatal("cleared hop restored")
 	}
 }

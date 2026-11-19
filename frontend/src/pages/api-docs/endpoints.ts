@@ -1519,7 +1519,15 @@ export const sections: readonly Section[] = [
         path: '/panel/api/inbounds/:id/subscriptionDialer',
         summary:
           'Read the endpoint and revision of the client-side Mihomo first hop on an owned inbound.',
-        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' },
+          {
+            name: 'includeConfig',
+            in: 'query',
+            type: 'boolean',
+            desc: 'Set to true to include the saved proxy as editable JSON with its credentials. Defaults to false.',
+          },
+        ],
       },
       {
         method: 'POST',
