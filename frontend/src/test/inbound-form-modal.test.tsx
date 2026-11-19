@@ -104,6 +104,47 @@ async function renderCloneLikeEdit(dbInbound: DBInbound) {
 }
 
 describe('InboundFormModal', () => {
+  it('opens the first-hop editor with the saved config and keeps an edited config after saving', async () => {
+    await renderCloneLikeEdit(cloneLikeVlessInbound('example.org:443'));
+    const config = JSON.stringify(
+      { name: 'HK', type: 'socks5', server: 'hk.test', port: 2501, password: 'fixture-password' },
+      null,
+      2,
+    );
+    const summary = { name: 'HK', type: 'socks5', server: 'hk.test', port: 2501 };
+    vi.mocked(HttpUtil.get).mockResolvedValueOnce({
+      success: true,
+      msg: '',
+      obj: { ...summary, revision: 'first', config },
+    });
+    fireEvent.click(screen.getByRole('tab', { name: 'Subscription first hop' }));
+    const field = await screen.findByRole<HTMLTextAreaElement>('textbox', {
+      name: /First-hop proxy/,
+    });
+    expect(field.value).toBe(config);
+    expect(HttpUtil.get).toHaveBeenCalledWith('/panel/api/inbounds/42/subscriptionDialer', {
+      includeConfig: true,
+    });
+    const save = screen.getByRole<HTMLButtonElement>('button', { name: 'Save first hop' });
+    expect(save.disabled).toBe(true);
+    const edited = config.replace('2501', '2502');
+    fireEvent.change(field, { target: { value: edited } });
+    vi.mocked(HttpUtil.post).mockResolvedValueOnce({
+      success: true,
+      msg: '',
+      obj: { ...summary, port: 2502, revision: 'second' },
+    });
+    fireEvent.click(save);
+    await screen.findByText(/SOCKS5.*2502/);
+    expect(HttpUtil.post).toHaveBeenCalledWith(
+      '/panel/api/inbounds/42/subscriptionDialer',
+      { revision: 'first', config: edited },
+      expect.anything(),
+    );
+    expect(field.value).toBe(edited);
+    expect(save.disabled).toBe(true);
+  });
+
   it('field structure differs per protocol (not a vacuous snapshot loop)', async () => {
     renderModal();
     const protocols = listSelectOptions('protocol');

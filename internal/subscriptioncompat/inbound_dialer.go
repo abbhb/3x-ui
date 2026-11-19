@@ -1,6 +1,7 @@
 package subscriptioncompat
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -22,6 +23,7 @@ const (
 )
 
 type InboundDialerView struct {
+	Config   string `json:"config,omitempty"`
 	Revision string `json:"revision"`
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
@@ -29,15 +31,32 @@ type InboundDialerView struct {
 	Port     int    `json:"port,omitempty"`
 }
 
-func dialerView(ciphertext string) (InboundDialerView, error) {
+func dialerView(ciphertext string, includeConfig bool) (InboundDialerView, error) {
 	digest := sha256.Sum256([]byte(ciphertext))
 	view := InboundDialerView{Revision: hex.EncodeToString(digest[:])}
 	if ciphertext == "" {
 		return view, nil
 	}
-	node, err := OpenInboundDialer(ciphertext)
+	raw, err := Decrypt(dialerKind, ciphertext)
 	if err != nil {
 		return view, err
+	}
+	node, err := decodeInboundDialer(raw)
+	if err != nil {
+		return view, err
+	}
+	if includeConfig {
+		// Format the stored JSON directly so credential strings and numeric literals
+		// round-trip through the editor. Large entries must still fit the save limit.
+		var formatted bytes.Buffer
+		if err := json.Indent(&formatted, raw, "", "  "); err != nil {
+			return view, ErrInvalid
+		}
+		if formatted.Len() <= dialerLimit {
+			view.Config = formatted.String()
+		} else {
+			view.Config = string(raw)
+		}
 	}
 	view.Name, _ = node["name"].(string)
 	view.Type, _ = node["type"].(string)
@@ -51,6 +70,10 @@ func OpenInboundDialer(ciphertext string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
+	return decodeInboundDialer(raw)
+}
+
+func decodeInboundDialer(raw []byte) (map[string]any, error) {
 	var node map[string]any
 	if err := json.Unmarshal(raw, &node); err != nil {
 		return nil, ErrInvalid
@@ -98,12 +121,12 @@ func (s *Service) ownedDialer(userID, id int) (string, error) {
 	return inbound.MihomoDialer, err
 }
 
-func (s *Service) InboundDialer(userID, id int) (InboundDialerView, error) {
+func (s *Service) InboundDialer(userID, id int, includeConfig bool) (InboundDialerView, error) {
 	old, err := s.ownedDialer(userID, id)
 	if err != nil {
 		return InboundDialerView{}, err
 	}
-	return dialerView(old)
+	return dialerView(old, includeConfig)
 }
 
 func (s *Service) SetInboundDialer(userID, id int, revision string, config *string, remove bool) (InboundDialerView, error) {
@@ -136,7 +159,7 @@ func (s *Service) SetInboundDialer(userID, id int, revision string, config *stri
 	if result.RowsAffected != 1 {
 		return InboundDialerView{}, ErrConflict
 	}
-	return dialerView(next)
+	return dialerView(next, false)
 }
 
 // Import the file used by the first release once, before accepting traffic.

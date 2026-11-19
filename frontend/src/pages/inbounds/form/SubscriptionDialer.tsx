@@ -5,6 +5,7 @@ import { HttpUtil } from '@/utils';
 
 interface Dialer {
   revision: string;
+  config?: string;
   name?: string;
   type?: string;
   server?: string;
@@ -16,18 +17,22 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
   const label = (key: string) => t(`pages.inbounds.dialer.${key}`);
   const url = `/panel/api/inbounds/${id}/subscriptionDialer`;
   const [view, setView] = useState<Dialer>();
-  const [draft, setDraft] = useState('');
+  const [edit, setEdit] = useState<string>();
+  const stored = view?.config ?? '';
+  const draft = edit ?? stored;
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<'invalid' | 'conflict' | 'failed' | 'saved'>();
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-    void HttpUtil.get<Dialer>(url)
+    void HttpUtil.get<Dialer>(url, { includeConfig: true })
       .then((msg) => {
         if (!active) return;
-        if (msg?.success && msg.obj) setView(msg.obj);
-        else setFeedback('failed');
+        if (msg?.success && msg.obj) {
+          setView(msg.obj);
+          setEdit(undefined);
+        } else setFeedback('failed');
       })
       .catch(() => {
         if (active) setFeedback('failed');
@@ -51,8 +56,8 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
         },
       );
       if (msg?.success && msg.obj) {
-        setView(msg.obj);
-        setDraft('');
+        setView({ ...msg.obj, config: remove ? undefined : draft });
+        setEdit(undefined);
         setFeedback('saved');
       } else if (msg?.msg?.includes('conflict')) setFeedback('conflict');
       else if (msg?.msg?.includes('invalid')) setFeedback('invalid');
@@ -82,13 +87,18 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
             <Input.TextArea
               id="inbound-dialer-config"
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setEdit(e.target.value);
+                if (feedback === 'saved' || feedback === 'invalid') setFeedback(undefined);
+              }}
               autoComplete="off"
               spellCheck={false}
-              rows={6}
+              autoSize={{ minRows: 6, maxRows: 14 }}
               disabled={busy}
               placeholder={
-                '- name: Hong Kong\n  type: socks5\n  server: hop.example.org\n  port: 1080'
+                view.name
+                  ? undefined
+                  : '- name: Hong Kong\n  type: socks5\n  server: hop.example.org\n  port: 1080'
               }
             />
           </div>
@@ -96,7 +106,7 @@ export default function SubscriptionDialer({ id, landing }: { id: number; landin
           <Space>
             <Button
               type="primary"
-              disabled={!draft.trim() || busy || feedback === 'conflict'}
+              disabled={!draft.trim() || draft === stored || busy || feedback === 'conflict'}
               loading={busy}
               onClick={() => void save(false)}
             >

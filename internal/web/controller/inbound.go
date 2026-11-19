@@ -503,7 +503,7 @@ func (a *InboundController) subscriptionDialer(c *gin.Context) {
 	svc := subscriptioncompat.Service{DB: database.GetDB()}
 	var view subscriptioncompat.InboundDialerView
 	if c.Request.Method == http.MethodGet {
-		view, err = svc.InboundDialer(user.Id, id)
+		view, err = svc.InboundDialer(user.Id, id, c.Query("includeConfig") == "true")
 	} else {
 		var input struct {
 			Revision string  `json:"revision"`
