@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL odberu JSON",
       "subLinksCopyAll": "Skopírovať všetko",
       "subLinksCopiedAll": "Skopírované odkazy: {count}",
+      "managedSubscriptionTitle": "Predplatné vyžaduje prístupový token",
+      "managedSubscriptionHint": "Získajte úplný odkaz na predplatné v zákazníckom portáli a potom ho importujte alebo aktualizujte v klientovi.",
       "subLinksEmpty": "Žiadny z vybraných klientov nemá ID odberu.",
       "subLinksDisabled": "Služba odberu konfigurácií je vypnutá.",
       "subLinksDisabledHint": "Na vytváranie odkazov zapnite odber v časti Nastavenia panelu → Odber konfigurácií.",

@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "Abonelik JSON URL",
       "subLinksCopyAll": "Tümünü Kopyala",
       "subLinksCopiedAll": "{count} bağlantı kopyalandı",
+      "managedSubscriptionTitle": "Abonelik için erişim belirteci gerekir",
+      "managedSubscriptionHint": "Aboneliğin tam bağlantısını müşteri portalından alın, ardından istemcinize aktarın veya mevcut bağlantıyı güncelleyin.",
       "subLinksEmpty": "Seçilen kullanıcıların hiçbirinin abonelik ID'si yok.",
       "subLinksDisabled": "Abonelik hizmeti devre dışı.",
       "subLinksDisabledHint": "Bağlantı oluşturmak için Panel Ayarları → Abonelik'ten etkinleştirin.",

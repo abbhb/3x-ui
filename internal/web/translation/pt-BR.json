@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL JSON da assinatura",
       "subLinksCopyAll": "Copiar tudo",
       "subLinksCopiedAll": "Copiados {count} link(s)",
+      "managedSubscriptionTitle": "A assinatura exige um token de acesso",
+      "managedSubscriptionHint": "Obtenha o link completo da assinatura no portal do cliente e importe-o ou atualize-o no seu aplicativo cliente.",
       "subLinksEmpty": "Nenhum dos clientes selecionados tem ID de assinatura.",
       "subLinksDisabled": "O serviço de assinatura está desabilitado.",
       "subLinksDisabledHint": "Habilite a assinatura em Configurações do Painel → Assinatura para gerar links.",

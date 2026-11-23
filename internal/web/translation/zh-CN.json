@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "订阅 JSON URL",
       "subLinksCopyAll": "全部复制",
       "subLinksCopiedAll": "已复制 {count} 条链接",
+      "managedSubscriptionTitle": "订阅需要访问令牌",
+      "managedSubscriptionHint": "请从用户门户获取带令牌的完整订阅链接，然后在客户端导入或更新订阅。",
       "subLinksEmpty": "选中的客户端均无订阅 ID。",
       "subLinksDisabled": "订阅服务已禁用。",
       "subLinksDisabledHint": "在面板设置 → 订阅中启用订阅以生成链接。",

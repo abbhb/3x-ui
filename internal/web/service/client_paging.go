@@ -21,6 +21,7 @@ import (
 type ClientSlim struct {
 	Email        string              `json:"email" example:"alice@example.com"`
 	SubID        string              `json:"subId" example:"abcd1234"`
+	RequireMGMA  bool                `json:"requireMGMA" example:"false"`
 	Enable       bool                `json:"enable" example:"true"`
 	TotalGB      int64               `json:"totalGB" example:"53687091200"`
 	ExpiryTime   int64               `json:"expiryTime" example:"1735689600000"`
@@ -460,16 +461,23 @@ func (q clientQuery) pageRows(params ClientPageParams, onlines []string, offset,
 		return []ClientSlim{}, nil
 	}
 
-	var records []model.ClientRecord
-	if err := q.db.Where("id IN ?", ids).Find(&records).Error; err != nil {
+	var records []struct {
+		model.ClientRecord
+		HasPortalAccess bool
+	}
+	if err := q.db.Model(&model.ClientRecord{}).
+		Select("clients.*, EXISTS (SELECT 1 FROM portal_accesses WHERE client_id = clients.id) AS has_portal_access").
+		Where("id IN ?", ids).Find(&records).Error; err != nil {
 		return nil, err
 	}
 	byId := make(map[int]*model.ClientRecord, len(records))
 	emails := make([]string, 0, len(records))
 	for i := range records {
-		byId[records[i].Id] = &records[i]
-		if records[i].Email != "" {
-			emails = append(emails, records[i].Email)
+		record := &records[i]
+		record.RequireMGMA = record.RequireMGMA || record.HasPortalAccess
+		byId[record.Id] = &record.ClientRecord
+		if record.Email != "" {
+			emails = append(emails, record.Email)
 		}
 	}
 
@@ -641,6 +649,7 @@ func toClientSlim(c ClientWithAttachments) ClientSlim {
 	return ClientSlim{
 		Email:        c.Email,
 		SubID:        c.SubID,
+		RequireMGMA:  c.RequireMGMA,
 		Enable:       c.Enable,
 		TotalGB:      c.TotalGB,
 		ExpiryTime:   c.ExpiryTime,

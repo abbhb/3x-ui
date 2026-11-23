@@ -20,6 +20,7 @@ import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
 import { QrPanel } from '@/pages/inbounds/qr';
 import ClientHwidListModal from '@/components/clients/ClientHwidList';
 import ConfigBlock from '@/components/clients/ConfigBlock';
+import ManagedSubscriptionNotice from './ManagedSubscriptionNotice';
 import {
   buildWireguardClientConfig,
   findWireguardInbounds,
@@ -571,7 +572,13 @@ export default function ClientInfoModal({
               </tbody>
             </table>
 
-            {showSubscription && subLink && (
+            {showSubscription && client.requireMGMA && (
+              <>
+                <Divider>{t('subscription.title')}</Divider>
+                <ManagedSubscriptionNotice />
+              </>
+            )}
+            {showSubscription && !client.requireMGMA && subLink && (
               <>
                 <Divider>{t('subscription.title')}</Divider>
                 <div className="link-row">

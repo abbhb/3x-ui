@@ -2331,6 +2331,10 @@
             "example": 0,
             "type": "integer"
           },
+          "requireMGMA": {
+            "example": false,
+            "type": "boolean"
+          },
           "reset": {
             "example": 0,
             "type": "integer"
@@ -2378,6 +2382,7 @@
           "inboundIds",
           "limitHwid",
           "limitIp",
+          "requireMGMA",
           "reset",
           "resetDay",
           "resetMax",
@@ -16227,6 +16232,7 @@
                         ],
                         "limitHwid": 0,
                         "limitIp": 0,
+                        "requireMGMA": false,
                         "reset": 0,
                         "resetDay": 0,
                         "resetMax": 0,
