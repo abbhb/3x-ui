@@ -548,6 +548,7 @@ export interface ClientSlim {
   inboundIds: number[];
   limitHwid: number;
   limitIp: number;
+  requireMGMA: boolean;
   reset: number;
   resetDay: number;
   resetMax: number;

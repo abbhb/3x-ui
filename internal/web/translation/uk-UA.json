@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL JSON-підписки",
       "subLinksCopyAll": "Копіювати все",
       "subLinksCopiedAll": "Скопійовано {count} посилань",
+      "managedSubscriptionTitle": "Для підписки потрібен токен доступу",
+      "managedSubscriptionHint": "Отримайте повне посилання на підписку в кабінеті користувача, а потім імпортуйте або оновіть його в клієнті.",
       "subLinksEmpty": "Жоден з обраних клієнтів не має ID підписки.",
       "subLinksDisabled": "Сервіс підписки вимкнено.",
       "subLinksDisabledHint": "Увімкніть підписку в Налаштування панелі → Підписка для генерації посилань.",

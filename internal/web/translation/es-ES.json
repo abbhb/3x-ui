@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL JSON de suscripción",
       "subLinksCopyAll": "Copiar todo",
       "subLinksCopiedAll": "Copiados {count} enlace(s)",
+      "managedSubscriptionTitle": "La suscripción requiere un token de acceso",
+      "managedSubscriptionHint": "Obtén el enlace de suscripción completo en el portal de clientes e impórtalo o actualízalo en tu cliente.",
       "subLinksEmpty": "Ninguno de los clientes seleccionados tiene ID de suscripción.",
       "subLinksDisabled": "El servicio de suscripción está deshabilitado.",
       "subLinksDisabledHint": "Habilita la suscripción en Ajustes del panel → Suscripción para generar enlaces.",

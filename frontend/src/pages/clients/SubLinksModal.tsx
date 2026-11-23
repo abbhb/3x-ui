@@ -5,6 +5,7 @@ import type { TableColumnType } from 'antd';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import type { ClientRecord } from '@/hooks/useClients';
+import ManagedSubscriptionNotice from './ManagedSubscriptionNotice';
 
 interface SubSettings {
   enable: boolean;
@@ -42,14 +43,19 @@ export default function SubLinksModal({
   const enabled = !!subSettings?.enable && !!subSettings?.subURI;
   const jsonEnabled = !!subSettings?.subJsonEnable && !!subSettings?.subJsonURI;
 
-  const rows = useMemo<Row[]>(() => {
-    if (!enabled) return [];
+  const { rows, hasManagedSubscriptions } = useMemo(() => {
+    const rows: Row[] = [];
+    let hasManagedSubscriptions = false;
+    if (!enabled) return { rows, hasManagedSubscriptions };
     const byEmail = new Map(clients.map((c) => [c.email, c]));
-    const out: Row[] = [];
     for (const email of emails) {
       const c = byEmail.get(email);
       if (!c?.subId) continue;
-      out.push({
+      if (c.requireMGMA) {
+        hasManagedSubscriptions = true;
+        continue;
+      }
+      rows.push({
         key: email,
         email,
         subId: c.subId,
@@ -57,7 +63,7 @@ export default function SubLinksModal({
         jsonLink: jsonEnabled ? subSettings!.subJsonURI + c.subId : '',
       });
     }
-    return out;
+    return { rows, hasManagedSubscriptions };
   }, [emails, clients, enabled, jsonEnabled, subSettings]);
 
   const allText = useMemo(
@@ -187,7 +193,12 @@ export default function SubLinksModal({
             style={{ marginBottom: 12 }}
           />
         )}
-        {enabled && rows.length === 0 && (
+        {hasManagedSubscriptions && (
+          <div style={{ marginBottom: 12 }}>
+            <ManagedSubscriptionNotice />
+          </div>
+        )}
+        {enabled && rows.length === 0 && !hasManagedSubscriptions && (
           <Alert
             type="info"
             showIcon

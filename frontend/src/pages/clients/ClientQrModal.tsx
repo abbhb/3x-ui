@@ -11,6 +11,7 @@ import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
 import { QrPanel } from '@/pages/inbounds/qr';
 import type { ClientRecord, InboundOption } from '@/hooks/useClients';
 import { formatTunnelConfigMeta } from '@/lib/inbounds/label';
+import ManagedSubscriptionNotice from './ManagedSubscriptionNotice';
 import {
   buildWireguardClientConfig,
   findWireguardInbounds,
@@ -218,7 +219,9 @@ export default function ClientQrModal(props: ClientQrModalProps) {
   const subSettings = props.subSettings ?? DEFAULT_SUB;
   const subId = props.client?.subId ?? '';
   const subLink =
-    subId && subSettings.enable && subSettings.subURI ? subSettings.subURI + subId : '';
+    subId && subSettings.enable && !props.client?.requireMGMA && subSettings.subURI
+      ? subSettings.subURI + subId
+      : '';
   const happLinkEnabled = subSettings.happLinkEnable === true;
   // A gate or source change remounts this scope to clear Happ state and retire any in-flight response.
   const scopeKey = `${props.client?.id ?? ''}\0${subId}\0${subLink}\0${happLinkEnabled ? 1 : 0}`;
@@ -241,7 +244,8 @@ function ClientQrModalContent({
   const [loading, setLoading] = useState(false);
 
   const subId = client?.subId;
-  const subEnabled = !!subSettings?.enable;
+  const subEnabled = subSettings.enable && !client?.requireMGMA;
+  const showManagedSubscription = !!(subSettings.enable && client?.requireMGMA && subId);
   const subLink = subId && subEnabled && subSettings?.subURI ? subSettings.subURI + subId : '';
   const subJsonLink =
     subId && subEnabled && subSettings?.subJsonEnable && subSettings?.subJsonURI
@@ -378,6 +382,7 @@ function ClientQrModalContent({
   }, [client, tuicInbound, subSettings.publicHost, hosts]);
 
   const hasAnything =
+    showManagedSubscription ||
     !!subLink ||
     !!subJsonLink ||
     wgConfigs.length > 0 ||
@@ -422,6 +427,13 @@ function ClientQrModalContent({
 
   const items = useMemo(() => {
     const out: { key: string; label: React.ReactNode; children: React.ReactNode }[] = [];
+    if (showManagedSubscription) {
+      out.push({
+        key: 'managed-sub',
+        label: t('subscription.title'),
+        children: <ManagedSubscriptionNotice />,
+      });
+    }
     if (subLink) {
       out.push({
         key: 'sub',
@@ -528,6 +540,7 @@ function ClientQrModalContent({
     });
     return out;
   }, [
+    showManagedSubscription,
     subLink,
     subJsonLink,
     variant,

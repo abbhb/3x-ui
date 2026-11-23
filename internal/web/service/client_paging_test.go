@@ -446,6 +446,37 @@ func TestListPagedRowContents(t *testing.T) {
 	})
 }
 
+func TestListPagedSubscriptionProtection(t *testing.T) {
+	svc, inboundSvc, settingSvc := setupPagingServices(t)
+	db := database.GetDB()
+	clients := []model.ClientRecord{
+		{Email: "ordinary"},
+		{Email: "protected", RequireMGMA: true},
+		{Email: "legacy-managed"},
+	}
+	if err := db.Create(&clients).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&model.PortalAccess{ClientID: clients[2].Id}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	page, err := svc.ListPaged(inboundSvc, settingSvc, ClientPageParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make(map[string]bool, len(page.Items))
+	for _, client := range page.Items {
+		got[client.Email] = client.RequireMGMA
+	}
+	for _, client := range clients {
+		want := client.Email != "ordinary"
+		if required, found := got[client.Email]; !found || required != want {
+			t.Errorf("%s: present=%t, requireMGMA=%t, want present=true and requireMGMA=%t", client.Email, found, required, want)
+		}
+	}
+}
+
 func TestListPagedSummary(t *testing.T) {
 	svc, inboundSvc, settingSvc := setupPagingServices(t)
 	seedPagingClients(t)

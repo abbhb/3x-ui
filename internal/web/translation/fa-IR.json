@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "آدرس JSON اشتراک",
       "subLinksCopyAll": "کپی همه",
       "subLinksCopiedAll": "{count} لینک کپی شد",
+      "managedSubscriptionTitle": "اشتراک به توکن دسترسی نیاز دارد",
+      "managedSubscriptionHint": "پیوند کامل اشتراک را از پرتال کاربران بگیرید و سپس آن را در برنامهٔ کارخواه وارد یا به‌روزرسانی کنید.",
       "subLinksEmpty": "هیچ‌کدام از کاربران انتخابی شناسه اشتراک ندارند.",
       "subLinksDisabled": "سرویس اشتراک غیرفعال است.",
       "subLinksDisabledHint": "برای ساخت لینک، اشتراک را در تنظیمات پنل ← اشتراک فعال کنید.",

@@ -775,7 +775,16 @@ export default function ClientsPage() {
       const row = rowsByEmail.current.get(email);
       if (!row) return;
       const full = await hydrate(row.email);
-      setInfoClient(full ? { ...row, ...full.client, inboundIds: full.inboundIds } : row);
+      setInfoClient(
+        full
+          ? {
+              ...row,
+              ...full.client,
+              requireMGMA: row.requireMGMA || full.client.requireMGMA,
+              inboundIds: full.inboundIds,
+            }
+          : row,
+      );
       setViewingTunnelAllowedIPs(full?.tunnelAllowedIPs ?? {});
       setInfoOpen(true);
     },
@@ -787,7 +796,16 @@ export default function ClientsPage() {
       const row = rowsByEmail.current.get(email);
       if (!row) return;
       const full = await hydrate(row.email);
-      setQrClient(full ? { ...row, ...full.client, inboundIds: full.inboundIds } : row);
+      setQrClient(
+        full
+          ? {
+              ...row,
+              ...full.client,
+              requireMGMA: row.requireMGMA || full.client.requireMGMA,
+              inboundIds: full.inboundIds,
+            }
+          : row,
+      );
       setViewingTunnelAllowedIPs(full?.tunnelAllowedIPs ?? {});
       setQrOpen(true);
     },

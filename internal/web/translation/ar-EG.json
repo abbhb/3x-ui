@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "رابط JSON للاشتراك",
       "subLinksCopyAll": "نسخ الكل",
       "subLinksCopiedAll": "تم نسخ {count} رابط",
+      "managedSubscriptionTitle": "رمز الوصول مطلوب للاشتراك",
+      "managedSubscriptionHint": "احصل على رابط الاشتراك الكامل من بوابة المستخدم، ثم استورده أو حدّثه في تطبيق العميل.",
       "subLinksEmpty": "لا يحتوي أي من العملاء المحددين على معرف اشتراك.",
       "subLinksDisabled": "خدمة الاشتراك معطلة.",
       "subLinksDisabledHint": "فعّل الاشتراك من إعدادات اللوحة → الاشتراك لإنشاء الروابط.",

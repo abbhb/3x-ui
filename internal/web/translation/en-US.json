@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "Subscription JSON URL",
       "subLinksCopyAll": "Copy all",
       "subLinksCopiedAll": "Copied {count} link(s)",
+      "managedSubscriptionTitle": "Subscription requires an access token",
+      "managedSubscriptionHint": "Get the full subscription link from the customer portal, then import or update it in your client.",
       "subLinksEmpty": "None of the selected clients have a subscription ID.",
       "subLinksDisabled": "Subscription service is disabled.",
       "subLinksDisabledHint": "Enable subscription in Panel Settings → Subscription to generate links.",

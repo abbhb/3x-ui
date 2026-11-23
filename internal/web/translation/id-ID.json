@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL JSON Langganan",
       "subLinksCopyAll": "Salin semua",
       "subLinksCopiedAll": "{count} tautan disalin",
+      "managedSubscriptionTitle": "Langganan memerlukan token akses",
+      "managedSubscriptionHint": "Dapatkan tautan langganan lengkap dari portal pelanggan, lalu impor atau perbarui tautan itu di aplikasi klien.",
       "subLinksEmpty": "Tidak ada klien terpilih yang memiliki ID langganan.",
       "subLinksDisabled": "Layanan langganan dinonaktifkan.",
       "subLinksDisabledHint": "Aktifkan langganan di Pengaturan Panel → Langganan untuk membuat tautan.",

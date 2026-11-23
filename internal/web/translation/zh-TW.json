@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "訂閱 JSON URL",
       "subLinksCopyAll": "全部複製",
       "subLinksCopiedAll": "已複製 {count} 條連結",
+      "managedSubscriptionTitle": "訂閱需要存取權杖",
+      "managedSubscriptionHint": "請從使用者入口網站取得含權杖的完整訂閱連結，再於用戶端匯入或更新訂閱。",
       "subLinksEmpty": "選取的客戶端皆無訂閱 ID。",
       "subLinksDisabled": "訂閱服務已停用。",
       "subLinksDisabledHint": "在面板設定 → 訂閱中啟用訂閱以產生連結。",

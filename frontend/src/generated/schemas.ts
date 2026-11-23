@@ -2299,6 +2299,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "type": "integer"
       },
+      "requireMGMA": {
+        "example": false,
+        "type": "boolean"
+      },
       "reset": {
         "example": 0,
         "type": "integer"
@@ -2346,6 +2350,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "inboundIds",
       "limitHwid",
       "limitIp",
+      "requireMGMA",
       "reset",
       "resetDay",
       "resetMax",

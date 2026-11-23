@@ -298,7 +298,7 @@ export default function CommandPalette() {
             navigate(`/clients?search=${encodeURIComponent(c.email)}`);
           },
           secondaryAction:
-            c.subId && allSetting.subURI
+            c.subId && !c.requireMGMA && allSetting.subURI
               ? {
                   label: t('commandPalette.copySubscription'),
                   icon: <CopyOutlined aria-hidden />,

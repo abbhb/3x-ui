@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "URL JSON đăng ký",
       "subLinksCopyAll": "Sao chép tất cả",
       "subLinksCopiedAll": "Đã sao chép {count} liên kết",
+      "managedSubscriptionTitle": "Gói đăng ký yêu cầu mã thông báo truy cập",
+      "managedSubscriptionHint": "Lấy liên kết đăng ký đầy đủ từ cổng khách hàng, rồi nhập hoặc cập nhật liên kết trong ứng dụng khách.",
       "subLinksEmpty": "Không client nào trong các client đã chọn có ID đăng ký.",
       "subLinksDisabled": "Dịch vụ đăng ký đã tắt.",
       "subLinksDisabledHint": "Bật đăng ký tại Cài đặt bảng điều khiển → Đăng ký để tạo liên kết.",

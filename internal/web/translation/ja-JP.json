@@ -982,6 +982,8 @@
       "subJsonLinkColumn": "サブスクリプション JSON URL",
       "subLinksCopyAll": "すべてコピー",
       "subLinksCopiedAll": "{count} リンクをコピーしました",
+      "managedSubscriptionTitle": "サブスクリプションにはアクセストークンが必要です",
+      "managedSubscriptionHint": "ユーザーポータルで完全なサブスクリプションリンクを取得し、クライアントでインポートまたは更新してください。",
       "subLinksEmpty": "選択したクライアントにはサブスクリプション ID がありません。",
       "subLinksDisabled": "サブスクリプションサービスは無効です。",
       "subLinksDisabledHint": "リンクを生成するにはパネル設定 → サブスクリプションで有効にしてください。",
