@@ -211,6 +211,15 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	}
 	proxyNames = append(proxyNames, "DIRECT")
 
+	rules := []string{"MATCH,PROXY"}
+	if !legacy {
+		rules = []string{
+			"DOMAIN-SUFFIX,aki-game.com,DIRECT",
+			"DOMAIN-SUFFIX,kurogames.com,DIRECT",
+			"DOMAIN,cschannel.anticheatexpert.com,DIRECT",
+			"MATCH,PROXY",
+		}
+	}
 	config := map[string]any{
 		"proxies": proxies,
 		"proxy-groups": []map[string]any{{
@@ -218,7 +227,7 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 			"type":    "select",
 			"proxies": proxyNames,
 		}},
-		"rules": []string{"MATCH,PROXY"},
+		"rules": rules,
 	}
 
 	// Custom Clash routing can inject Mihomo-only groups, rules, providers or a

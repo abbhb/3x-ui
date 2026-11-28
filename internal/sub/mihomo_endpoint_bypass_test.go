@@ -71,7 +71,12 @@ func TestMihomoSubscriptionBypassesOnlyOwnIngress(t *testing.T) {
 		if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
 			t.Fatal(err)
 		}
-		wantRules := []string{"MATCH,PROXY"}
+		wantRules := []string{
+			"DOMAIN-SUFFIX,aki-game.com,DIRECT",
+			"DOMAIN-SUFFIX,kurogames.com,DIRECT",
+			"DOMAIN,cschannel.anticheatexpert.com,DIRECT",
+			"MATCH,PROXY",
+		}
 		var wantExclusions []string
 		if format == "mihomo" {
 			wantRules = append([]string{"IP-CIDR,192.0.2.12/32,DIRECT,no-resolve", "IP-CIDR,2001:db8::12/128,DIRECT,no-resolve"}, wantRules...)

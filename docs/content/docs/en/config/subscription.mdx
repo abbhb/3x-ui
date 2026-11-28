@@ -74,6 +74,18 @@ default matcher so existing subscription URLs continue returning YAML.
 It does not distinguish legacy clients from Mihomo-based clients; Clash for
 Windows users must use `/clash-legacy/<sub-id>` for a compatible profile.
 
+### Default Mihomo routing
+
+The built-in rules send Wuthering Waves traffic for `aki-game.com` and
+`kurogames.com`, including their subdomains, directly. The ACE endpoint
+`cschannel.anticheatexpert.com` also goes directly. These rules run before
+`MATCH,PROXY`.
+
+Custom Clash rules run before the built-in rules. A custom rule list containing
+`MATCH` replaces the built-in list. An enabled subscription policy supplies its
+own rule list. To use direct routing in that policy, add the domain matches
+before broader rules that would otherwise match the same traffic.
+
 ### Subscription node ordering
 
 In **Settings → Subscription → Panel settings**, select **Subscription Node Ordering**

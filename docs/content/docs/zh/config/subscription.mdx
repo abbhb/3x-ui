@@ -61,6 +61,15 @@ Clash 格式自动识别保留原有的 `(?i)(clash|mihomo)` 默认匹配器，�
 继续返回 YAML。它不区分旧版客户端与 Mihomo 系客户端；Clash for Windows 用户
 必须使用 `/clash-legacy/<sub-id>` 获取兼容配置。
 
+### Mihomo 默认路由
+
+内置规则将鸣潮使用的 `aki-game.com`、`kurogames.com` 及其子域名设为直连，
+ACE 的 `cschannel.anticheatexpert.com` 也走直连。这些规则排在 `MATCH,PROXY` 前。
+
+自定义 Clash 规则优先匹配。自定义规则列表包含 `MATCH` 时，会替换内置规则列表。
+已启用的订阅策略使用自己的规则列表。要在该策略中启用直连，请将上述域名规则放在
+可能匹配同一流量的宽泛规则之前。
+
 ### Base64 与 JSON
 
 **Base64** 内容只是用换行符连接的分享链接，经标准 base64 编码（通过 `subEncrypt` 开关控制）。**JSON** 内容则将每个客户端包装为一份完整的 Xray 客户端配置 —— 一套固定的骨架（绑定到 127.0.0.1 的本地 SOCKS/HTTP 入站、DNS、路由、策略）加上一个指向该入站的 `proxy` 出站。3x-ui **对单个客户端输出单个配置对象，对多个客户端输出数组**，使用扁平的出站 `settings` 形式（`address`/`port`/`id`，`level: 8`），并从 `streamSettings` 中剥离 `sockopt`。
