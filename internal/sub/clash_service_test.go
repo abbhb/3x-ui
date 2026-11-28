@@ -7,10 +7,67 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-yaml"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawg"
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subscriptioncompat"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
 )
+
+func TestClashExportRoutingDefaults(t *testing.T) {
+	seedSubDB(t)
+	const subID = "game-routing"
+	seedSubProtocolInbound(t, subID, "vmess", 4486, 1, `{"network":"tcp","security":"none"}`, model.VMESS)
+	svc := NewSubClashService(false, "", false, NewSubService(""))
+	const ingress = "IP-CIDR,203.0.113.5/32,DIRECT,no-resolve"
+
+	checkRules := func(t *testing.T, export func(string, string) (string, string, error), want ...string) {
+		t.Helper()
+		body, _, err := export(subID, "panel.example.test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var doc struct {
+			Rules []string `yaml:"rules"`
+		}
+		if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(doc.Rules, want) {
+			t.Fatalf("rules = %q, want %q", doc.Rules, want)
+		}
+	}
+
+	t.Run("Mihomo defaults", func(t *testing.T) {
+		checkRules(t, svc.GetClash, ingress,
+			"DOMAIN-SUFFIX,aki-game.com,DIRECT",
+			"DOMAIN-SUFFIX,kurogames.com,DIRECT",
+			"DOMAIN,cschannel.anticheatexpert.com,DIRECT",
+			"MATCH,PROXY",
+		)
+	})
+	t.Run("explicit Clash rules", func(t *testing.T) {
+		custom := NewSubClashService(true, "rules:\n  - DOMAIN-SUFFIX,aki-game.com,REJECT\n  - MATCH,PROXY\n", false, svc.SubService)
+		checkRules(t, custom.GetClash, ingress, "DOMAIN-SUFFIX,aki-game.com,REJECT", "MATCH,PROXY")
+	})
+	t.Run("enabled subscription policy", func(t *testing.T) {
+		compat := &subscriptioncompat.Service{DB: database.GetDB()}
+		_, err := compat.SavePolicy(model.SubscriptionPolicy{
+			Enabled:      true,
+			PrimaryGroup: "PROXY",
+			Document:     `{"proxy-groups":[{"name":"PROXY","type":"select","proxies":["__MGMA_LOCAL_NODES__"]}],"rules":["DOMAIN-SUFFIX,kurogames.com,PROXY","MATCH,PROXY"]}`,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkRules(t, svc.GetClash, ingress, "DOMAIN-SUFFIX,kurogames.com,PROXY", "MATCH,PROXY")
+	})
+	t.Run("legacy Clash", func(t *testing.T) {
+		checkRules(t, svc.GetClashLegacy, "MATCH,PROXY")
+	})
+}
 
 func TestEnsureUniqueProxyNames(t *testing.T) {
 	proxies := []map[string]any{
